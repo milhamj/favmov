@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, SectionList, StyleSheet } from 'react-native';
+import { View, Text, FlatList, StyleSheet, Image } from 'react-native';
 import { fetchTrendingMovies, fetchPopularMovies, fetchFavoriteMovies } from '../services/movieService';
+import { Movie } from '../model/movieModel';
 
 const Homepage = () => {
-  const [trendingMovies, setTrendingMovies] = useState([]);
-  const [popularMovies, setPopularMovies] = useState([]);
-  const [favoriteMovies, setFavoriteMovies] = useState([]);
+  const defaultMovies: Movie[] = []
+  const [trendingMovies, setTrendingMovies] = useState(defaultMovies);
+  const [popularMovies, setPopularMovies] = useState(defaultMovies);
+  const [favoriteMovies, setFavoriteMovies] = useState(defaultMovies);
 
   useEffect(() => {
     const loadMovies = async () => {
@@ -19,22 +21,28 @@ const Homepage = () => {
     loadMovies();
   }, []);
 
-  const sections = [
-    { title: 'Trending', data: trendingMovies },
-    { title: 'Popular', data: popularMovies },
-    { title: 'Your Favorites', data: favoriteMovies },
-  ];
+  const renderMoviePoster = ({ item }: { item: Movie }) => (
+    <Image source={{ uri: item.posterUrl }} style={styles.poster} />
+  );
+
+  const renderSection = (title: string, data: Movie[]) => (
+    <View style={styles.section}>
+      <Text style={styles.header}>{title}</Text>
+      <FlatList
+        data={data}
+        renderItem={renderMoviePoster}
+        keyExtractor={(item) => item.id.toString()}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+      />
+    </View>
+  );
 
   return (
     <View style={styles.container}>
-      <SectionList
-        sections={sections}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => <Text style={styles.item}>{item.title}</Text>}
-        renderSectionHeader={({ section: { title } }) => (
-          <Text style={styles.header}>{title}</Text>
-        )}
-      />
+      {renderSection('Trending', trendingMovies)}
+      {renderSection('Popular', popularMovies)}
+      {renderSection('Your Favorites', favoriteMovies)}
     </View>
   );
 };
@@ -43,15 +51,21 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+    backgroundColor: '#fff',
+  },
+  section: {
+    marginBottom: 16,
   },
   header: {
     fontSize: 24,
     fontWeight: 'bold',
     marginVertical: 8,
   },
-  item: {
-    fontSize: 18,
-    marginVertical: 4,
+  poster: {
+    width: 120,
+    height: 180,
+    marginRight: 8,
+    borderRadius: 8,
   },
 });
 
