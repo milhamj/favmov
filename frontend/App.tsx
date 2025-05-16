@@ -25,6 +25,7 @@ export default function App() {
           },
           tabBarActiveTintColor: 'tomato',
           tabBarInactiveTintColor: 'gray',
+          headerShown: false, // Hide the default header
         })}
       >
         <Tab.Screen name="Home" component={Homepage} />

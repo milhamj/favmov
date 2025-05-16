@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, Image, ScrollView } from 'react-native';
 import { fetchTrendingMovies, fetchPopularMovies, fetchFavoriteMovies } from '../services/movieService';
 import { Movie } from '../model/movieModel';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import TopBar from '../components/TopBar';
 
 const Homepage = () => {
   const defaultMovies: Movie[] = []
@@ -44,10 +44,12 @@ const Homepage = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.topBar}>
-        <Text style={styles.appTitle}>CineVerse</Text>
-        <Icon name="search" size={24} />
-      </View>
+      <TopBar
+        title="CineVerse"
+        icons={[
+          { name: 'search', onClick: () => console.log('Search clicked') }
+        ]}
+      />
       <ScrollView>
         {renderSection('Trending', trendingMovies)}
         {renderSection('Popular', popularMovies)}
@@ -61,17 +63,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-  },
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#f8f8f8',
-  },
-  appTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
   },
   section: {
     marginBottom: 16,
