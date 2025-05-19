@@ -17,7 +17,7 @@ const Homepage = () => {
   const [trendingMovies, setTrendingMovies] = useState(defaultMovies);
   const [trendingShows, setTrendingShows] = useState(defaultMovies);
   const [popularMovies, setPopularMovies] = useState(defaultMovies);
-  const [favoriteMovies, setFavoriteMovies] = useState(defaultMovies);
+  const [favoriteMovies, setFavoriteMovies] = useState(null as Movie[] | null);
 
   useEffect(() => {
     const loadMovies = async () => {
@@ -33,6 +33,7 @@ const Homepage = () => {
           type: 'error',
           text1: 'Error',
           text2: trendingMoviesResult.message,
+          position: 'bottom'
         });
       }
 
@@ -43,6 +44,7 @@ const Homepage = () => {
           type: 'error',
           text1: 'Error',
           text2: trendingShowsResult.message,
+          position: 'bottom'
         });
       }
 
@@ -53,6 +55,7 @@ const Homepage = () => {
           type: 'error',
           text1: 'Error',
           text2: popularResult.message,
+          position: 'bottom'
         });
       }
 
@@ -63,6 +66,7 @@ const Homepage = () => {
           type: 'error',
           text1: 'Error',
           text2: favoritesResult.message,
+          position: 'bottom'
         });
       }
     };
@@ -122,7 +126,7 @@ const Homepage = () => {
         {renderSection('Trending Movies', trendingMovies)}
         {renderSection('Trending TV Shows', trendingShows)}
         {renderSection('Popular Movies', popularMovies)}
-        {renderSection('Your Favorites', favoriteMovies)}
+        { favoriteMovies && renderSection('Your Favorites', favoriteMovies) }
       </ScrollView>
       <Toast />
     </View>

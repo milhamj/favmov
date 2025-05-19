@@ -35,6 +35,7 @@ const MovieDetail = () => {
           type: 'error',
           text1: 'Error',
           text2: result.message,
+          position: 'bottom'
         });
       }
     };
@@ -101,6 +102,7 @@ const MovieDetail = () => {
           }
         </View>
       </ScrollView>
+      <Toast />
     </View>
   );
 };

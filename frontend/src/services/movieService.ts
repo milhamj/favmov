@@ -63,9 +63,10 @@ export const fetchMovieDetails = async (movieId: string): Promise<Success<Movie>
 
 export const fetchFavoriteMovies = async (): Promise<Success<Movie[]> | Error> => {
   // Mock data for favorite movies
-  return new Success<Movie[]>([
-    { id: 7, title: "Favorite Movie 1", posterUrl: "https://m.media-amazon.com/images/I/81SIVdnkUmL.jpg" },
-    { id: 8, title: "Favorite Movie 2", posterUrl: "https://upload.wikimedia.org/wikipedia/id/0/0d/Avengers_Endgame_poster.jpg" },
-    { id: 9, title: "Favorite Movie 3", posterUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRVVKXRFFc9BNtpnBRWifO2r1-wzFwKfNIGsg&s" },
-  ]);
+  // return new Success<Movie[]>([
+  //   { id: 7, title: "Favorite Movie 1", posterUrl: "https://m.media-amazon.com/images/I/81SIVdnkUmL.jpg" },
+  //   { id: 8, title: "Favorite Movie 2", posterUrl: "https://upload.wikimedia.org/wikipedia/id/0/0d/Avengers_Endgame_poster.jpg" },
+  //   { id: 9, title: "Favorite Movie 3", posterUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRVVKXRFFc9BNtpnBRWifO2r1-wzFwKfNIGsg&s" },
+  // ]);
+  return new Error('Your Favorite section is not implemented, yet. Sorry!');
 };
