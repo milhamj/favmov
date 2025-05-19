@@ -76,7 +76,7 @@ const Homepage = () => {
   const renderMoviePoster = ({ item }: { item: Movie }) => (
     <TouchableOpacity onPress={() => navigation.navigate('MovieDetail', { movie: item })}>
       <View style={styles.posterContainer}>
-        <Image source={{ uri: item.posterUrl }} style={styles.poster} />
+        <Image source={{ uri: item.smallPosterUrl() }} style={styles.poster} />
         <Text style={styles.posterTitle} numberOfLines={1} ellipsizeMode="tail">
           {item.title}
         </Text>

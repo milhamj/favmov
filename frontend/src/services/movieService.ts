@@ -5,17 +5,17 @@ import tmdbApiClient from '../utils/apiUtil';
 
 const mTmdbApiClient = tmdbApiClient();
 
-const transformMovieData = (data: any): Movie => ({
-  id: data.id,
-  title: data.title || data.name,
-  posterUrl: `https://image.tmdb.org/t/p/w500${data.poster_path}`,
-  overview: data.overview,
-  releaseDate: data.release_date || data.first_air_date,
-  rating: data.vote_average.toFixed(2),
-  ratingCount: data.vote_count,
-  runtime: data.runtime,
-  genres: data.genre_ids,
-});
+const transformMovieData = (data: any, isTvShow?: boolean): Movie => {
+  const movie = new Movie(data.id, data.title || data.name, data.poster_path)
+  movie.overview = data.overview;
+  movie.releaseDate = data.release_date || data.first_air_date;
+  movie.rating = data.vote_average.toFixed(2);
+  movie.ratingCount = data.vote_count;
+  movie.runtime = data.runtime;
+  movie.genres = data.genres?.map((genre: any) => genre.name);
+  movie.isTvShow = isTvShow || false;
+  return movie;
+}
 
 export const fetchTrendingMovies = async (): Promise<Success<Movie[]> | Error> => {
   try {
@@ -31,7 +31,7 @@ export const fetchTrendingMovies = async (): Promise<Success<Movie[]> | Error> =
 export const fetchTrendingShows = async (): Promise<Success<Movie[]> | Error> => {
   try {
     const response = await mTmdbApiClient.get(`/trending/tv/week`);
-    const movies = response.data.results.map(transformMovieData);
+    const movies = response.data.results.map((data: any) => transformMovieData(data, true));
     return new Success<Movie[]>(movies);
   } catch (error: any) {
     console.error('Error fetching trending TV shows:', error);
@@ -50,9 +50,10 @@ export const fetchPopularMovies = async (): Promise<Success<Movie[]> | Error> =>
   }
 };
 
-export const fetchMovieDetails = async (movieId: string): Promise<Success<Movie> | Error> => {
+export const fetchMovieDetails = async (movieId: string, isTvShow?: boolean): Promise<Success<Movie> | Error> => {
   try {
-    const response = await mTmdbApiClient.get(`/movie/${movieId}`);
+    let url = isTvShow === true ? `/tv/${movieId}` : `/movie/${movieId}`;
+    const response = await mTmdbApiClient.get(url);
     const movie = transformMovieData(response.data);
     return new Success<Movie>(movie);
   } catch (error: any) {

@@ -16,6 +16,8 @@ const MovieDetail = () => {
 
   const [movie, setMovie] = useState(movieParams);
 
+  const [isBigImageLoaded, setIsBigImageLoaded] = useState(false);
+
   // Image viewer state and logic
   const [isImageViewerVisible, setImageViewerVisible] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState('');
@@ -26,7 +28,7 @@ const MovieDetail = () => {
 
   useEffect(() => {
     const loadMovieDetails = async () => {
-      const result: Result = await fetchMovieDetails(movie.id.toString());
+      const result: Result = await fetchMovieDetails(movie.id.toString(), movie.isTvShow);
 
       if (result instanceof Success) {
         setMovie(result.data);
@@ -57,8 +59,14 @@ const MovieDetail = () => {
           imageUrl={selectedImageUrl}
           onClose={() => setImageViewerVisible(false)}
         />
-        <TouchableOpacity onPress={() => handleImagePress(movie.posterUrl)}>
-          <Image source={{ uri: movie.posterUrl }} style={styles.poster} />
+        <TouchableOpacity onPress={() => handleImagePress(movie.bigPosterUrl())}>
+          <View style={styles.posterContainer}>
+            { !isBigImageLoaded && <Image source={{ uri: movie.smallPosterUrl() }} style={styles.poster} />}
+            <Image source={{ uri: movie.bigPosterUrl() }} 
+              style={[styles.poster, !isBigImageLoaded ? styles.posterBig : null]} 
+              onLoadEnd={() => setIsBigImageLoaded(true)}
+            />
+          </View>
         </TouchableOpacity>
         <View style={styles.detailsContainer}>
           <Text style={styles.title}>{movie.title}</Text>
@@ -74,7 +82,9 @@ const MovieDetail = () => {
                 )}
               </Text>
           }
-          <Text style={styles.info}>{movie.runtime} minutes • {movie.releaseDate}</Text>
+          <Text style={styles.info}>
+            {movie.runtime && `${movie.runtime} minutes • `}{movie.releaseDate}
+          </Text>
           { 
               movie.genres && movie.genres.length > 0 && 
                 <View style={styles.genres}>
@@ -112,9 +122,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
+  posterContainer: {
+    position: 'relative',
+  },
   poster: {
     width: '100%',
     height: 300,
+  },
+  posterBig: {
+    position: 'absolute',
+    zIndex: 1,
   },
   detailsContainer: {
     padding: 16,
