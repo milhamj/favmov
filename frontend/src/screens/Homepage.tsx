@@ -66,7 +66,9 @@ const Homepage = () => {
   const renderMoviePoster = ({ item }: { item: Movie }) => (
     <View style={styles.posterContainer}>
       <Image source={{ uri: item.posterUrl }} style={styles.poster} />
-      <Text style={styles.posterTitle}>{item.title}</Text>
+      <Text style={styles.posterTitle} numberOfLines={1} ellipsizeMode="tail">
+        {item.title}
+      </Text>
     </View>
   );
 
@@ -79,6 +81,7 @@ const Homepage = () => {
         keyExtractor={(item) => item.id.toString()}
         horizontal
         showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.flatListContent}
       />
     </View>
   );
@@ -109,12 +112,12 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: 16,
-    paddingHorizontal: 16,
   },
   header: {
     fontSize: 24,
     fontWeight: 'bold',
     marginVertical: 8,
+    paddingHorizontal: 16,
   },
   posterContainer: {
     marginRight: 8,
@@ -129,6 +132,10 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontSize: 14,
     textAlign: 'center',
+    width: 120,
+  },
+  flatListContent: {
+    paddingHorizontal: 16,
   },
 });
 
