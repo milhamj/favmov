@@ -1,0 +1,124 @@
+import React from 'react';
+import { View, Text, Image, StyleSheet, ScrollView, Button } from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { Movie } from '../model/movieModel';
+import TopBar from '../components/TopBar';
+
+const MovieDetail = () => {
+  const navigation = useNavigation();
+  const route = useRoute();
+  const { movie } = route.params as { movie: Movie };
+
+  return (
+    <View style={styles.container}>
+      <TopBar
+        title= { movie.title }
+        backButton={{
+          isShow: true,
+          onClick: () => navigation.goBack()
+        }}
+      />
+      <ScrollView>
+        <Image source={{ uri: movie.posterUrl }} style={styles.poster} />
+        <View style={styles.detailsContainer}>
+          <Text style={styles.title}>{movie.title}</Text>
+          <Text style={styles.rating}>⭐ {movie.rating}</Text>
+          <Text style={styles.info}>{movie.runtime} • {movie.releaseDate}</Text>
+          { 
+              movie.genres && movie.genres.length > 0? (
+                  <View style={styles.genres}>
+                      {movie.genres?.map((genre, index) => (
+                      <Text key={index} style={styles.genre}>{genre}</Text>
+                      ))}
+                  </View>
+              ) : null
+          }
+          <Text style={styles.sectionTitle}>Synopsis</Text>
+          <Text style={styles.synopsis}>{movie.overview}</Text>
+          {
+              movie.cast && movie.cast.length > 0? (
+                  <View> 
+                      <Text style={styles.sectionTitle}>Cast</Text>
+                      {movie.cast?.map((actor, index) => (
+                          <View key={index} style={styles.castItem}>
+                          <Image source={{ uri: actor.photoUrl }} style={styles.actorPhoto} />
+                          <View>
+                              <Text style={styles.actorName}>{actor.name}</Text>
+                              <Text style={styles.characterName}>{actor.character}</Text>
+                          </View>
+                          </View>
+                      ))}
+                  </View>
+              ) : null
+          }
+        </View>
+      </ScrollView>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  poster: {
+    width: '100%',
+    height: 300,
+  },
+  detailsContainer: {
+    padding: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  rating: {
+    fontSize: 18,
+    marginVertical: 4,
+  },
+  info: {
+    fontSize: 16,
+    color: '#666',
+  },
+  genres: {
+    flexDirection: 'row',
+    marginVertical: 8,
+  },
+  genre: {
+    backgroundColor: '#eee',
+    borderRadius: 4,
+    padding: 4,
+    marginRight: 8,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginVertical: 8,
+  },
+  synopsis: {
+    fontSize: 16,
+    color: '#333',
+  },
+  castItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 8,
+  },
+  actorPhoto: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 16,
+  },
+  actorName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  characterName: {
+    fontSize: 14,
+    color: '#666',
+  },
+});
+
+export default MovieDetail;

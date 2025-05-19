@@ -1,12 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, Image, ScrollView } from 'react-native';
+import { View, Text, FlatList, StyleSheet, Image, ScrollView, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { fetchTrendingMovies, fetchPopularMovies, fetchFavoriteMovies, fetchTrendingShows } from '../services/movieService';
 import { Movie } from '../model/movieModel';
 import TopBar from '../components/TopBar';
 import { Result, Success, Error } from '../model/apiResponse';
 import Toast from 'react-native-toast-message';
+import { RootStackParamList } from '../navigation/navigationTypes';
 
 const Homepage = () => {
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Home'>>(); // Use 'Home' as the key
+  
   const defaultMovies: Movie[] = [];
   const [trendingMovies, setTrendingMovies] = useState(defaultMovies);
   const [trendingShows, setTrendingShows] = useState(defaultMovies);
@@ -64,12 +69,14 @@ const Homepage = () => {
   }, []);
 
   const renderMoviePoster = ({ item }: { item: Movie }) => (
+    <TouchableOpacity onPress={() => navigation.navigate('MovieDetail', { movie: item })}>
     <View style={styles.posterContainer}>
       <Image source={{ uri: item.posterUrl }} style={styles.poster} />
       <Text style={styles.posterTitle} numberOfLines={1} ellipsizeMode="tail">
         {item.title}
       </Text>
     </View>
+  </TouchableOpacity>
   );
 
   const renderSection = (title: string, data: Movie[]) => (
