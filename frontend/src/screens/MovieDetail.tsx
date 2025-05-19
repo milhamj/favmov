@@ -6,7 +6,7 @@ import { fetchMovieDetails } from '../services/movieService';
 import { Result, Success } from '../model/apiResponse';
 import Toast from 'react-native-toast-message';
 import TopBar from '../components/TopBar';
-import FullImageViewer from '../components/FullImageViewer';
+import PosterViewer from '../components/PosterViewer';
 import { COLORS } from '../styles/colors'; 
 
 const MovieDetail = () => {
@@ -15,16 +15,6 @@ const MovieDetail = () => {
   const movieParams = (route.params as { movie: Movie }).movie;
 
   const [movie, setMovie] = useState(movieParams);
-
-  const [isBigImageLoaded, setIsBigImageLoaded] = useState(false);
-
-  // Image viewer state and logic
-  const [isImageViewerVisible, setImageViewerVisible] = useState(false);
-  const [selectedImageUrl, setSelectedImageUrl] = useState('');
-  const handleImagePress = (imageUrl: string) => {
-    setSelectedImageUrl(imageUrl);
-    setImageViewerVisible(true);
-  };
 
   useEffect(() => {
     const loadMovieDetails = async () => {
@@ -54,20 +44,7 @@ const MovieDetail = () => {
         }}
       />
       <ScrollView>
-        <FullImageViewer
-          visible={isImageViewerVisible}
-          imageUrl={selectedImageUrl}
-          onClose={() => setImageViewerVisible(false)}
-        />
-        <TouchableOpacity onPress={() => handleImagePress(movie.bigPosterUrl())}>
-          <View style={styles.posterContainer}>
-            { !isBigImageLoaded && <Image source={{ uri: movie.smallPosterUrl() }} style={styles.poster} />}
-            <Image source={{ uri: movie.bigPosterUrl() }} 
-              style={[styles.poster, !isBigImageLoaded ? styles.posterBig : null]} 
-              onLoadEnd={() => setIsBigImageLoaded(true)}
-            />
-          </View>
-        </TouchableOpacity>
+        <PosterViewer bigPosterUrl={movie.bigPosterUrl()} smallPosterUrl={movie.smallPosterUrl()} />
         <View style={styles.detailsContainer}>
           <Text style={styles.title}>{movie.title}</Text>
           {
@@ -121,17 +98,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-  },
-  posterContainer: {
-    position: 'relative',
-  },
-  poster: {
-    width: '100%',
-    height: 300,
-  },
-  posterBig: {
-    position: 'absolute',
-    zIndex: 1,
   },
   detailsContainer: {
     padding: 16,
