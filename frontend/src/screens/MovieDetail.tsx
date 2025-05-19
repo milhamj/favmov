@@ -4,6 +4,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { Movie } from '../model/movieModel';
 import TopBar from '../components/TopBar';
 import FullImageViewer from '../components/FullImageViewer';
+import { COLORS } from '../styles/colors'; 
 
 const MovieDetail = () => {
   const navigation = useNavigation();
@@ -38,34 +39,43 @@ const MovieDetail = () => {
         </TouchableOpacity>
         <View style={styles.detailsContainer}>
           <Text style={styles.title}>{movie.title}</Text>
-          <Text style={styles.rating}>⭐ {movie.rating}</Text>
+          {
+            movie.rating && 
+              <Text style={[styles.rating, {
+                  color: movie.rating > 5.0 ? COLORS.rating_green : COLORS.rating_red,
+                },
+              ]}>
+                ⭐ {movie.rating}{' '}
+                {movie.ratingCount && (
+                  <Text style={styles.ratingCount}>({movie.ratingCount})</Text>
+                )}
+              </Text>
+          }
           <Text style={styles.info}>{movie.runtime} • {movie.releaseDate}</Text>
           { 
-              movie.genres && movie.genres.length > 0? (
-                  <View style={styles.genres}>
-                      {movie.genres?.map((genre, index) => (
-                      <Text key={index} style={styles.genre}>{genre}</Text>
-                      ))}
-                  </View>
-              ) : null
+              movie.genres && movie.genres.length > 0 && 
+                <View style={styles.genres}>
+                    {movie.genres?.map((genre, index) => (
+                    <Text key={index} style={styles.genre}>{genre}</Text>
+                    ))}
+                </View>
           }
           <Text style={styles.sectionTitle}>Synopsis</Text>
           <Text style={styles.synopsis}>{movie.overview}</Text>
           {
-              movie.cast && movie.cast.length > 0? (
-                  <View> 
-                      <Text style={styles.sectionTitle}>Cast</Text>
-                      {movie.cast?.map((actor, index) => (
-                          <View key={index} style={styles.castItem}>
-                          <Image source={{ uri: actor.photoUrl }} style={styles.actorPhoto} />
-                          <View>
-                              <Text style={styles.actorName}>{actor.name}</Text>
-                              <Text style={styles.characterName}>{actor.character}</Text>
-                          </View>
-                          </View>
-                      ))}
-                  </View>
-              ) : null
+              movie.cast && movie.cast.length > 0 &&
+                <View> 
+                    <Text style={styles.sectionTitle}>Cast</Text>
+                    {movie.cast?.map((actor, index) => (
+                        <View key={index} style={styles.castItem}>
+                        <Image source={{ uri: actor.photoUrl }} style={styles.actorPhoto} />
+                        <View>
+                            <Text style={styles.actorName}>{actor.name}</Text>
+                            <Text style={styles.characterName}>{actor.character}</Text>
+                        </View>
+                        </View>
+                    ))}
+                </View>
           }
         </View>
       </ScrollView>
@@ -92,6 +102,11 @@ const styles = StyleSheet.create({
   rating: {
     fontSize: 18,
     marginVertical: 4,
+    fontWeight: 'bold',
+  },
+  ratingCount: {
+    color: COLORS.text_gray,
+    fontWeight: 'normal',
   },
   info: {
     fontSize: 16,

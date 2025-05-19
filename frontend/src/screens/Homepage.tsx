@@ -8,6 +8,7 @@ import TopBar from '../components/TopBar';
 import { Result, Success, Error } from '../model/apiResponse';
 import Toast from 'react-native-toast-message';
 import { RootStackParamList } from '../navigation/navigationTypes';
+import { COLORS } from '../styles/colors'; 
 
 const Homepage = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Home'>>(); // Use 'Home' as the key
@@ -70,13 +71,29 @@ const Homepage = () => {
 
   const renderMoviePoster = ({ item }: { item: Movie }) => (
     <TouchableOpacity onPress={() => navigation.navigate('MovieDetail', { movie: item })}>
-    <View style={styles.posterContainer}>
-      <Image source={{ uri: item.posterUrl }} style={styles.poster} />
-      <Text style={styles.posterTitle} numberOfLines={1} ellipsizeMode="tail">
-        {item.title}
-      </Text>
-    </View>
-  </TouchableOpacity>
+      <View style={styles.posterContainer}>
+        <Image source={{ uri: item.posterUrl }} style={styles.poster} />
+        <Text style={styles.posterTitle} numberOfLines={1} ellipsizeMode="tail">
+          {item.title}
+        </Text>
+        {item.rating && (
+          <Text
+            style={[
+              styles.posterRating,
+              {
+                color: item.rating > 5.0 ? COLORS.rating_green : COLORS.rating_red,
+                fontWeight: 'bold',
+              },
+            ]}
+          >
+            ⭐ {item.rating}{' '}
+            {item.ratingCount && (
+              <Text style={styles.posterRatingCount}>({item.ratingCount})</Text>
+            )}
+          </Text>
+        )}
+      </View>
+    </TouchableOpacity>
   );
 
   const renderSection = (title: string, data: Movie[]) => (
@@ -138,8 +155,18 @@ const styles = StyleSheet.create({
   posterTitle: {
     marginTop: 4,
     fontSize: 14,
-    textAlign: 'center',
+    textAlign: 'left',
     width: 120,
+  },
+  posterRating: {
+    marginTop: 2,
+    fontSize: 10,
+    textAlign: 'left',
+    width: 120,
+  },
+  posterRatingCount: {
+    color: COLORS.text_gray,
+    fontWeight: 'normal',
   },
   flatListContent: {
     paddingHorizontal: 16,

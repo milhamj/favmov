@@ -11,6 +11,9 @@ const transformMovieData = (data: any): Movie => ({
   posterUrl: `https://image.tmdb.org/t/p/w500${data.poster_path}`,
   overview: data.overview,
   releaseDate: data.release_date || data.first_air_date,
+  rating: data.vote_average,
+  ratingCount: data.vote_count,
+  runtime: data.runtime,
   genres: data.genre_ids,
 });
 
