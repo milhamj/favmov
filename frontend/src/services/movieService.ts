@@ -11,7 +11,7 @@ const transformMovieData = (data: any): Movie => ({
   posterUrl: `https://image.tmdb.org/t/p/w500${data.poster_path}`,
   overview: data.overview,
   releaseDate: data.release_date || data.first_air_date,
-  rating: data.vote_average,
+  rating: data.vote_average.toFixed(2),
   ratingCount: data.vote_count,
   runtime: data.runtime,
   genres: data.genre_ids,
@@ -47,6 +47,17 @@ export const fetchPopularMovies = async (): Promise<Success<Movie[]> | Error> =>
   } catch (error: any) {
     console.error('Error fetching popular movies:', error);
     return new Error('Failed to fetch popular movies', error.response?.status);
+  }
+};
+
+export const fetchMovieDetails = async (movieId: string): Promise<Success<Movie> | Error> => {
+  try {
+    const response = await mTmdbApiClient.get(`/movie/${movieId}`);
+    const movie = transformMovieData(response.data);
+    return new Success<Movie>(movie);
+  } catch (error: any) {
+    console.error('Error fetching movie details:', error);
+    return new Error('Failed to fetch movie details', error.response?.status);
   }
 };
 

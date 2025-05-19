@@ -5,7 +5,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { fetchTrendingMovies, fetchPopularMovies, fetchFavoriteMovies, fetchTrendingShows } from '../services/movieService';
 import { Movie } from '../model/movieModel';
 import TopBar from '../components/TopBar';
-import { Result, Success, Error } from '../model/apiResponse';
+import { Result, Success } from '../model/apiResponse';
 import Toast from 'react-native-toast-message';
 import { RootStackParamList } from '../navigation/navigationTypes';
 import { COLORS } from '../styles/colors'; 

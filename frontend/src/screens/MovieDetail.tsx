@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, Button } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Movie } from '../model/movieModel';
+import { fetchMovieDetails } from '../services/movieService';
+import { Result, Success } from '../model/apiResponse';
+import Toast from 'react-native-toast-message';
 import TopBar from '../components/TopBar';
 import FullImageViewer from '../components/FullImageViewer';
 import { COLORS } from '../styles/colors'; 
@@ -9,15 +12,34 @@ import { COLORS } from '../styles/colors';
 const MovieDetail = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { movie } = route.params as { movie: Movie };
+  const movieParams = (route.params as { movie: Movie }).movie;
 
+  const [movie, setMovie] = useState(movieParams);
+
+  // Image viewer state and logic
   const [isImageViewerVisible, setImageViewerVisible] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState('');
-
   const handleImagePress = (imageUrl: string) => {
     setSelectedImageUrl(imageUrl);
     setImageViewerVisible(true);
   };
+
+  useEffect(() => {
+    const loadMovieDetails = async () => {
+      const result: Result = await fetchMovieDetails(movie.id.toString());
+
+      if (result instanceof Success) {
+        setMovie(result.data);
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: result.message,
+        });
+      }
+    };
+    loadMovieDetails();
+  }, [])
 
   return (
     <View style={styles.container}>
@@ -51,7 +73,7 @@ const MovieDetail = () => {
                 )}
               </Text>
           }
-          <Text style={styles.info}>{movie.runtime} • {movie.releaseDate}</Text>
+          <Text style={styles.info}>{movie.runtime} minutes • {movie.releaseDate}</Text>
           { 
               movie.genres && movie.genres.length > 0 && 
                 <View style={styles.genres}>
