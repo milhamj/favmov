@@ -22,6 +22,7 @@
     "react-native": "0.79.2",
     "react-native-dotenv": "^3.4.11",
     "react-native-elements": "^3.4.3",
+    "react-native-image-zoom-viewer": "^3.0.1",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.10.0",
     "react-native-tailwindcss": "^1.1.11",

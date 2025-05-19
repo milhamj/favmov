@@ -1,13 +1,22 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet, ScrollView, Button } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, Button } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Movie } from '../model/movieModel';
 import TopBar from '../components/TopBar';
+import FullImageViewer from '../components/FullImageViewer';
 
 const MovieDetail = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { movie } = route.params as { movie: Movie };
+
+  const [isImageViewerVisible, setImageViewerVisible] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState('');
+
+  const handleImagePress = (imageUrl: string) => {
+    setSelectedImageUrl(imageUrl);
+    setImageViewerVisible(true);
+  };
 
   return (
     <View style={styles.container}>
@@ -19,7 +28,14 @@ const MovieDetail = () => {
         }}
       />
       <ScrollView>
-        <Image source={{ uri: movie.posterUrl }} style={styles.poster} />
+        <FullImageViewer
+          visible={isImageViewerVisible}
+          imageUrl={selectedImageUrl}
+          onClose={() => setImageViewerVisible(false)}
+        />
+        <TouchableOpacity onPress={() => handleImagePress(movie.posterUrl)}>
+          <Image source={{ uri: movie.posterUrl }} style={styles.poster} />
+        </TouchableOpacity>
         <View style={styles.detailsContainer}>
           <Text style={styles.title}>{movie.title}</Text>
           <Text style={styles.rating}>⭐ {movie.rating}</Text>
