@@ -1,23 +1,64 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, Image, ScrollView } from 'react-native';
-import { fetchTrendingMovies, fetchPopularMovies, fetchFavoriteMovies } from '../services/movieService';
+import { fetchTrendingMovies, fetchPopularMovies, fetchFavoriteMovies, fetchTrendingShows } from '../services/movieService';
 import { Movie } from '../model/movieModel';
 import TopBar from '../components/TopBar';
+import { Result, Success, Error } from '../model/apiResponse';
+import Toast from 'react-native-toast-message';
 
 const Homepage = () => {
-  const defaultMovies: Movie[] = []
+  const defaultMovies: Movie[] = [];
   const [trendingMovies, setTrendingMovies] = useState(defaultMovies);
+  const [trendingShows, setTrendingShows] = useState(defaultMovies);
   const [popularMovies, setPopularMovies] = useState(defaultMovies);
   const [favoriteMovies, setFavoriteMovies] = useState(defaultMovies);
 
   useEffect(() => {
     const loadMovies = async () => {
-      const trending = await fetchTrendingMovies();
-      const popular = await fetchPopularMovies();
-      const favorites = await fetchFavoriteMovies();
-      setTrendingMovies(trending);
-      setPopularMovies(popular);
-      setFavoriteMovies(favorites);
+      const trendingMoviesResult: Result = await fetchTrendingMovies();
+      const trendingShowsResult: Result = await fetchTrendingShows();
+      const popularResult: Result = await fetchPopularMovies();
+      const favoritesResult: Result = await fetchFavoriteMovies();
+
+      if (trendingMoviesResult instanceof Success) {
+        setTrendingMovies(trendingMoviesResult.data);
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: trendingMoviesResult.message,
+        });
+      }
+
+      if (trendingShowsResult instanceof Success) {
+        setTrendingShows(trendingShowsResult.data);
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: trendingShowsResult.message,
+        });
+      }
+
+      if (popularResult instanceof Success) {
+        setPopularMovies(popularResult.data);
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: popularResult.message,
+        });
+      }
+
+      if (favoritesResult instanceof Success) {
+        setFavoriteMovies(favoritesResult.data);
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: favoritesResult.message,
+        });
+      }
     };
     loadMovies();
   }, []);
@@ -51,10 +92,12 @@ const Homepage = () => {
         ]}
       />
       <ScrollView>
-        {renderSection('Trending', trendingMovies)}
-        {renderSection('Popular', popularMovies)}
+        {renderSection('Trending Movies', trendingMovies)}
+        {renderSection('Trending TV Shows', trendingShows)}
+        {renderSection('Popular Movies', popularMovies)}
         {renderSection('Your Favorites', favoriteMovies)}
       </ScrollView>
+      <Toast />
     </View>
   );
 };

@@ -1,28 +1,57 @@
+import axios from 'axios';
 import { Movie } from '../model/movieModel';
+import { Success, Error } from '../model/apiResponse';
+import tmdbApiClient from '../utils/apiUtil';
 
-export const fetchTrendingMovies = async (): Promise<Movie[]> => {
-  // Mock data for trending movies
-  return [
-    { id: 1, title: "Trending Movie 1", posterUrl: "https://static.wikia.nocookie.net/marvelmovies/images/8/8f/2012_Avengers_Poster.jpg/revision/latest?cb=20221014191345" },
-    { id: 2, title: "Trending Movie 2", posterUrl: "https://upload.wikimedia.org/wikipedia/id/0/0d/Avengers_Endgame_poster.jpg" },
-    { id: 3, title: "Trending Movie 3", posterUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRVVKXRFFc9BNtpnBRWifO2r1-wzFwKfNIGsg&s" },
-  ];
+const mTmdbApiClient = tmdbApiClient();
+
+const transformMovieData = (data: any): Movie => ({
+  id: data.id,
+  title: data.title || data.name,
+  posterUrl: `https://image.tmdb.org/t/p/w500${data.poster_path}`,
+  overview: data.overview,
+  releaseDate: data.release_date || data.first_air_date,
+  genres: data.genre_ids,
+});
+
+export const fetchTrendingMovies = async (): Promise<Success<Movie[]> | Error> => {
+  try {
+    const response = await mTmdbApiClient.get(`/trending/movie/week`);
+    const movies = response.data.results.map(transformMovieData);
+    return new Success<Movie[]>(movies);
+  } catch (error: any) {
+    console.error('Error fetching trending movies:', error);
+    return new Error('Failed to fetch trending movies', error.response?.status);
+  }
 };
 
-export const fetchPopularMovies = async (): Promise<Movie[]> => {
-  // Mock data for popular movies
-  return [
-    { id: 4, title: "Popular Movie 1", posterUrl: "https://static.wikia.nocookie.net/marvelmovies/images/8/8f/2012_Avengers_Poster.jpg/revision/latest?cb=20221014191345" },
-    { id: 5, title: "Popular Movie 2", posterUrl: "https://upload.wikimedia.org/wikipedia/id/0/0d/Avengers_Endgame_poster.jpg" },
-    { id: 6, title: "Popular Movie 3", posterUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRVVKXRFFc9BNtpnBRWifO2r1-wzFwKfNIGsg&s" },
-  ];
+export const fetchTrendingShows = async (): Promise<Success<Movie[]> | Error> => {
+  try {
+    const response = await mTmdbApiClient.get(`/trending/tv/week`);
+    const movies = response.data.results.map(transformMovieData);
+    return new Success<Movie[]>(movies);
+  } catch (error: any) {
+    console.error('Error fetching trending TV shows:', error);
+    return new Error('Failed to fetch trending TV shows', error.response?.status);
+  }
 };
 
-export const fetchFavoriteMovies = async (): Promise<Movie[]> => {
+export const fetchPopularMovies = async (): Promise<Success<Movie[]> | Error> => {
+  try {
+    const response = await mTmdbApiClient.get(`/movie/popular`);
+    const movies = response.data.results.map(transformMovieData);
+    return new Success<Movie[]>(movies);
+  } catch (error: any) {
+    console.error('Error fetching popular movies:', error);
+    return new Error('Failed to fetch popular movies', error.response?.status);
+  }
+};
+
+export const fetchFavoriteMovies = async (): Promise<Success<Movie[]> | Error> => {
   // Mock data for favorite movies
-  return [
-    { id: 7, title: "Favorite Movie 1", posterUrl: "https://static.wikia.nocookie.net/marvelmovies/images/8/8f/2012_Avengers_Poster.jpg/revision/latest?cb=20221014191345" },
+  return new Success<Movie[]>([
+    { id: 7, title: "Favorite Movie 1", posterUrl: "https://m.media-amazon.com/images/I/81SIVdnkUmL.jpg" },
     { id: 8, title: "Favorite Movie 2", posterUrl: "https://upload.wikimedia.org/wikipedia/id/0/0d/Avengers_Endgame_poster.jpg" },
     { id: 9, title: "Favorite Movie 3", posterUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRVVKXRFFc9BNtpnBRWifO2r1-wzFwKfNIGsg&s" },
-  ];
+  ]);
 };
