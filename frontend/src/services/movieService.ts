@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Movie } from '../model/movieModel';
+import { Movie, Actor, Crew } from '../model/movieModel';
 import { Success, Error } from '../model/apiResponse';
 import tmdbApiClient from '../utils/apiUtil';
 
@@ -14,6 +14,23 @@ const transformMovieData = (data: any, isTvShow?: boolean): Movie => {
   movie.runtime = data.runtime;
   movie.genres = data.genres?.map((genre: any) => genre.name);
   movie.isTvShow = isTvShow || false;
+  movie.cast = data.credits?.cast?.slice(0, 10).map((actor: any) => {
+    return new Actor(
+      actor.id, 
+      actor.name, 
+      actor.profile_path, 
+      actor.character
+    )
+  });
+  movie.crew = data.credits?.crew?.slice(0, 5).map((crew: any) => {
+    return new Crew(
+      crew.id,
+      crew.name,
+      crew.profile_path,
+      crew.job
+    )
+  });
+  console.log('transformMovieData', movie);
   return movie;
 }
 
@@ -53,6 +70,7 @@ export const fetchPopularMovies = async (): Promise<Success<Movie[]> | Error> =>
 export const fetchMovieDetails = async (movieId: string, isTvShow?: boolean): Promise<Success<Movie> | Error> => {
   try {
     let url = isTvShow === true ? `/tv/${movieId}` : `/movie/${movieId}`;
+    url += `?append_to_response=credits`;
     const response = await mTmdbApiClient.get(url);
     const movie = transformMovieData(response.data);
     return new Success<Movie>(movie);

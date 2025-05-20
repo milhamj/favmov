@@ -53,7 +53,7 @@ const MovieDetail = () => {
                   color: movie.rating > 5.0 ? COLORS.rating_green : COLORS.rating_red,
                 },
               ]}>
-                ⭐ {movie.rating}{' '}
+                {'⭐ '}{movie.rating}{' '}
                 {movie.ratingCount && (
                   <Text style={styles.ratingCount}>({movie.ratingCount})</Text>
                 )}

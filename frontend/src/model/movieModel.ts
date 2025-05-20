@@ -8,6 +8,7 @@ export class Movie {
     releaseDate?: string;
     genres?: string[];
     cast?: Actor[];
+    crew?: Crew[];
     rating?: number;
     ratingCount?: number;
     runtime?: string;
@@ -28,8 +29,30 @@ export class Movie {
     }
 }
 
-export interface Actor {
-    photoUrl: string;
+export class Actor {
+    id: number;
     name: string;
+    photoUrl: string;
     character: string;  
+
+    constructor(id: number, name: string, photoPath: string, character: string) {
+        this.id = id;
+        this.name = name;
+        this.photoUrl = TMDB_IMAGE_SMALL + photoPath;
+        this.character = character;
+    }
+}
+
+export class Crew {
+    id: number;
+    name: string;
+    photoUrl: string;
+    job: string;  
+
+    constructor(id: number, name: string, photoPath: string, job: string) {
+        this.id = id;
+        this.name = name;
+        this.photoUrl = TMDB_IMAGE_SMALL + photoPath;
+        this.job = job;
+    }
 }
