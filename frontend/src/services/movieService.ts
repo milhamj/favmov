@@ -30,7 +30,6 @@ const transformMovieData = (data: any, isTvShow?: boolean): Movie => {
       crew.job
     )
   });
-  console.log('transformMovieData', movie);
   return movie;
 }
 
