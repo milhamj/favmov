@@ -161,6 +161,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'left',
     width: 120,
+    fontWeight: '500'
   },
   posterRating: {
     marginTop: 2,
