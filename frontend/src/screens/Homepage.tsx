@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, Image, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, StyleSheet, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { fetchTrendingMovies, fetchPopularMovies, fetchFavoriteMovies, fetchTrendingShows } from '../services/movieService';
@@ -8,7 +8,7 @@ import TopBar from '../components/TopBar';
 import { Result, Success } from '../model/apiResponse';
 import Toast from 'react-native-toast-message';
 import { RootStackParamList } from '../navigation/navigationTypes';
-import { COLORS } from '../styles/colors'; 
+import MovieCard from '../components/MovieCard';
 
 const Homepage = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Home'>>(); // Use 'Home' as the key
@@ -74,30 +74,7 @@ const Homepage = () => {
   }, []);
 
   const renderMoviePoster = ({ item }: { item: Movie }) => (
-    <TouchableOpacity onPress={() => navigation.navigate('MovieDetail', { movie: item })}>
-      <View style={styles.posterContainer}>
-        <Image source={{ uri: item.smallPosterUrl() }} style={styles.poster} />
-        <Text style={styles.posterTitle} numberOfLines={1} ellipsizeMode="tail">
-          {item.title}
-        </Text>
-        {item.rating && (
-          <Text
-            style={[
-              styles.posterRating,
-              {
-                color: item.rating > 5.0 ? COLORS.rating_green : COLORS.rating_red,
-                fontWeight: 'bold',
-              },
-            ]}
-          >
-            ⭐ {item.rating}{' '}
-            {item.ratingCount && (
-              <Text style={styles.posterRatingCount}>({item.ratingCount})</Text>
-            )}
-          </Text>
-        )}
-      </View>
-    </TouchableOpacity>
+    <MovieCard movie={item} onClick={() => navigation.navigate('MovieDetail', { movie: item })}/>
   );
 
   const renderSection = (title: string, data: Movie[]) => (
@@ -146,32 +123,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginVertical: 8,
     paddingHorizontal: 16,
-  },
-  posterContainer: {
-    marginRight: 8,
-    alignItems: 'center',
-  },
-  poster: {
-    width: 120,
-    height: 180,
-    borderRadius: 8,
-  },
-  posterTitle: {
-    marginTop: 4,
-    fontSize: 14,
-    textAlign: 'left',
-    width: 120,
-    fontWeight: '500'
-  },
-  posterRating: {
-    marginTop: 2,
-    fontSize: 10,
-    textAlign: 'left',
-    width: 120,
-  },
-  posterRatingCount: {
-    color: COLORS.text_gray,
-    fontWeight: 'normal',
   },
   flatListContent: {
     paddingHorizontal: 16,
