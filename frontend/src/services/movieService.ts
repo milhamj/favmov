@@ -22,7 +22,15 @@ const transformMovieData = (data: any, isTvShow?: boolean): Movie => {
       actor.character
     )
   });
-  movie.crew = data.credits?.crew?.slice(0, 5).map((crew: any) => {
+  // Put the 'Director' and 'Producer' as the first elements
+  const director = data.credits?.crew?.find((crewMember: any) => crewMember.job === 'Director');
+  const producers = data.credits?.crew?.filter((crewMember: any) => crewMember.job?.includes('Producer'));
+  const otherCrew = data.credits?.crew?.filter((crewMember: any) => crewMember.job !== 'Director' && !crewMember.job?.includes('Producer'));
+  const crew: Crew[] = [];
+  if (director) crew.push(director);
+  if (producers) crew.push(...producers);
+  if (otherCrew) crew.push(...otherCrew)
+  movie.crew = crew?.slice(0, 20).map((crew: any) => {
     return new Crew(
       crew.id,
       crew.name,

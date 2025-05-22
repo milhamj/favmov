@@ -45,8 +45,10 @@ const MovieDetail = () => {
         }}
       />
       <ScrollView>
+        {/* Poster Section */}
         <PosterViewer bigPosterUrl={movie.bigPosterUrl()} smallPosterUrl={movie.smallPosterUrl()} />
         <View style={styles.detailsContainer}>
+          {/* Top Section */}
           <Text style={styles.title}>{movie.title}</Text>
           {
             movie.rating && 
@@ -63,6 +65,8 @@ const MovieDetail = () => {
           <Text style={styles.info}>
             {movie.runtime && `${movie.runtime} minutes • `}{movie.releaseDate}
           </Text>
+
+          {/* Genre Section */}
           { 
               movie.genres && movie.genres.length > 0 && 
                 <View style={styles.genres}>
@@ -71,8 +75,12 @@ const MovieDetail = () => {
                     ))}
                 </View>
           }
+
+          {/* Synopsis Section */}
           <Text style={styles.sectionTitle}>Synopsis</Text>
           <Text style={styles.synopsis}>{movie.overview}</Text>
+
+          {/* Cast Section */}
           {
               movie.cast && movie.cast.length > 0 &&
                 <View> 
@@ -86,6 +94,24 @@ const MovieDetail = () => {
                         </View>
                         </View>
                     ))}
+                </View>
+          }
+
+          {/* Crew Section */}
+          {
+              movie.crew && movie.crew.length > 0 &&
+                <View> 
+                    <Text style={styles.sectionTitle}>Crew</Text>
+                    <View style={styles.crewContainer}>
+                      {movie.crew?.map((crew, index) => (
+                          <View key={index} style={styles.crewItem}>
+                          <View>
+                              <Text style={styles.crewName}>{crew.name}</Text>
+                              <Text style={styles.crewJob}>{crew.job}</Text>
+                          </View>
+                          </View>
+                      ))}
+                    </View>
                 </View>
           }
         </View>
@@ -152,10 +178,29 @@ const styles = StyleSheet.create({
   },
   actorName: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '500',
   },
   characterName: {
     fontSize: 14,
+    color: '#666',
+  },
+  crewContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  crewItem: {
+    width: '48%',
+    alignItems: 'flex-start',
+    marginBottom: 10,
+  },
+  crewName: {
+    fontSize: 14,
+    fontWeight: '500'
+  },
+  crewJob: {
+    fontSize: 12,
+    fontWeight: 'light',
     color: '#666',
   },
 });
