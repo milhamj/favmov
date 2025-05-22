@@ -8,6 +8,7 @@ import Toast from 'react-native-toast-message';
 import TopBar from '../components/TopBar';
 import PosterViewer from '../components/PosterViewer';
 import { COLORS } from '../styles/colors'; 
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const MovieDetail = () => {
   const navigation = useNavigation();
@@ -35,7 +36,7 @@ const MovieDetail = () => {
   }, [])
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <TopBar
         title= { movie.title }
         backButton={{
@@ -90,7 +91,7 @@ const MovieDetail = () => {
         </View>
       </ScrollView>
       <Toast />
-    </View>
+    </SafeAreaView>
   );
 };
 

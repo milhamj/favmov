@@ -1,4 +1,5 @@
 import { NavigationContainer } from '@react-navigation/native';
+import { Platform, ViewStyle } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import Toast from 'react-native-toast-message';
@@ -9,11 +10,16 @@ import MovieDetail from './src/screens/MovieDetail';
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
+const cardStyle: ViewStyle = {
+  flex: 1,
+  ...(Platform.OS === 'web' ? { height: '100vh' as any } : { }),
+};
+
 export default function App() {
   return (
     <>
       <NavigationContainer>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Navigator screenOptions={{ headerShown: false, cardStyle: cardStyle, }}>
           <Stack.Screen name="Main" component={MainTabs} />
           <Stack.Screen name="MovieDetail" component={MovieDetail} />
         </Stack.Navigator>
