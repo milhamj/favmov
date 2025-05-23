@@ -96,7 +96,7 @@ const Homepage = () => {
       <TopBar
         title="CineVerse"
         icons={[
-          { name: 'search', onClick: () => console.log('Search clicked') }
+          { name: 'search', onClick: () => navigation.navigate('SearchPage') }
         ]}
       />
       <ScrollView>

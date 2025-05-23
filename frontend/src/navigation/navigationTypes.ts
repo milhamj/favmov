@@ -5,4 +5,5 @@ export type RootStackParamList = {
   Collection: undefined;
   Profile: undefined;
   MovieDetail: { movie: Movie };
+  SearchPage: undefined;
 };

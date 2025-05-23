@@ -9,7 +9,7 @@ const transformMovieData = (data: any, isTvShow?: boolean): Movie => {
   const movie = new Movie(data.id, data.title || data.name, data.poster_path)
   movie.overview = data.overview;
   movie.releaseDate = data.release_date || data.first_air_date;
-  movie.rating = data.vote_average.toFixed(2);
+  movie.rating = data.vote_average?.toFixed(2);
   movie.ratingCount = data.vote_count;
   movie.runtime = data.runtime;
   movie.genres = data.genres?.map((genre: any) => genre.name);
@@ -84,6 +84,21 @@ export const fetchMovieDetails = async (movieId: string, isTvShow?: boolean): Pr
   } catch (error: any) {
     console.error('Error fetching movie details:', error);
     return new Error('Failed to fetch movie details', error.response?.status);
+  }
+};
+
+export const searchMovie = async (query: string, page: number, includeAdult?: boolean): Promise<Success<Movie[]> | Error> => {
+  try {
+    const response = await mTmdbApiClient.get('/search/movie', { params: {
+      query,
+      page,
+      include_adult: includeAdult ? true : false
+    }})
+    const movies = response.data.results.map(transformMovieData);
+    return new Success<Movie[]>(movies);
+  } catch (error: any) {
+    console.error(`Error search movie with query: ${query}`, error);
+    return new Error(`Failed to search movie with query: ${query}`, error.response?.status);
   }
 };
 

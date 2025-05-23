@@ -5,6 +5,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import Toast from 'react-native-toast-message';
 import Icon from 'react-native-vector-icons/MaterialIcons'; 
 import Homepage from './src/screens/Homepage';
+import SearchPage from './src/screens/SearchPage';
 import MovieDetail from './src/screens/MovieDetail';
 
 const Tab = createBottomTabNavigator();
@@ -21,6 +22,7 @@ export default function App() {
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false, cardStyle: cardStyle, }}>
           <Stack.Screen name="Main" component={MainTabs} />
+          <Stack.Screen name="SearchPage" component={SearchPage} />
           <Stack.Screen name="MovieDetail" component={MovieDetail} />
         </Stack.Navigator>
       </NavigationContainer>
