@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, TextInput, FlatList, Image, Text, StyleSheet } from 'react-native';
+import PageContainer  from '../components/PageContainer';
 import { Movie } from '../model/movieModel';
 import { searchMovie } from '../services/movieService';
 import { Success } from '../model/apiResponse';
@@ -36,7 +37,7 @@ const SearchPage = () => {
   const isEmptyQuery = searchQuery?.length == 0
 
   return (
-    <View style={styles.container}>
+    <PageContainer>
       <TextInput
         style={styles.searchBox}
         placeholder="Type any Movie title..."
@@ -66,15 +67,11 @@ const SearchPage = () => {
             />
         )
       }
-    </View>
+    </PageContainer>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 10,
-  },
   searchBox: {
     height: 40,
     borderColor: 'gray',

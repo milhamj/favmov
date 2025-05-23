@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, Button } from 'react-native';
+import { View, Text, Image, StyleSheet, ScrollView } from 'react-native';
+import PageContainer  from '../components/PageContainer';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Movie } from '../model/movieModel';
 import { fetchMovieDetails } from '../services/movieService';
@@ -8,7 +9,6 @@ import Toast from 'react-native-toast-message';
 import TopBar from '../components/TopBar';
 import PosterViewer from '../components/PosterViewer';
 import { COLORS } from '../styles/colors'; 
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 const MovieDetail = () => {
   const navigation = useNavigation();
@@ -36,7 +36,7 @@ const MovieDetail = () => {
   }, [])
 
   return (
-    <SafeAreaView style={styles.container}>
+    <PageContainer>
       <TopBar
         title= { movie.title }
         backButton={{
@@ -117,15 +117,11 @@ const MovieDetail = () => {
         </View>
       </ScrollView>
       <Toast />
-    </SafeAreaView>
+    </PageContainer>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
   detailsContainer: {
     padding: 16,
   },
