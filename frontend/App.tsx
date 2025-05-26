@@ -7,6 +7,7 @@ import Toast from 'react-native-toast-message';
 import Homepage from './src/screens/Homepage';
 import SearchPage from './src/screens/SearchPage';
 import MovieDetail from './src/screens/MovieDetail';
+import LoginPage from './src/screens/LoginPage';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -24,6 +25,7 @@ export default function App() {
           <Stack.Screen name="Main" component={MainTabs} />
           <Stack.Screen name="SearchPage" component={SearchPage} />
           <Stack.Screen name="MovieDetail" component={MovieDetail} />
+          <Stack.Screen name="Login" component={LoginPage} />
         </Stack.Navigator>
       </NavigationContainer>
       <Toast />
