@@ -11,7 +11,7 @@ import { RootStackParamList } from '../navigation/navigationTypes';
 import MovieCard from '../components/MovieCard';
 
 const Homepage = () => {
-  const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Home'>>(); // Use 'Home' as the key
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Home'>>();
   
   const defaultMovies: Movie[] = [];
   const [trendingMovies, setTrendingMovies] = useState(defaultMovies);
@@ -74,7 +74,13 @@ const Homepage = () => {
   }, []);
 
   const renderMoviePoster = ({ item }: { item: Movie }) => (
-    <MovieCard movie={item} onClick={() => navigation.navigate('MovieDetail', { movie: item })}/>
+    <View style={{ width: 120, marginEnd: 8 }}>
+      <MovieCard 
+        movie={item} 
+        onClick={() => navigation.navigate('MovieDetail', { movie: item })}
+      />
+    </View>
+    
   );
 
   const renderSection = (title: string, data: Movie[]) => (

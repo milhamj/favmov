@@ -1,100 +1,115 @@
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, FlatList, Image, Text, StyleSheet } from 'react-native';
+import { View, TextInput, FlatList, Image, Text, StyleSheet, ScrollView } from 'react-native';
 import PageContainer  from '../components/PageContainer';
 import { Movie } from '../model/movieModel';
 import { searchMovie } from '../services/movieService';
 import { Success } from '../model/apiResponse';
+import TopBar from '../components/TopBar';
+import { useNavigation } from '@react-navigation/native';
+import MovieCard from '../components/MovieCard';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../navigation/navigationTypes';
 
 const SearchPage = () => {
-  const [searchQuery, setSearchQuery]  = useState('');
-  const [movies, setMovies] = useState([] as Movie[]);
+    const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Home'>>();
+    const [searchQuery, setSearchQuery]  = useState('');
+    const [movies, setMovies] = useState([] as Movie[]);
 
-  useEffect(() => {
-    const fetchMovies = async () => {
-      const result = await searchMovie(searchQuery, 1);
-      if (result instanceof Success) {
-        setMovies(result.data);
-      }
-    };
+    useEffect(() => {
+        const fetchMovies = async () => {
+        const result = await searchMovie(searchQuery, 1);
+            if (result instanceof Success) {
+                setMovies(result.data);
+            }
+        };
 
-    const debounceFetch = setTimeout(() => {
-      if (searchQuery) {
-        fetchMovies();
-      }
-    }, 300);
+        const debounceFetch = setTimeout(() => {
+            if (searchQuery) {
+                fetchMovies();
+            }
+        }, 300);
 
-    return () => clearTimeout(debounceFetch);
-  }, [searchQuery]);
+        return () => clearTimeout(debounceFetch);
+    }, [searchQuery]);
 
-  const renderMovieItem = ({ item }: { item: Movie }) => (
-    <View style={styles.movieItem}>
-      <Image source={{ uri: item.smallPosterUrl() }} style={styles.poster} />
-      <Text style={styles.title}>{ item.title }</Text>
-    </View>
-  );
-
-  const isEmptyResult = movies?.length === 0
-  const isEmptyQuery = searchQuery?.length == 0
-
-  return (
-    <PageContainer>
-      <TextInput
-        style={styles.searchBox}
-        placeholder="Type any Movie title..."
-        value={searchQuery}
-        onChangeText={setSearchQuery}
-      />
-
-      {
-        isEmptyQuery || isEmptyResult ? (
-            <View style={styles.emptyState}>
-                <Image source={require('../../assets/empty_search.png')} style={styles.emptyImage} />
-                <Text style={styles.emptyText}>
-                    {
-                        isEmptyQuery ? ('Type any Movie title...') :
-                        isEmptyResult ? ('No results found.') :
-                        null
-                    }
-                </Text>
-            </View>
-        ) : (
-            <FlatList
-                data={movies}
-                renderItem={renderMovieItem}
-                keyExtractor={(item) => item.id.toString()}
-                numColumns={2}
-                columnWrapperStyle={styles.row}
+    const renderMovieItem = ({ item, index }: { item: Movie, index: number }) => (
+        <View style={{
+            width: '48%', 
+            marginRight: index % 2 === 0 ? 16 : 0,
+            marginBottom: 16, 
+            alignContent: 'center'
+        }}>
+            <MovieCard 
+                movie={item}
+                onClick={() => navigation.navigate('MovieDetail', { movie: item })} 
             />
-        )
-      }
-    </PageContainer>
-  );
+        </View>
+    );
+
+    const isEmptyResult = movies?.length === 0
+    const isEmptyQuery = searchQuery?.length == 0
+
+    return (
+        <PageContainer>
+            <TopBar
+                title= 'Search'
+                backButton={{
+                isShow: true,
+                onClick: () => navigation.goBack()
+                }}
+            />
+            <TextInput 
+                style={styles.searchBox}
+                placeholder="Type any Movie title..."
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+            />
+            <ScrollView style={{paddingHorizontal: 16}}>
+                {
+                    isEmptyQuery || isEmptyResult ? (
+                        <View style={styles.emptyState}>
+                            <Image source={require('../../assets/empty_search.png')} style={styles.emptyImage} />
+                            <Text style={styles.emptyText}>
+                                {
+                                    isEmptyQuery ? ('Type any Movie title...') :
+                                    isEmptyResult ? ('No results found.') :
+                                    null
+                                }
+                            </Text>
+                        </View>
+                    ) : (
+                        <FlatList
+                            data={movies}
+                            renderItem={renderMovieItem}
+                            keyExtractor={(item) => item.id.toString()}
+                            numColumns={2}
+                            columnWrapperStyle={styles.row}
+                            
+                        />
+                    )
+                }
+            </ScrollView>
+        </PageContainer>
+    );
 };
 
 const styles = StyleSheet.create({
   searchBox: {
-    height: 40,
+    minHeight: 40,
     borderColor: 'gray',
     borderWidth: 1,
-    marginBottom: 10,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
+    marginHorizontal: 16,
+    marginVertical: 12
   },
   row: {
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
   },
-  movieItem: {
-    flex: 1,
-    marginBottom: 10,
-    alignItems: 'center',
+  flatListContent: {
+    paddingHorizontal: 16,
   },
-  poster: {
-    width: 100,
-    height: 150,
-  },
-  title: {
-    marginTop: 5,
-    fontSize: 16,
-    fontWeight: 'bold',
+  scrollContainer: {
+    
   },
   emptyState: {
     flex: 1,
