@@ -9,32 +9,32 @@ interface MovieCardProps {
 }
 
 const MovieCard: React.FC<MovieCardProps> = ({ movie, onClick}) => {
-    return (
-        <TouchableOpacity onPress={() => onClick(movie)}>
-          <View style={[styles.posterContainer]}>
-            <Image source={{ uri: movie.smallPosterUrl() }} style={[styles.poster]} />
-            <Text style={styles.posterTitle} numberOfLines={1} ellipsizeMode="tail">
-              {movie.title}
-            </Text>
-            {movie.rating && (
-              <Text
-                style={[
-                  styles.posterRating,
-                  {
-                    color: movie.rating > 5.0 ? COLORS.rating_green : COLORS.rating_red,
-                    fontWeight: 'bold',
-                  },
-                ]}
-              >
-                ⭐ {movie.rating}{' '}
-                {movie.ratingCount && (
-                  <Text style={styles.posterRatingCount}>({movie.ratingCount})</Text>
-                )}
-              </Text>
+  return (
+    <TouchableOpacity onPress={() => onClick(movie)}>
+      <View style={[styles.posterContainer]}>
+        <Image source={{ uri: movie.smallPosterUrl() }} style={[styles.poster]} />
+        <Text style={styles.posterTitle} numberOfLines={1} ellipsizeMode="tail">
+          {movie.title}
+        </Text>
+        {movie.rating && (
+          <Text
+            style={[
+              styles.posterRating,
+              {
+                color: movie.rating > 5.0 ? COLORS.rating_green : COLORS.rating_red,
+                fontWeight: 'bold',
+              },
+            ]}
+          >
+            ⭐ {movie.rating}{' '}
+            {movie.ratingCount && (
+              <Text style={styles.posterRatingCount}>({movie.ratingCount})</Text>
             )}
-          </View>
-        </TouchableOpacity>
-      );
+          </Text>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
 }
 
 const styles = StyleSheet.create({

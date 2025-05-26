@@ -1,5 +1,7 @@
 import { TMDB_IMAGE_BIG, TMDB_IMAGE_SMALL } from '../utils/apiUtil';
 
+const DEFAULT_MOVIE_POSTER = "https://gdlqv951tx.ufs.sh/f/C0k8wbELmJeDMbBjukx0ikxGAuhtN0IpoKq6Y8bXU5ERDZla";
+
 export class Movie {
     id: number;
     title: string;
@@ -21,11 +23,11 @@ export class Movie {
     }
 
     bigPosterUrl(): string {
-        return TMDB_IMAGE_BIG + this.posterPath;
+        return this.posterPath ? TMDB_IMAGE_BIG + this.posterPath : DEFAULT_MOVIE_POSTER;
     }
 
     smallPosterUrl(): string {
-        return TMDB_IMAGE_SMALL + this.posterPath;
+        return this.posterPath ? TMDB_IMAGE_SMALL + this.posterPath : DEFAULT_MOVIE_POSTER;
     }
 }
 
