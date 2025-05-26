@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, StyleSheet, View, TouchableOpacity } from 'react-native';
+import { Icon } from 'react-native-elements';
 import ImageViewer from 'react-native-image-zoom-viewer';
-import Icon from 'react-native-vector-icons/MaterialIcons';
 
 interface FullImageViewerProps {
   visible: boolean;
