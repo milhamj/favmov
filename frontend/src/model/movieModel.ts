@@ -29,6 +29,10 @@ export class Movie {
     smallPosterUrl(): string {
         return this.posterPath ? TMDB_IMAGE_SMALL + this.posterPath : DEFAULT_MOVIE_POSTER;
     }
+
+    director(): Crew | undefined {
+        return this.crew?.find(member => member.job === 'Director');
+    }
 }
 
 export class Actor {

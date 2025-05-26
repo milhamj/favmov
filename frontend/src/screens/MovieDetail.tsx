@@ -63,7 +63,9 @@ const MovieDetail = () => {
               </Text>
           }
           <Text style={styles.info}>
-            {movie.runtime && `${movie.runtime} minutes • `}{movie.releaseDate}
+            {movie.runtime ? `${movie.runtime} minutes • ` : ''}
+            {movie.releaseDate}
+            {movie.director() ? ` • Directed by ${movie.director()?.name}` : ''}
           </Text>
 
           {/* Genre Section */}

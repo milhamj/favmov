@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, TextInput, FlatList, Image, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Platform, TextInput, FlatList, Image, Text, StyleSheet, ScrollView } from 'react-native';
 import PageContainer  from '../components/PageContainer';
 import { Movie } from '../model/movieModel';
 import { searchMovie } from '../services/movieService';
@@ -14,6 +14,15 @@ const SearchPage = () => {
     const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Home'>>();
     const [searchQuery, setSearchQuery]  = useState('');
     const [movies, setMovies] = useState([] as Movie[]);
+    const inputRef = useRef<TextInput>(null);
+
+    useEffect(() => {
+        const focusTimeout = setTimeout(() => {
+            inputRef.current?.focus();
+        }, 100);
+        
+        return () => clearTimeout(focusTimeout);
+    }, []);
 
     useEffect(() => {
         const fetchMovies = async () => {
@@ -59,10 +68,12 @@ const SearchPage = () => {
                 }}
             />
             <TextInput 
+                ref={inputRef}
                 style={styles.searchBox}
                 placeholder="Type any Movie title..."
                 value={searchQuery}
                 onChangeText={setSearchQuery}
+                autoFocus={Platform.OS === 'web'}
             />
             <ScrollView style={{paddingHorizontal: 16}}>
                 {
