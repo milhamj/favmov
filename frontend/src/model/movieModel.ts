@@ -1,4 +1,4 @@
-import { TMDB_IMAGE_BIG, TMDB_IMAGE_SMALL } from '../utils/apiUtil';
+import { TMDB_IMAGE_BIG, TMDB_IMAGE_SMALL } from '../services/tmdbClient';
 
 const DEFAULT_MOVIE_POSTER = "https://gdlqv951tx.ufs.sh/f/C0k8wbELmJeDMbBjukx0ikxGAuhtN0IpoKq6Y8bXU5ERDZla";
 
