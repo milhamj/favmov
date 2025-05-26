@@ -100,7 +100,7 @@ const Homepage = () => {
   return (
     <View style={styles.container}>
       <TopBar
-        title="CineVerse"
+        title="FavMov"
         icons={[
           { name: 'search', onClick: () => navigation.navigate('SearchPage') }
         ]}
