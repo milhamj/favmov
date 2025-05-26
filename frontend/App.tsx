@@ -3,7 +3,7 @@ import { Platform, ViewStyle } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import Toast from 'react-native-toast-message';
-import Icon from 'react-native-vector-icons/MaterialIcons'; 
+import { Icon } from 'react-native-elements'
 import Homepage from './src/screens/Homepage';
 import SearchPage from './src/screens/SearchPage';
 import MovieDetail from './src/screens/MovieDetail';
