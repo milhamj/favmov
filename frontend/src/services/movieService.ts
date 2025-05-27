@@ -1,7 +1,6 @@
-import axios from 'axios';
 import { Movie, Actor, Crew } from '../model/movieModel';
 import { Success, Error } from '../model/apiResponse';
-import tmdbApiClient from '../utils/apiUtil';
+import tmdbApiClient from './tmdbClient';
 
 const mTmdbApiClient = tmdbApiClient();
 

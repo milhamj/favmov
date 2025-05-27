@@ -6,4 +6,5 @@ export type RootStackParamList = {
   Profile: undefined;
   MovieDetail: { movie: Movie };
   SearchPage: undefined;
+  Login: undefined;
 };

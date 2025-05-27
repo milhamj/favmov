@@ -1,4 +1,4 @@
-import { TMDB_IMAGE_BIG, TMDB_IMAGE_SMALL } from '../utils/apiUtil';
+import { TMDB_IMAGE_BIG, TMDB_IMAGE_SMALL } from '../services/tmdbClient';
 
 const DEFAULT_MOVIE_POSTER = "https://gdlqv951tx.ufs.sh/f/C0k8wbELmJeDMbBjukx0ikxGAuhtN0IpoKq6Y8bXU5ERDZla";
 
@@ -28,6 +28,10 @@ export class Movie {
 
     smallPosterUrl(): string {
         return this.posterPath ? TMDB_IMAGE_SMALL + this.posterPath : DEFAULT_MOVIE_POSTER;
+    }
+
+    director(): Crew | undefined {
+        return this.crew?.find(member => member.job === 'Director');
     }
 }
 

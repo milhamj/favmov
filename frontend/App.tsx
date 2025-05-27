@@ -2,11 +2,13 @@ import { NavigationContainer } from '@react-navigation/native';
 import { Platform, ViewStyle } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
+import { Icon } from 'react-native-elements';
 import Toast from 'react-native-toast-message';
-import Icon from 'react-native-vector-icons/MaterialIcons'; 
 import Homepage from './src/screens/Homepage';
 import SearchPage from './src/screens/SearchPage';
 import MovieDetail from './src/screens/MovieDetail';
+import LoginPage from './src/screens/LoginPage';
+import Collection from './src/screens/Collection';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -24,6 +26,7 @@ export default function App() {
           <Stack.Screen name="Main" component={MainTabs} />
           <Stack.Screen name="SearchPage" component={SearchPage} />
           <Stack.Screen name="MovieDetail" component={MovieDetail} />
+          <Stack.Screen name="Login" component={LoginPage} />
         </Stack.Navigator>
       </NavigationContainer>
       <Toast />
@@ -51,7 +54,7 @@ const MainTabs = () => (
     })}
   >
     <Tab.Screen name="Home" component={Homepage} />
-    <Tab.Screen name="Collection" component={Homepage} />
+    <Tab.Screen name="Collection" component={Collection} />
     <Tab.Screen name="Profile" component={Homepage} />
   </Tab.Navigator>
 );
