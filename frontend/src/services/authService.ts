@@ -33,10 +33,10 @@ export const signInWithOtp = async (email: string): Promise<Success<any> | Error
         const { data, error } = await supabase.auth.signInWithOtp({
             email: email,
             options: {
-                // set this to false if you do not want the user to be automatically signed up
-                shouldCreateUser: false,
+                shouldCreateUser: true,
             },
         })
+        console.log(data, error)
         if (error) {
             console.error('Error signing in with OTP:', error);
             return new Error(error.message);

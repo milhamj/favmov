@@ -21,19 +21,20 @@ const LoginPage = () => {
   const [isWaitingForOtp, setIsWaitingForOtp] = useState(false);
   const navigation = useNavigation();
 
-  const handleLogin = () => {
+  const handleSendOtp = () => {
+    setIsWaitingForOtp(true);
     console.log('Login with:', { email });
-    async () => {
+    const doSignInWithOtp = async () => {
         const result = await signInWithOtp(email)
         if (result instanceof Success) {
-            setIsWaitingForOtp(true);
             Toast.show({
                 type: 'success',
                 text1: 'Check your email',
-                text2: 'We have sent you an OTP to your email. Please input it below.',
+                text2: 'We have sent you an OTP to your email.',
                 position: 'bottom'
             });
         } else {
+            setIsWaitingForOtp(false);
             Toast.show({
                 type: 'error',
                 text1: 'Error',
@@ -42,6 +43,11 @@ const LoginPage = () => {
             });
         }
     }
+    doSignInWithOtp();
+  };
+
+  const handleLogin = () => {
+
   };
 
   return (
@@ -86,9 +92,18 @@ const LoginPage = () => {
 
                 <View style={{height: 8}} />
 
+                { !isWaitingForOtp &&
+                  <TouchableOpacity style={styles.loginButton} onPress={handleSendOtp}>
+                    <Text style={styles.loginButtonText}>Send OTP</Text>
+                  </TouchableOpacity>
+                }
+
+                { isWaitingForOtp &&
                 <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
                     <Text style={styles.loginButtonText}>LOGIN</Text>
                 </TouchableOpacity>
+                }
+
                 <View style={{height: 16}} />
             </View>
         </View>
