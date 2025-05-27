@@ -36,7 +36,7 @@ export const signInWithOtp = async (email: string): Promise<Success<any> | Error
                 shouldCreateUser: true,
             },
         })
-        console.log(data, error)
+        console.log('signInWithOtp', data, error)
         if (error) {
             console.error('Error signing in with OTP:', error);
             return new Error(error.message);
@@ -46,4 +46,23 @@ export const signInWithOtp = async (email: string): Promise<Success<any> | Error
         console.error('Error signing in with OTP:', error);
         return new Error(error.message);
     }
+};
+
+export const verifyOtp = async (email: string, token: string): Promise<Success<any> | Error> => {
+  try {
+      const { data, error } = await supabase.auth.verifyOtp({
+          email,
+          token,
+          type: 'email'
+      })
+      console.log('verifyOtp', data, error)
+      if (error) {
+          console.error('Error verifying OTP:', error);
+          return new Error(error.message);
+      }
+      return new Success(data);
+  } catch (error: any) {
+      console.error('Error verifying OTP:', error);
+      return new Error(error.message);
+  }
 };

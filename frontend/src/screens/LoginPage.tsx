@@ -6,48 +6,80 @@ import {
   Text,
   StyleSheet,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Icon } from 'react-native-elements';
+import { Button, Icon } from 'react-native-elements';
 import PageContainer from '../components/PageContainer';
 import TopBar from '../components/TopBar';
-import { signInWithOtp } from '../services/authService';
+import { signInWithOtp, verifyOtp } from '../services/authService';
 import Toast from 'react-native-toast-message';
 import { Result, Success } from '../model/apiResponse';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [isWaitingForOtp, setIsWaitingForOtp] = useState(false);
   const navigation = useNavigation();
 
   const handleSendOtp = () => {
-    setIsWaitingForOtp(true);
     console.log('Login with:', { email });
+
+    setIsWaitingForOtp(false);
+    setIsLoading(true);
+
     const doSignInWithOtp = async () => {
         const result = await signInWithOtp(email)
         if (result instanceof Success) {
-            Toast.show({
-                type: 'success',
-                text1: 'Check your email',
-                text2: 'We have sent you an OTP to your email.',
-                position: 'bottom'
-            });
+          setIsLoading(false);
+          setIsWaitingForOtp(true);
+          Toast.show({
+              type: 'success',
+              text1: 'Check your email',
+              text2: 'We have sent you an OTP to your email.',
+              position: 'bottom'
+          });
         } else {
-            setIsWaitingForOtp(false);
-            Toast.show({
-                type: 'error',
-                text1: 'Error',
-                text2: result.message,
-                position: 'bottom'
-            });
+          setIsLoading(false);
+          Toast.show({
+              type: 'error',
+              text1: 'Error',
+              text2: result.message,
+              position: 'bottom'
+          });
         }
     }
     doSignInWithOtp();
   };
 
-  const handleLogin = () => {
+  const handleVerifyOtp = () => {
+    console.log('Verifying OTP:', { email, otp });
 
+    setIsLoading(true);
+
+    const doVerifyOtp = async () => {
+      const result = await verifyOtp(email, otp)
+        if (result instanceof Success) {
+          setIsLoading(false);
+          Toast.show({
+              type: 'success',
+              text1: 'Login success!',
+              text2: `Welcome ${email}`,
+              position: 'bottom'
+          });
+        } else {
+          setIsLoading(false);
+          Toast.show({
+              type: 'error',
+              text1: 'Error',
+              text2: result.message,
+              position: 'bottom'
+          });
+        }
+    }
+
+    doVerifyOtp();
   };
 
   return (
@@ -73,7 +105,7 @@ const LoginPage = () => {
                     onChangeText={setEmail}
                     keyboardType="email-address"
                     autoCapitalize="none"
-                    aria-disabled={isWaitingForOtp}
+                    aria-disabled={isWaitingForOtp || isLoading}
                     />
                 </View>
 
@@ -85,7 +117,7 @@ const LoginPage = () => {
                         placeholder="Input your OTP here..."
                         value={otp}
                         onChangeText={setOtp}
-                        secureTextEntry
+                        aria-disabled={isLoading}
                         />
                     </View>
                 }
@@ -93,14 +125,25 @@ const LoginPage = () => {
                 <View style={{height: 8}} />
 
                 { !isWaitingForOtp &&
-                  <TouchableOpacity style={styles.loginButton} onPress={handleSendOtp}>
-                    <Text style={styles.loginButtonText}>Send OTP</Text>
+                  <TouchableOpacity style={styles.loginButton} onPress={handleSendOtp} disabled={isLoading}>
+                    {
+                      isLoading ? (
+                        <ActivityIndicator size="small" color="#ffffff" />
+                      ) : (
+                        <Text style={styles.loginButtonText}>Send OTP</Text>
+                      )
+                    }
                   </TouchableOpacity>
                 }
 
                 { isWaitingForOtp &&
-                <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-                    <Text style={styles.loginButtonText}>LOGIN</Text>
+                <TouchableOpacity style={styles.loginButton} onPress={handleVerifyOtp} disabled={isLoading}>
+                    { isLoading ? (
+                        <ActivityIndicator size="small" color="#ffffff" />
+                      ) : (
+                        <Text style={styles.loginButtonText}>LOGIN</Text>
+                      )
+                    }
                 </TouchableOpacity>
                 }
 
