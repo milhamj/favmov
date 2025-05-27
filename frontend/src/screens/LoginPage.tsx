@@ -10,85 +10,88 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { Icon } from 'react-native-elements';
 import PageContainer from '../components/PageContainer';
+import TopBar from '../components/TopBar';
+import { signInWithOtp } from '../services/authService';
+import Toast from 'react-native-toast-message';
+import { Result, Success } from '../model/apiResponse';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [isWaitingForOtp, setIsWaitingForOtp] = useState(false);
   const navigation = useNavigation();
 
   const handleLogin = () => {
-    // TODO: Implement login logic
-    console.log('Login with:', { email, password, rememberMe });
+    console.log('Login with:', { email });
+    async () => {
+        const result = await signInWithOtp(email)
+        if (result instanceof Success) {
+            setIsWaitingForOtp(true);
+            Toast.show({
+                type: 'success',
+                text1: 'Check your email',
+                text2: 'We have sent you an OTP to your email. Please input it below.',
+                position: 'bottom'
+            });
+        } else {
+            Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: result.message,
+                position: 'bottom'
+            });
+        }
+    }
   };
 
   return (
     <PageContainer>
-      <View style={styles.container}>
-        <View style={styles.loginBox}>
-          <Text style={styles.title}>LOGIN</Text>
+        <TopBar
+            title= { 'Login' }
+            backButton={{
+            isShow: true,
+            onClick: () => navigation.goBack()
+            }}
+        />
+        <View style={styles.container}>
+            <View style={styles.loginBox}>
+                <View style={{height: 16}} />
+                <Text style={styles.title}>Welcome!</Text>
 
-          <View style={styles.inputContainer}>
-            <Icon name="email" size={20} color="gray" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-          </View>
+                <View style={styles.inputContainer}>
+                    <Icon name="email" size={20} color="gray" style={styles.inputIcon} />
+                    <TextInput
+                    style={styles.input}
+                    placeholder="Email"
+                    value={email}
+                    onChangeText={setEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    aria-disabled={isWaitingForOtp}
+                    />
+                </View>
 
-          <View style={styles.inputContainer}>
-            <Icon name="lock" size={20} color="gray" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-            />
-          </View>
+                { isWaitingForOtp && 
+                    <View style={styles.inputContainer}>
+                        <Icon name="lock" size={20} color="gray" style={styles.inputIcon} />
+                        <TextInput
+                        style={styles.input}
+                        placeholder="Input your OTP here..."
+                        value={otp}
+                        onChangeText={setOtp}
+                        secureTextEntry
+                        />
+                    </View>
+                }
 
-          <TouchableOpacity
-            style={styles.checkboxContainer}
-            onPress={() => setRememberMe(!rememberMe)}
-          >
-            <Icon
-              name={rememberMe ? 'check-box' : 'check-box-outline-blank'}
-              size={20}
-              color="#E91E63"
-            />
-            <Text style={styles.rememberText}>Remember me</Text>
-          </TouchableOpacity>
+                <View style={{height: 8}} />
 
-          <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-            <Text style={styles.loginButtonText}>LOGIN</Text>
-          </TouchableOpacity>
-
-          <Text style={styles.orText}>Or login with</Text>
-
-          <View style={styles.socialContainer}>
-            <TouchableOpacity style={styles.socialButton}>
-              <Icon name="facebook" type="font-awesome" color="#3b5998" />
-              <Text style={styles.socialButtonText}>Facebook</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.socialButton}>
-              <Icon name="google" type="font-awesome" color="#db4437" />
-              <Text style={styles.socialButtonText}>Google</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.signupContainer}>
-            <Text style={styles.signupText}>Not a member? </Text>
-            <TouchableOpacity>
-              <Text style={styles.signupLink}>Sign up now</Text>
-            </TouchableOpacity>
-          </View>
+                <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+                    <Text style={styles.loginButtonText}>LOGIN</Text>
+                </TouchableOpacity>
+                <View style={{height: 16}} />
+            </View>
         </View>
-      </View>
     </PageContainer>
   );
 };
@@ -99,7 +102,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: 'rgba(233, 30, 99, 0.1)',
+    backgroundColor: 'rgba(243, 143, 77, 0.1)',
   },
   loginBox: {
     width: Platform.OS === 'web' ? 400 : '100%',
@@ -133,17 +136,8 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 45,
   },
-  checkboxContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  rememberText: {
-    marginLeft: 10,
-    color: '#666',
-  },
   loginButton: {
-    backgroundColor: '#E91E63',
+    backgroundColor: 'tomato',
     padding: 15,
     borderRadius: 5,
     alignItems: 'center',
@@ -153,41 +147,6 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  orText: {
-    textAlign: 'center',
-    color: '#666',
-    marginBottom: 20,
-  },
-  socialContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 20,
-  },
-  socialButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 5,
-    width: '45%',
-    justifyContent: 'center',
-  },
-  socialButtonText: {
-    marginLeft: 10,
-    color: '#666',
-  },
-  signupContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  signupText: {
-    color: '#666',
-  },
-  signupLink: {
-    color: '#E91E63',
-    textDecorationLine: 'underline',
   },
 });
 

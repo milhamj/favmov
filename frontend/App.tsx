@@ -8,6 +8,7 @@ import Homepage from './src/screens/Homepage';
 import SearchPage from './src/screens/SearchPage';
 import MovieDetail from './src/screens/MovieDetail';
 import LoginPage from './src/screens/LoginPage';
+import Collection from './src/screens/Collection';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -53,7 +54,7 @@ const MainTabs = () => (
     })}
   >
     <Tab.Screen name="Home" component={Homepage} />
-    <Tab.Screen name="Collection" component={Homepage} />
+    <Tab.Screen name="Collection" component={Collection} />
     <Tab.Screen name="Profile" component={Homepage} />
   </Tab.Navigator>
 );
