@@ -23,6 +23,10 @@ const LoginPage = () => {
   const [isWaitingForOtp, setIsWaitingForOtp] = useState(false);
   const navigation = useNavigation();
 
+  const handleChangeEmail = () => {
+    setIsWaitingForOtp(false);
+  }
+
   const handleSendOtp = () => {
     console.log('Login with:', { email });
 
@@ -107,6 +111,11 @@ const LoginPage = () => {
                     autoCapitalize="none"
                     aria-disabled={isWaitingForOtp || isLoading}
                     />
+                    { isWaitingForOtp &&
+                      <TouchableOpacity style={styles.inputAction} onPress={handleChangeEmail}>
+                        <Text>Change</Text>
+                      </TouchableOpacity>
+                    }
                 </View>
 
                 { isWaitingForOtp && 
@@ -193,6 +202,9 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     height: 45,
+  },
+  inputAction: {
+    marginLeft: 8,
   },
   loginButton: {
     backgroundColor: 'tomato',
