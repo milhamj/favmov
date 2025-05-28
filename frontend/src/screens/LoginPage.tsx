@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   TextInput,
@@ -16,15 +16,50 @@ import { signInWithOtp, verifyOtp } from '../services/authService';
 import Toast from 'react-native-toast-message';
 import { Result, Success } from '../model/apiResponse';
 
+const TIMER_SECONDS = 30
+
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isWaitingForOtp, setIsWaitingForOtp] = useState(false);
+  const [canResend, setCanResend] = useState(false);
+  const [timer, setTimer] = useState(TIMER_SECONDS);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
   const navigation = useNavigation();
+
+  // Timer effect for OTP resend countdown
+  useEffect(() => {
+    if (isWaitingForOtp && timer > 0) {
+      timerRef.current = setInterval(() => {
+        setTimer((prevTimer) => prevTimer - 1);
+      }, 1000);
+    } else if (timer === 0) {
+      setCanResend(true);
+    }
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [isWaitingForOtp, timer]);
+
+  // Format timer to MM:SS
+  const formatTime = (seconds : number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+  };
 
   const handleChangeEmail = () => {
     setIsWaitingForOtp(false);
+    // Reset timer when changing email
+    setTimer(TIMER_SECONDS);
+    setCanResend(false);
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
   }
 
   const handleSendOtp = () => {
@@ -32,6 +67,8 @@ const LoginPage = () => {
 
     setIsWaitingForOtp(false);
     setIsLoading(true);
+    setTimer(TIMER_SECONDS);
+    setCanResend(false);
 
     const doSignInWithOtp = async () => {
         const result = await signInWithOtp(email)
@@ -55,6 +92,39 @@ const LoginPage = () => {
         }
     }
     doSignInWithOtp();
+  };
+
+  const handleResendOtp = () => {
+    if (canResend) {
+      setIsLoading(true);
+      setCanResend(false);
+      setIsWaitingForOtp(true);
+
+      const doSignInWithOtp = async () => {
+        const result = await signInWithOtp(email)
+        if (result instanceof Success) {
+          setIsLoading(false);
+          setCanResend(false);
+          setTimer(TIMER_SECONDS);
+          Toast.show({
+              type: 'success',
+              text1: 'Check your email',
+              text2: 'We have sent you an OTP to your email.',
+              position: 'bottom'
+          });
+        } else {
+          setIsLoading(false);
+          setCanResend(true);
+          Toast.show({
+              type: 'error',
+              text1: 'Error',
+              text2: result.message,
+              position: 'bottom'
+          });
+        }
+      }
+      doSignInWithOtp();
+    }
   };
 
   const handleVerifyOtp = () => {
@@ -112,7 +182,7 @@ const LoginPage = () => {
                     aria-disabled={isWaitingForOtp || isLoading}
                     />
                     { isWaitingForOtp &&
-                      <TouchableOpacity style={styles.inputAction} onPress={handleChangeEmail}>
+                      <TouchableOpacity style={styles.inputAction} onPress={handleChangeEmail}>  
                         <Text>Change</Text>
                       </TouchableOpacity>
                     }
@@ -130,6 +200,19 @@ const LoginPage = () => {
                         />
                     </View>
                 }
+
+                {/* Resend OTP with Timer */}
+                {isWaitingForOtp && (
+                  <TouchableOpacity 
+                    onPress={handleResendOtp}
+                    disabled={!canResend}
+                    style={styles.resendContainer}
+                  >
+                    <Text style={[styles.resendText, !canResend && styles.resendTextDisabled]}>
+                      Resend OTP {!canResend && timer > 0 && `(${formatTime(timer)})`}
+                    </Text>
+                  </TouchableOpacity>
+                )}
 
                 <View style={{height: 8}} />
 
@@ -217,6 +300,17 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  resendContainer: {
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  resendText: {
+    color: 'tomato',
+    fontSize: 14,
+  },
+  resendTextDisabled: {
+    color: 'gray',
   },
 });
 
