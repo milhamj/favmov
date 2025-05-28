@@ -16,7 +16,7 @@ import { signInWithOtp, verifyOtp } from '../services/authService';
 import Toast from 'react-native-toast-message';
 import { Result, Success } from '../model/apiResponse';
 
-const TIMER_SECONDS = 30
+const TIMER_SECONDS = 300
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
