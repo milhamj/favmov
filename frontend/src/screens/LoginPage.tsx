@@ -73,22 +73,22 @@ const LoginPage = () => {
     const doSignInWithOtp = async () => {
         const result = await signInWithOtp(email)
         if (result instanceof Success) {
-          setIsLoading(false);
-          setIsWaitingForOtp(true);
           Toast.show({
               type: 'success',
               text1: 'Check your email',
               text2: 'We have sent you an OTP to your email.',
               position: 'bottom'
           });
-        } else {
           setIsLoading(false);
+          setIsWaitingForOtp(true);
+        } else {
           Toast.show({
               type: 'error',
               text1: 'Error',
               text2: result.message,
               position: 'bottom'
           });
+          setIsLoading(false);
         }
     }
     doSignInWithOtp();
@@ -103,24 +103,24 @@ const LoginPage = () => {
       const doSignInWithOtp = async () => {
         const result = await signInWithOtp(email)
         if (result instanceof Success) {
-          setIsLoading(false);
-          setCanResend(false);
-          setTimer(TIMER_SECONDS);
           Toast.show({
               type: 'success',
               text1: 'Check your email',
               text2: 'We have sent you an OTP to your email.',
               position: 'bottom'
           });
-        } else {
           setIsLoading(false);
-          setCanResend(true);
+          setCanResend(false);
+          setTimer(TIMER_SECONDS);
+        } else {
           Toast.show({
               type: 'error',
               text1: 'Error',
               text2: result.message,
               position: 'bottom'
           });
+          setIsLoading(false);
+          setCanResend(true);
         }
       }
       doSignInWithOtp();
@@ -135,21 +135,21 @@ const LoginPage = () => {
     const doVerifyOtp = async () => {
       const result = await verifyOtp(email, otp)
         if (result instanceof Success) {
-          setIsLoading(false);
           Toast.show({
               type: 'success',
               text1: 'Login success!',
               text2: `Welcome ${email}`,
               position: 'bottom'
           });
-        } else {
           setIsLoading(false);
+        } else {
           Toast.show({
               type: 'error',
               text1: 'Error',
               text2: result.message,
               position: 'bottom'
           });
+          setIsLoading(false);
         }
     }
 
