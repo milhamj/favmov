@@ -63,10 +63,6 @@ const ProfilePage = () => {
     <PageContainer>
       <TopBar
         title="Profile"
-        backButton={{
-          isShow: true,
-          onClick: () => navigation.goBack()
-        }}
       />
       <View style={styles.container}>
         <View style={styles.profileBox}>
