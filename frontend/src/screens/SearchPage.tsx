@@ -11,7 +11,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/navigationTypes';
 
 const SearchPage = () => {
-    const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Home'>>();
+    const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'SearchPage'>>();
     const [searchQuery, setSearchQuery]  = useState('');
     const [movies, setMovies] = useState([] as Movie[]);
     const inputRef = useRef<TextInput>(null);

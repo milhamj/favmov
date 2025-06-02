@@ -16,15 +16,11 @@ import { supabase } from '../services/supabaseClient';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/navigationTypes';
 import Toast from 'react-native-toast-message';
+import withAuth from '../components/withAuth';
 
-const ProfilePage = () => {
-  const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Home'>>();
-  const { user, isAuthenticated, loading } = useAuth();
-
-    if (loading) return <ActivityIndicator />;
-    if (!isAuthenticated) {
-        navigation.navigate('Login');
-    }
+const ProfilePage = withAuth(() => {
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Main'>>();
+  const { user } = useAuth();
 
   const handleLogout = async () => {
     try {
@@ -40,7 +36,7 @@ const ProfilePage = () => {
         });
         navigation.reset({
             index: 0,
-            routes: [{ name: 'Home' }],
+            routes: [{ name: 'Main' }],
         });
 
     } catch (error) {
@@ -93,7 +89,7 @@ const ProfilePage = () => {
       </View>
     </PageContainer>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {

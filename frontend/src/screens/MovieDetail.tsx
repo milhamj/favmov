@@ -9,9 +9,11 @@ import Toast from 'react-native-toast-message';
 import TopBar from '../components/TopBar';
 import PosterViewer from '../components/PosterViewer';
 import { COLORS } from '../styles/colors'; 
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../navigation/navigationTypes';
 
 const MovieDetail = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'MovieDetail'>>();
   const route = useRoute();
   const movieParams = (route.params as { movie: Movie }).movie;
 

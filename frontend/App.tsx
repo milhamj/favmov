@@ -51,7 +51,7 @@ const MainTabs = () => (
       },
       tabBarActiveTintColor: 'tomato',
       tabBarInactiveTintColor: 'gray',
-      headerShown: false, // Hide the default header
+      headerShown: false,
     })}
   >
     <Tab.Screen name="Home" component={Homepage} />

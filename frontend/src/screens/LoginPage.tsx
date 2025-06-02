@@ -15,6 +15,8 @@ import TopBar from '../components/TopBar';
 import { signInWithOtp, verifyOtp } from '../services/authService';
 import Toast from 'react-native-toast-message';
 import { Result, Success } from '../model/apiResponse';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../navigation/navigationTypes';
 
 const TIMER_SECONDS = 300
 
@@ -26,7 +28,7 @@ const LoginPage = () => {
   const [canResend, setCanResend] = useState(false);
   const [timer, setTimer] = useState(TIMER_SECONDS);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const navigation = useNavigation();
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Login'>>();
 
   // Timer effect for OTP resend countdown
   useEffect(() => {

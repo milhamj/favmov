@@ -11,7 +11,7 @@ import { RootStackParamList } from '../navigation/navigationTypes';
 import MovieCard from '../components/MovieCard';
 
 const Homepage = () => {
-  const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Home'>>();
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Main'>>();
   
   const defaultMovies: Movie[] = [];
   const [trendingMovies, setTrendingMovies] = useState(defaultMovies);

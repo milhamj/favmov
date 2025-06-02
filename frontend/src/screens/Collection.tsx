@@ -4,17 +4,11 @@ import { useAuth } from '../hooks/useAuth';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/navigationTypes';
+import withAuth from '../components/withAuth';
 
 
-const Collection = () => {
-  const { user, isAuthenticated, loading } = useAuth();
-  const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Home'>>();
-
-  if (loading) return <ActivityIndicator />;
-  if (!isAuthenticated) {
-    navigation.navigate('Login');
-    return <Text>Please log in to view your collections.</Text>;
-  }
+const Collection = withAuth(() => {
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
   // Placeholder data for collections
   const collections = [
@@ -36,7 +30,7 @@ const Collection = () => {
       />
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
