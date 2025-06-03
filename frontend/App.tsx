@@ -1,4 +1,4 @@
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, RouteProp, useRoute } from '@react-navigation/native';
 import { Platform, ViewStyle } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -10,6 +10,7 @@ import MovieDetail from './src/screens/MovieDetail';
 import LoginPage from './src/screens/LoginPage';
 import Collection from './src/screens/Collection';
 import ProfilePage from './src/screens/ProfilePage';
+import { RootStackParamList } from './src/navigation/navigationTypes';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -35,27 +36,35 @@ export default function App() {
   );
 }
 
-const MainTabs = () => (
+type MainTabsRouteProp = RouteProp<RootStackParamList, 'Main'>;
+
+const MainTabs = () => {
+  const route = useRoute<MainTabsRouteProp>();
+  const activeTab = route.params?.activeTab;
+
+  return (
   <Tab.Navigator
-    screenOptions={({ route }) => ({
-      tabBarIcon: ({ color, size }) => {
-        let iconName: string = 'home';
-        if (route.name === 'Home') {
-          iconName = 'home';
-        } else if (route.name === 'Collection') {
-          iconName = 'collections';
-        } else if (route.name === 'Profile') {
-          iconName = 'person';
-        }
-        return <Icon name={iconName} color={color} size={size} />;
-      },
-      tabBarActiveTintColor: 'tomato',
-      tabBarInactiveTintColor: 'gray',
-      headerShown: false,
-    })}
-  >
-    <Tab.Screen name="Home" component={Homepage} />
-    <Tab.Screen name="Collection" component={Collection} />
-    <Tab.Screen name="Profile" component={ProfilePage} />
-  </Tab.Navigator>
-);
+      initialRouteName={activeTab || 'Home'}
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ color, size }) => {
+          let iconName: string = 'home';
+          if (route.name === 'Home') {
+            iconName = 'home';
+          } else if (route.name === 'Collection') {
+            iconName = 'collections';
+          } else if (route.name === 'Profile') {
+            iconName = 'person';
+          }
+          return <Icon name={iconName} color={color} size={size} />;
+        },
+        tabBarActiveTintColor: 'tomato',
+        tabBarInactiveTintColor: 'gray',
+        headerShown: false,
+      })}
+    >
+      <Tab.Screen name="Home" component={Homepage} />
+      <Tab.Screen name="Collection" component={Collection} />
+      <Tab.Screen name="Profile" component={ProfilePage} />
+    </Tab.Navigator>
+  );
+}
