@@ -143,7 +143,10 @@ const LoginPage = () => {
               text2: `Welcome ${email}`,
               position: 'bottom'
           });
-          setIsLoading(false);
+          setTimeout(() => {
+            setIsLoading(false);
+            navigation.goBack();
+          }, 2000);
         } else {
           Toast.show({
               type: 'error',
@@ -244,6 +247,7 @@ const LoginPage = () => {
                 <View style={{height: 16}} />
             </View>
         </View>
+        <Toast />
     </PageContainer>
   );
 };

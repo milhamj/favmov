@@ -34,9 +34,15 @@ const ProfilePage = withAuth(() => {
             text1: 'Logout successful',
             position: 'bottom'
         });
+
         navigation.reset({
             index: 0,
-            routes: [{ name: 'Main' }],
+            routes: [
+                { 
+                    name: 'Main',
+                    params: { activeTab: 'Home' }
+                }
+            ]
         });
 
     } catch (error) {
@@ -47,7 +53,6 @@ const ProfilePage = withAuth(() => {
             text2: 'An error occurred while logging out. Please try again.',
             position: 'bottom'
         });
-        return;
     }
   };
 
