@@ -6,11 +6,18 @@ NODE_ENV=development || production
 SUPABASE_URL=
 SUPABASE_ANON_KEY=
 ```
+```
+pnpm run dev
+```
+
 ### frontend/.env
 ```
 TMDB_API_KEY=
 SUPABASE_URL=
 SUPABASE_ANON_KEY=
+```
+```
+pnpm run web
 ```
 
 # TODOs

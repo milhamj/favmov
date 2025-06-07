@@ -2,6 +2,7 @@ const { body, validationResult } = require('express-validator');
 const supabase = require('../config/supabase');
 const asyncHandler = require('../utils/asyncHandler');
 const { successResponse, errorResponse } = require('../utils/responses');
+const { getTableName, COLLECTIONS, MOVIES_COLLECTIONS } = require('../utils/tableNames');
 
 // Validation rules
 exports.validateCollection = [
@@ -23,8 +24,14 @@ exports.createCollection = asyncHandler(async (req, res) => {
   const { name } = req.body;
   const userId = req.user.id; // Assuming user ID is available from auth middleware
 
+  const { tableName, error: tableError } = getTableName(COLLECTIONS);
+  if (tableError) {
+    console.error('Environment error:', tableError);
+    return errorResponse(res, tableError, 500);
+  }
+
   const { data, error } = await supabase
-    .from('collections')
+    .from(tableName)
     .insert([{ name, user_id: userId }])
     .select();
 
@@ -40,8 +47,14 @@ exports.createCollection = asyncHandler(async (req, res) => {
 exports.getUserCollections = asyncHandler(async (req, res) => {
   const userId = req.user.id; // Assuming user ID is available from auth middleware
 
+  const { tableName, error: tableError } = getTableName(COLLECTIONS);
+  if (tableError) {
+    console.error('Environment error:', tableError);
+    return errorResponse(res, tableError, 500);
+  }
+
   const { data, error } = await supabase
-    .from('collections')
+    .from(tableName)
     .select('*')
     .eq('user_id', userId);
 
@@ -65,9 +78,15 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
   const { movie_id } = req.body;
   const userId = req.user.id; // Assuming user ID is available from auth middleware
 
+  const { tableName: collectionsTable, error: collectionsTableError } = getTableName(COLLECTIONS);
+  if (collectionsTableError) {
+    console.error('Environment error:', collectionsTableError);
+    return errorResponse(res, collectionsTableError, 500);
+  }
+
   // First verify the collection belongs to the user
   const { data: collectionData, error: collectionError } = await supabase
-    .from('collections')
+    .from(collectionsTable)
     .select('*')
     .eq('id', collection_id)
     .eq('user_id', userId)
@@ -77,9 +96,15 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
     return errorResponse(res, 'Collection not found or access denied', 404);
   }
 
+  const { tableName: moviesCollectionsTable, error: moviesCollectionsTableError } = getTableName(MOVIES_COLLECTIONS);
+  if (moviesCollectionsTableError) {
+    console.error('Environment error:', moviesCollectionsTableError);
+    return errorResponse(res, moviesCollectionsTableError, 500);
+  }
+
   // Check if movie already exists in the collection
   const { data: existingMovie, error: existingMovieError } = await supabase
-    .from('movies_collections')
+    .from(moviesCollectionsTable)
     .select('*')
     .eq('collection_id', collection_id)
     .eq('movie_id', movie_id)
@@ -91,7 +116,7 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
 
   // Add movie to collection
   const { data, error } = await supabase
-    .from('movies_collections')
+    .from(moviesCollectionsTable)
     .insert([{
       collection_id,
       movie_id,
@@ -112,9 +137,15 @@ exports.getCollectionMovies = asyncHandler(async (req, res) => {
   const { collection_id } = req.params;
   const userId = req.user.id; // Assuming user ID is available from auth middleware
 
+  const { tableName: collectionsTable, error: collectionsTableError } = getTableName(COLLECTIONS);
+  if (collectionsTableError) {
+    console.error('Environment error:', collectionsTableError);
+    return errorResponse(res, collectionsTableError, 500);
+  }
+
   // First verify the collection belongs to the user
   const { data: collectionData, error: collectionError } = await supabase
-    .from('collections')
+    .from(collectionsTable)
     .select('*')
     .eq('id', collection_id)
     .eq('user_id', userId)
@@ -124,9 +155,15 @@ exports.getCollectionMovies = asyncHandler(async (req, res) => {
     return errorResponse(res, 'Collection not found or access denied', 404);
   }
 
+  const { tableName: moviesCollectionsTable, error: moviesCollectionsTableError } = getTableName(MOVIES_COLLECTIONS);
+  if (moviesCollectionsTableError) {
+    console.error('Environment error:', moviesCollectionsTableError);
+    return errorResponse(res, moviesCollectionsTableError, 500);
+  }
+
   // Get all movies in the collection
   const { data, error } = await supabase
-    .from('movies_collections')
+    .from(moviesCollectionsTable)
     .select('*')
     .eq('collection_id', collection_id)
     .eq('user_id', userId);
@@ -144,9 +181,15 @@ exports.removeMovieFromCollection = asyncHandler(async (req, res) => {
   const { collection_id, movie_id } = req.params;
   const userId = req.user.id; // Assuming user ID is available from auth middleware
 
+  const { tableName: collectionsTable, error: collectionsTableError } = getTableName(COLLECTIONS);
+  if (collectionsTableError) {
+    console.error('Environment error:', collectionsTableError);
+    return errorResponse(res, collectionsTableError, 500);
+  }
+
   // First verify the collection belongs to the user
   const { data: collectionData, error: collectionError } = await supabase
-    .from('collections')
+    .from(collectionsTable)
     .select('*')
     .eq('id', collection_id)
     .eq('user_id', userId)
@@ -156,9 +199,15 @@ exports.removeMovieFromCollection = asyncHandler(async (req, res) => {
     return errorResponse(res, 'Collection not found or access denied', 404);
   }
 
+  const { tableName: moviesCollectionsTable, error: moviesCollectionsTableError } = getTableName(MOVIES_COLLECTIONS);
+  if (moviesCollectionsTableError) {
+    console.error('Environment error:', moviesCollectionsTableError);
+    return errorResponse(res, moviesCollectionsTableError, 500);
+  }
+
   // Remove movie from collection
   const { error } = await supabase
-    .from('movies_collections')
+    .from(moviesCollectionsTable)
     .delete()
     .eq('collection_id', collection_id)
     .eq('movie_id', movie_id)
@@ -177,9 +226,15 @@ exports.deleteCollection = asyncHandler(async (req, res) => {
   const { collection_id } = req.params;
   const userId = req.user.id; // Assuming user ID is available from auth middleware
 
+  const { tableName: collectionsTable, error: collectionsTableError } = getTableName(COLLECTIONS);
+  if (collectionsTableError) {
+    console.error('Environment error:', collectionsTableError);
+    return errorResponse(res, collectionsTableError, 500);
+  }
+
   // First verify the collection belongs to the user
   const { data: collectionData, error: collectionError } = await supabase
-    .from('collections')
+    .from(collectionsTable)
     .select('*')
     .eq('id', collection_id)
     .eq('user_id', userId)
@@ -189,9 +244,15 @@ exports.deleteCollection = asyncHandler(async (req, res) => {
     return errorResponse(res, 'Collection not found or access denied', 404);
   }
 
+  const { tableName: moviesCollectionsTable, error: moviesCollectionsTableError } = getTableName(MOVIES_COLLECTIONS);
+  if (moviesCollectionsTableError) {
+    console.error('Environment error:', moviesCollectionsTableError);
+    return errorResponse(res, moviesCollectionsTableError, 500);
+  }
+
   // First delete all movies in the collection
   const { error: moviesDeleteError } = await supabase
-    .from('movies_collections')
+    .from(moviesCollectionsTable)
     .delete()
     .eq('collection_id', collection_id)
     .eq('user_id', userId);
@@ -203,7 +264,7 @@ exports.deleteCollection = asyncHandler(async (req, res) => {
 
   // Then delete the collection
   const { error } = await supabase
-    .from('collections')
+    .from(collectionsTable)
     .delete()
     .eq('id', collection_id)
     .eq('user_id', userId);
