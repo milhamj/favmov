@@ -37,7 +37,8 @@ exports.createCollection = asyncHandler(async (req, res) => {
 
   if (error) {
     console.error('Error creating collection:', error);
-    return errorResponse(res, 'Failed to create collection', 500);
+    const debugMessage = error?.message
+    return errorResponse(res, 'Failed to create collection', 500, debugMessage);
   }
 
   return successResponse(res, data[0], 'Collection created successfully', 201);
@@ -60,7 +61,8 @@ exports.getUserCollections = asyncHandler(async (req, res) => {
 
   if (error) {
     console.error('Error fetching collections:', error);
-    return errorResponse(res, 'Failed to fetch collections', 500);
+    const debugMessage = error?.message
+    return errorResponse(res, 'Failed to fetch collections', 500, debugMessage);
   }
 
   return successResponse(res, data, 'Collections retrieved successfully');
@@ -126,7 +128,8 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
 
   if (error) {
     console.error('Error adding movie to collection:', error);
-    return errorResponse(res, 'Failed to add movie to collection', 500);
+    const debugMessage = error?.message
+    return errorResponse(res, 'Failed to add movie to collection', 500, debugMessage);
   }
 
   return successResponse(res, data[0], 'Movie added to collection successfully', 201);
@@ -170,7 +173,8 @@ exports.getCollectionMovies = asyncHandler(async (req, res) => {
 
   if (error) {
     console.error('Error fetching collection movies:', error);
-    return errorResponse(res, 'Failed to fetch collection movies', 500);
+    const debugMessage = error?.message
+    return errorResponse(res, 'Failed to fetch collection movies', 500, debugMessage);
   }
 
   return successResponse(res, data, 'Collection movies retrieved successfully');
@@ -215,7 +219,8 @@ exports.removeMovieFromCollection = asyncHandler(async (req, res) => {
 
   if (error) {
     console.error('Error removing movie from collection:', error);
-    return errorResponse(res, 'Failed to remove movie from collection', 500);
+    const debugMessage = error?.message
+    return errorResponse(res, 'Failed to remove movie from collection', 500, debugMessage);
   }
 
   return successResponse(res, null, 'Movie removed from collection successfully');
@@ -271,7 +276,8 @@ exports.deleteCollection = asyncHandler(async (req, res) => {
 
   if (error) {
     console.error('Error deleting collection:', error);
-    return errorResponse(res, 'Failed to delete collection', 500);
+    const debugMessage = error?.message
+    return errorResponse(res, 'Failed to delete collection', 500, debugMessage);
   }
 
   return successResponse(res, null, 'Collection deleted successfully');
