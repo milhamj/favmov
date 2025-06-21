@@ -22,12 +22,34 @@ exports.createCollection = asyncHandler(async (req, res) => {
   }
 
   const { name } = req.body;
-  const userId = req.user.id; // Assuming user ID is available from auth middleware
+  const userId = req.user.id;
 
   const { tableName, error: tableError } = getTableName(COLLECTIONS);
   if (tableError) {
     console.error('Environment error:', tableError);
     return errorResponse(res, tableError, 500);
+  }
+
+  // Check if user already has a collection with the same name.
+  const { data: selectData, error: selectError } = await supabase
+    .from(tableName)
+    .select('*')
+    .eq('user_id', userId);
+
+  if (selectError) {
+    console.error('Error fetching collections:', selectError);
+    const debugMessage = selectError?.message
+    return errorResponse(res, 'Failed to fetch collections', 500, debugMessage);
+  }
+
+  if (selectData) {
+    console.log("selectData:", selectData)
+    const existingCollection = selectData.find(
+      collection => collection.name.toLowerCase() === name.toLowerCase()
+    );
+    if (existingCollection) {
+      return errorResponse(res, 'You already have a collection with the same name.', 400);
+    }
   }
 
   const { data, error } = await supabase
@@ -46,7 +68,7 @@ exports.createCollection = asyncHandler(async (req, res) => {
 
 // Get all collections for a user
 exports.getUserCollections = asyncHandler(async (req, res) => {
-  const userId = req.user.id; // Assuming user ID is available from auth middleware
+  const userId = req.user.id;
 
   const { tableName, error: tableError } = getTableName(COLLECTIONS);
   if (tableError) {
@@ -77,7 +99,7 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
   }
 
   const { collection_id } = req.params;
-  const { movie_id } = req.body;
+  const { movie_id, notes } = req.body;
   const userId = req.user.id; // Assuming user ID is available from auth middleware
 
   const { tableName: collectionsTable, error: collectionsTableError } = getTableName(COLLECTIONS);
@@ -122,6 +144,7 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
     .insert([{
       collection_id,
       movie_id,
+      notes,
       user_id: userId
     }])
     .select();
