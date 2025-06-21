@@ -11,6 +11,9 @@ import {
   Pressable,
   ActivityIndicator,
 } from 'react-native';
+import { useAuth } from '../hooks/useAuth';
+import { createCollection } from '../services/collectionService';
+import { Success } from '../model/apiResponse';
 
 interface CreateCollectionSheetProps {
   visible: boolean;
@@ -22,20 +25,34 @@ const CreateCollectionSheet: React.FC<CreateCollectionSheetProps> = ({
   onClose
 }) => {
   const [collectionName, setCollectionName] = useState('');
-  const [isSaving, setIsSaving] = useState(false)
+  const [isSaving, setIsSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null as string | null);
+  const { session } = useAuth();
   
-  const handleSave = () => {
-    if (isSaving) return;
-
+  const handleSave = async () => {
     const collectionNameTrimmed = collectionName.trim();
-    if (collectionNameTrimmed) {
-        setIsSaving(true);
+    if (isSaving || !collectionNameTrimmed) return;
 
-        setTimeout(() => {
-            setIsSaving(false);
-            setCollectionName('');
-            onClose(true, collectionNameTrimmed);
-        }, 3000);
+    setIsSaving(true);
+    setErrorMessage(null);
+
+    try {
+      if (!session?.access_token) {
+        throw new Error('Authentication required');
+      }
+      
+      const result = await createCollection(collectionName.trim(), session.access_token);
+      
+      if (result instanceof Success) {
+        setCollectionName('');
+        onClose(true, collectionName.trim());
+      } else {
+        setErrorMessage(result.message);
+      }
+    } catch (error: any) {
+      setErrorMessage(error.message || 'Failed to create collection');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -43,6 +60,7 @@ const CreateCollectionSheet: React.FC<CreateCollectionSheetProps> = ({
     if (isSaving) return;
     
     setCollectionName('');
+    setErrorMessage(null);
     onClose(false);
   };
 
@@ -79,6 +97,10 @@ const CreateCollectionSheet: React.FC<CreateCollectionSheetProps> = ({
                 autoFocus
               />
             </View>
+
+            { errorMessage 
+                && <Text style={styles.errorMessage}> {errorMessage} </Text>
+            }
             
             <TouchableOpacity 
               style={styles.saveButton} 
@@ -141,13 +163,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#f5f5f5',
     borderRadius: 8,
-    marginBottom: 20,
+    marginBottom: 24,
     paddingHorizontal: 12,
   },
   input: {
     flex: 1,
     height: 45,
     fontSize: 16,
+  },
+  errorMessage: {
+    fontSize: 12,
+    fontWeight: '500',
+    marginBottom: 24,
+    color: 'red',
   },
   saveButton: {
     backgroundColor: 'tomato',
