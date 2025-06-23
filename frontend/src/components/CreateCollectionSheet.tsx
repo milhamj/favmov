@@ -6,12 +6,10 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Keyboard,
   Platform,
   Pressable,
   ActivityIndicator,
 } from 'react-native';
-import { useAuth } from '../hooks/useAuth';
 import { createCollection } from '../services/collectionService';
 import { Success } from '../model/apiResponse';
 
@@ -27,7 +25,6 @@ const CreateCollectionSheet: React.FC<CreateCollectionSheetProps> = ({
   const [collectionName, setCollectionName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null as string | null);
-  const { session } = useAuth();
   
   const handleSave = async () => {
     const collectionNameTrimmed = collectionName.trim();
@@ -36,24 +33,15 @@ const CreateCollectionSheet: React.FC<CreateCollectionSheetProps> = ({
     setIsSaving(true);
     setErrorMessage(null);
 
-    try {
-      if (!session?.access_token) {
-        throw new Error('Authentication required');
-      }
-      
-      const result = await createCollection(collectionName.trim());
-      
-      if (result instanceof Success) {
-        setCollectionName('');
-        onClose(true, collectionName.trim());
-      } else {
-        setErrorMessage(result.message);
-      }
-    } catch (error: any) {
-      setErrorMessage(error.message || 'Failed to create collection');
-    } finally {
-      setIsSaving(false);
+    const result = await createCollection(collectionNameTrimmed);
+    if (result instanceof Success) {
+      setCollectionName('');
+      onClose(true, collectionNameTrimmed);
+    } else {
+      setErrorMessage(result.message);
     }
+
+    setIsSaving(false);
   };
 
   const handleClose = () => {
