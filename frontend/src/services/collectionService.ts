@@ -1,13 +1,11 @@
 import { Collection } from '../model/collectionModel';
 import { Success, Error } from '../model/apiResponse';
-import createBackendClient from './backendClient';
+import backendClient from './backendClient';
 
 export const createCollection = async (
-  name: string,
-  token: string
+  name: string
 ): Promise<Success<Collection> | Error> => {
   try {
-    const backendClient = createBackendClient(token);
     const response = await backendClient.post('/collections', { name });
     
     const collection = new Collection(
@@ -31,20 +29,17 @@ export const createCollection = async (
   }
 };
 
-export const getUserCollections = async (
-  token: string
-): Promise<Success<Collection[]> | Error> => {
+export const getUserCollections = async (): Promise<Success<Collection[]> | Error> => {
   try {
-    const backendClient = createBackendClient(token);
     const response = await backendClient.get('/collections');
     
     const collections = response.data.data.map((item: any) => {
         const collection = new Collection(item.id, item.name)
-        if (response.data.data.user_id) {
-            collection.userId = response.data.data.user_id;
+        if (item.user_id) {
+            collection.userId = item.user_id;
         }
-        if (response.data.data.created_at) {
-            collection.createdAt = response.data.data.created_at;
+        if (item.created_at) {
+            collection.createdAt = item.created_at;
         }
         return collection;
     });

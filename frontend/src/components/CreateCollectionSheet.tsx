@@ -41,7 +41,7 @@ const CreateCollectionSheet: React.FC<CreateCollectionSheetProps> = ({
         throw new Error('Authentication required');
       }
       
-      const result = await createCollection(collectionName.trim(), session.access_token);
+      const result = await createCollection(collectionName.trim());
       
       if (result instanceof Success) {
         setCollectionName('');
