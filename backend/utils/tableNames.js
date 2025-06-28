@@ -22,5 +22,7 @@ const getTableName = (baseName) => {
 module.exports = {
   getTableName,
   COLLECTIONS: 'collections',
+  MOVIES: 'movies',
+  TV_SHOWS: 'tv_shows',
   MOVIES_COLLECTIONS: 'movies_collections'
 };

@@ -2,15 +2,17 @@ const { body, validationResult } = require('express-validator');
 const supabase = require('../config/supabase');
 const asyncHandler = require('../utils/asyncHandler');
 const { successResponse, errorResponse } = require('../utils/responses');
-const { getTableName, COLLECTIONS, MOVIES_COLLECTIONS } = require('../utils/tableNames');
+const { getTableName, COLLECTIONS, MOVIES_COLLECTIONS, TV_SHOWS, MOVIES } = require('../utils/tableNames');
 
 // Validation rules
 exports.validateCollection = [
-  body('name').trim().notEmpty().withMessage('Collection name is required')
+  body('name').trim().notEmpty().withMessage('Collection name is required.')
 ];
 
 exports.validateMovieToCollection = [
-  body('movie_id').isInt().withMessage('Valid movie ID is required')
+  body('is_tv_show').isBoolean().withMessage('is_tv_show is requires and must be boolean.'),
+  body('title').trim().notEmpty().withMessage('title is required.'),
+  body('poster_path').trim().notEmpty().withMessage('poster path is required.')
 ];
 
 // Create a new collection
@@ -99,8 +101,15 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
   }
 
   const { collection_id } = req.params;
-  const { movie_id, notes } = req.body;
-  const userId = req.user.id; // Assuming user ID is available from auth middleware
+  const { is_tv_show, movie_id, tv_show_id, notes, title, poster_path, rating, rating_count } = req.body;
+
+  if (is_tv_show && !tv_show_id) {
+    return errorResponse(res, 'tv_show_id is required when is_tv_show is true', 400);
+  } else if (!is_tv_show && !movie_id) {
+    return errorResponse(res, 'movie_id is required when is_tv_show is false', 400);
+  }
+
+  const userId = req.user.id; 
 
   const { tableName: collectionsTable, error: collectionsTableError } = getTableName(COLLECTIONS);
   if (collectionsTableError) {
@@ -126,28 +135,89 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
     return errorResponse(res, moviesCollectionsTableError, 500);
   }
 
-  // Check if movie already exists in the collection
-  const { data: existingMovie, error: existingMovieError } = await supabase
+  if (is_tv_show) {
+    // Check if tv show already exists in the collection
+    const { data: existingTvShowInCollection, error: existingTvShowInCollectionError } = await supabase
+    .from(moviesCollectionsTable)
+    .select('*')
+    .eq('collection_id', collection_id)
+    .eq('tv_show_id', tv_show_id)
+    .single();
+
+    if (existingTvShowInCollection) {
+      return errorResponse(res, 'TV Show already exists in this collection', 400);
+    }
+
+    // Check if the TV show already exists in the tv shows table, if not then add
+    const { tableName: tvShowsTable, error: tvShowsTableError } = getTableName(TV_SHOWS);
+    if (tvShowsTableError) {
+      console.error('Environment error:', tvShowsTableError);
+      return errorResponse(res, tvShowsTableError, 500);
+    }
+
+    const { data: existingTvShow, error: existingTvShowError } = await supabase
+    .from(tvShowsTable)
+    .select('*')
+    .eq('id', tv_show_id)
+    .single();
+
+    if (!existingTvShow) {
+      await supabase.from(tvShowsTable).insert([{
+        id: tv_show_id,
+        title,
+        poster_path,
+        rating,
+        rating_count
+      }])
+    }
+  } else {
+    const { data: existingMovieInCollection, error: existingMovieInCollectionError } = await supabase
     .from(moviesCollectionsTable)
     .select('*')
     .eq('collection_id', collection_id)
     .eq('movie_id', movie_id)
     .single();
 
-  if (existingMovie) {
-    return errorResponse(res, 'Movie already exists in this collection', 400);
+    if (existingMovieInCollection) {
+      return errorResponse(res, 'Movie already exists in this collection', 400);
+    }
+
+    // Check if the movie already exists in the movies table, if not then add
+    const { tableName: moviesTable, error: moviesTableError } = getTableName(MOVIES);
+    if (moviesTableError) {
+      console.error('Environment error:', moviesTableError);
+      return errorResponse(res, moviesTableError, 500);
+    }
+
+    const { data: existingMovie, error: existingMovieError } = await supabase
+    .from(moviesTable)
+    .select('*')
+    .eq('id', movie_id)
+    .single();
+
+    if (!existingMovie) {
+      await supabase.from(moviesTable).insert([{
+        id: movie_id,
+        title,
+        poster_path,
+        rating,
+        rating_count
+      }])
+    }
   }
 
-  // Add movie to collection
+  // Add movie/tv show to collection
   const { data, error } = await supabase
-    .from(moviesCollectionsTable)
-    .insert([{
-      collection_id,
-      movie_id,
-      notes,
-      user_id: userId
-    }])
-    .select();
+  .from(moviesCollectionsTable)
+  .insert([{
+    collection_id,
+    movie_id: is_tv_show ? null : movie_id,
+    tv_show_id: is_tv_show ? tv_show_id : null,
+    is_tv_show,
+    notes,
+    user_id: userId
+  }])
+  .select();
 
   if (error) {
     console.error('Error adding movie to collection:', error);
