@@ -137,7 +137,7 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
 
   if (is_tv_show) {
     // Check if tv show already exists in the collection
-    const { data: existingTvShowInCollection, error: existingTvShowInCollectionError } = await supabase
+    const { data: existingTvShowInCollection } = await supabase
     .from(moviesCollectionsTable)
     .select('*')
     .eq('collection_id', collection_id)
@@ -155,23 +155,29 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
       return errorResponse(res, tvShowsTableError, 500);
     }
 
-    const { data: existingTvShow, error: existingTvShowError } = await supabase
+    const { data: existingTvShow } = await supabase
     .from(tvShowsTable)
     .select('*')
     .eq('id', tv_show_id)
     .single();
 
     if (!existingTvShow) {
-      await supabase.from(tvShowsTable).insert([{
+      const { error: insertTvShowError } = await supabase.from(tvShowsTable).insert([{
         id: tv_show_id,
         title,
         poster_path,
         rating,
         rating_count
       }])
+
+      if (insertTvShowError) {
+        console.error('Error inserting tv show:', insertTvShowError);
+        const debugMessage = insertTvShowError?.message
+        return errorResponse(res, 'Error adding TV show to collection.', 500, debugMessage);
+      }
     }
   } else {
-    const { data: existingMovieInCollection, error: existingMovieInCollectionError } = await supabase
+    const { data: existingMovieInCollection } = await supabase
     .from(moviesCollectionsTable)
     .select('*')
     .eq('collection_id', collection_id)
@@ -189,20 +195,26 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
       return errorResponse(res, moviesTableError, 500);
     }
 
-    const { data: existingMovie, error: existingMovieError } = await supabase
+    const { data: existingMovie } = await supabase
     .from(moviesTable)
     .select('*')
     .eq('id', movie_id)
     .single();
 
     if (!existingMovie) {
-      await supabase.from(moviesTable).insert([{
+      const { error: insertMovieError } = await supabase.from(moviesTable).insert([{
         id: movie_id,
         title,
         poster_path,
         rating,
         rating_count
       }])
+
+      if (insertMovieError) {
+        console.error('Error inserting movie:', insertMovieError);
+        const debugMessage = insertMovieError?.message
+        return errorResponse(res, 'Error adding movie to collection.', 500, debugMessage);
+      }
     }
   }
 
@@ -252,15 +264,30 @@ exports.getCollectionMovies = asyncHandler(async (req, res) => {
   }
 
   const { tableName: moviesCollectionsTable, error: moviesCollectionsTableError } = getTableName(MOVIES_COLLECTIONS);
-  if (moviesCollectionsTableError) {
-    console.error('Environment error:', moviesCollectionsTableError);
-    return errorResponse(res, moviesCollectionsTableError, 500);
+  const { tableName: moviesTable, error: moviesTableError } = getTableName(MOVIES);
+  const { tableName: tvShowsTable, error: tvShowsTableError } = getTableName(TV_SHOWS);
+  const tableError = moviesCollectionsTableError || moviesTableError || tvShowsTableError;
+
+  if (tableError) {
+    console.error('Environment error:', tableError);
+    return errorResponse(res, tableError, 500);
   }
 
   // Get all movies in the collection
   const { data, error } = await supabase
     .from(moviesCollectionsTable)
-    .select('*')
+    .select(`
+      id,
+      collection_id,
+      movie_id,
+      tv_show_id,
+      is_tv_show,
+      notes,
+      user_id,
+      created_at,
+      ${moviesTable}(title, poster_path, rating, rating_count),
+      ${tvShowsTable}(title, poster_path, rating, rating_count)
+    `)
     .eq('collection_id', collection_id)
     .eq('user_id', userId);
 
@@ -270,7 +297,15 @@ exports.getCollectionMovies = asyncHandler(async (req, res) => {
     return errorResponse(res, 'Failed to fetch collection movies', 500, debugMessage);
   }
 
-  return successResponse(res, data, 'Collection movies retrieved successfully');
+  const movies = data.map(item => ({
+    ...item[moviesTable],
+    ...item[tvShowsTable],
+    is_tv_show: item.is_tv_show,
+    notes: item.notes,
+    id: item.is_tv_show ? item.tv_show_id : item.movie_id
+  }))
+
+  return successResponse(res, movies, 'Collection movies retrieved successfully');
 });
 
 // Remove a movie from a collection
