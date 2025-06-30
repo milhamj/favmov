@@ -299,7 +299,8 @@ exports.getCollectionMovies = asyncHandler(async (req, res) => {
       ${tvShowsTable}(title, poster_path, rating, rating_count)
     `)
     .eq('collection_id', collection_id)
-    .eq('user_id', userId);
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
 
   if (error) {
     console.error('Error fetching collection movies:', error);
@@ -312,10 +313,14 @@ exports.getCollectionMovies = asyncHandler(async (req, res) => {
     ...item[tvShowsTable],
     is_tv_show: item.is_tv_show,
     notes: item.notes,
+    created_at: item.created_at,
     id: item.is_tv_show ? item.tv_show_id : item.movie_id
-  }))
+  }));
 
-  return successResponse(res, movies, 'Collection movies retrieved successfully');
+  const response = collectionData;
+  response.movies = movies;
+
+  return successResponse(res, response, 'Collection movies retrieved successfully');
 });
 
 // Remove a movie from a collection
