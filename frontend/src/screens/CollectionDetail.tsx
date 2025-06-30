@@ -47,12 +47,8 @@ const CollectionDetail = withAuth(() => {
     }
 
     const renderMovieItem = ({ item, index }: { item: Movie, index: number }) => (
-        <TouchableOpacity style={{
-            width: '48%', 
-            marginRight: index % 2 === 0 ? 16 : 0,
-            marginBottom: 16, 
-            alignContent: 'center'
-        }}
+        <TouchableOpacity 
+        style={[styles.movieCard, { marginRight: index % 2 === 0 ? 16 : 0 }]}
         onPress={() => navigation.navigate('MovieDetail', { movie: item })} 
         >
             <MovieCard 
@@ -168,6 +164,11 @@ const styles = StyleSheet.create({
     },
     row: {
       justifyContent: 'flex-start',
+    },
+    movieCard: {
+        width: '48%', 
+        marginBottom: 16, 
+        alignContent: 'center'
     },
     collectionNote: {
         marginTop: 4,
