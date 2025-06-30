@@ -14,7 +14,7 @@ const SearchPage = () => {
     const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'SearchPage'>>();
     const [searchQuery, setSearchQuery]  = useState('');
     const [movies, setMovies] = useState([] as Movie[]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
     const inputRef = useRef<TextInput>(null);
 
     useEffect(() => {
@@ -80,7 +80,11 @@ const SearchPage = () => {
             />
             <ScrollView style={{paddingHorizontal: 16}}>
                 {
-                    isEmptyQuery || isEmptyResult ? (
+                    isLoading ? (
+                        <View style={styles.loadingContainer}>
+                            <ActivityIndicator style={styles.loadingItem} size="large" color="tomato" />
+                        </View>
+                    ) : isEmptyQuery || isEmptyResult ? (
                         <View style={styles.emptyState}>
                             <Image source={require('../../assets/empty_search.png')} style={styles.emptyImage} />
                             <Text style={styles.emptyText}>
@@ -90,10 +94,6 @@ const SearchPage = () => {
                                     null
                                 }
                             </Text>
-                        </View>
-                    ) : isLoading ? (
-                        <View style={styles.loadingContainer}>
-                            <ActivityIndicator style={styles.loadingItem} size="large" color="tomato" />
                         </View>
                     ) : (
                         <FlatList
