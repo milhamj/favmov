@@ -2,7 +2,7 @@ const { body, validationResult } = require('express-validator');
 const supabase = require('../config/supabase');
 const asyncHandler = require('../utils/asyncHandler');
 const { successResponse, errorResponse } = require('../utils/responses');
-const { getTableName, COLLECTIONS, MOVIES_COLLECTIONS, TV_SHOWS, MOVIES } = require('../utils/tableNames');
+const { getTableName, COLLECTIONS, MOVIES_COLLECTIONS, TV_SHOWS, MOVIES, COLLECTIONS_WITH_MOVIE_COUNT } = require('../utils/tableNames');
 
 // Validation rules
 exports.validateCollection = [
@@ -72,16 +72,14 @@ exports.createCollection = asyncHandler(async (req, res) => {
 exports.getUserCollections = asyncHandler(async (req, res) => {
   const userId = req.user.id;
 
-  const { tableName, error: tableError } = getTableName(COLLECTIONS);
-  if (tableError) {
-    console.error('Environment error:', tableError);
-    return errorResponse(res, tableError, 500);
+  const { tableName: collectionsTable, error: collectionsTableError } = getTableName(COLLECTIONS_WITH_MOVIE_COUNT);
+  if (collectionsTableError) {
+    console.error('Environment error:', collectionsTableError);
+    return errorResponse(res, collectionsTableError, 500);
   }
 
   const { data, error } = await supabase
-    .from(tableName)
-    .select('*')
-    .eq('user_id', userId);
+    .rpc(collectionsTable, { user_id_input: userId });
 
   if (error) {
     console.error('Error fetching collections:', error);
@@ -89,7 +87,19 @@ exports.getUserCollections = asyncHandler(async (req, res) => {
     return errorResponse(res, 'Failed to fetch collections', 500, debugMessage);
   }
 
-  return successResponse(res, data, 'Collections retrieved successfully');
+  data.forEach(element => {
+    if (element && !element.last_updated) {
+      element.last_updated = element.created_at;
+    }
+  });
+
+  const sortedData = data.sort((a, b) => {
+    const unixA = new Date(a.last_updated).getTime();
+    const unixB = new Date(b.last_updated).getTime();
+    return unixB - unixA;
+  });
+
+  return successResponse(res, sortedData, 'Collections retrieved successfully');
 });
 
 // Add a movie to a collection
@@ -374,7 +384,7 @@ exports.deleteCollection = asyncHandler(async (req, res) => {
     .single();
 
   if (collectionError || !collectionData) {
-    return errorResponse(res, 'Collection not found or access denied', 404);
+    return errorResponse(res, 'Collection not found or access denied', 404, collectionError?.message);
   }
 
   const { tableName: moviesCollectionsTable, error: moviesCollectionsTableError } = getTableName(MOVIES_COLLECTIONS);
