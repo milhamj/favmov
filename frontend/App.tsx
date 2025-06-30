@@ -11,6 +11,7 @@ import LoginPage from './src/screens/LoginPage';
 import Collection from './src/screens/Collection';
 import ProfilePage from './src/screens/ProfilePage';
 import { RootStackParamList } from './src/navigation/navigationTypes';
+import CollectionDetail from './src/screens/CollectionDetail';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -28,6 +29,7 @@ export default function App() {
           <Stack.Screen name="Main" component={MainTabs} />
           <Stack.Screen name="SearchPage" component={SearchPage} />
           <Stack.Screen name="MovieDetail" component={MovieDetail} />
+          <Stack.Screen name="CollectionDetail" component={CollectionDetail} />
           <Stack.Screen name="Login" component={LoginPage} />
         </Stack.Navigator>
       </NavigationContainer>

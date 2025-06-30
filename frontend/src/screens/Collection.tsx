@@ -16,6 +16,8 @@ import CollectionCard from '../components/CollectionCard';
 const numColumns = 2;
 
 const Collection = withAuth(() => {
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Main'>>();
+
   const [collections, setCollections] = useState<CollectionModel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateSheetVisible, setIsCreateSheetVisible] = useState(false);
@@ -61,16 +63,7 @@ const Collection = withAuth(() => {
   };
 
   const handleCollectionPress = (collection: CollectionModel) => {
-    // Navigate to collection detail screen
-    // This is a placeholder - implement navigation as needed
-    console.log('Navigate to collection:', collection.id);
-    Toast.show({
-      type: 'success',
-      text1: 'TODO',
-      text2: `[WIP] Going to collection detail!`,
-      position: 'bottom'
-    });
-    // navigation.navigate('CollectionDetail', { collectionId: collection.id });
+    navigation.navigate('CollectionDetail', { collectionId: collection.id.toString() });
   };
 
   const renderItem = ({ item }: { item: CollectionModel }) => (

@@ -1,6 +1,7 @@
 import { Collection } from '../model/collectionModel';
 import { Success, Error } from '../model/apiResponse';
 import backendClient from './backendClient';
+import { Movie } from '../model/movieModel';
 
 const transformCollectionData = (data: any): Collection => {
   const collection = new Collection(
@@ -20,6 +21,28 @@ const transformCollectionData = (data: any): Collection => {
     collection.moviesCount = data.movies_count;
   }
   return collection;
+}
+
+const transformMovieData = (item: any): Movie => {
+  const movie = new Movie(
+    item.id,
+    item.title,
+    item.poster_path
+  );
+  movie.isTvShow = item.is_tv_show;
+  if (item.rating) {
+    movie.rating = item.rating;
+  }
+  if (item.rating_count) {
+    movie.ratingCount = item.rating_count;
+  }
+  if (item.notes) {
+    movie.collectionNotes = item.notes
+  }
+  if (item.created_at) {
+    movie.collectionAddTime = new Date(item.created_at).getTime();
+  }
+  return movie;
 }
 
 export const createCollection = async (
@@ -50,6 +73,26 @@ export const getUserCollections = async (): Promise<Success<Collection[]> | Erro
     console.error('Error fetching collections:', error);
     return new Error(
       error.response?.data?.message || 'Failed to fetch collections',
+      error.response?.status
+    );
+  }
+};
+
+export const getCollectionDetail = async (id: string): Promise<Success<Collection> | Error> => {
+  try {
+    const response = await backendClient.get(`/collections/${id}/movies`);
+    
+    const collection = transformCollectionData(response.data.data);
+
+    collection.movies = response.data.data.movies.map((item: any) => {
+      return transformMovieData(item);
+    });
+    
+    return new Success<Collection>(collection, 'Collection detail retrieved successfully');
+  } catch (error: any) {
+    console.error('Error fetching collection detail:', error);
+    return new Error(
+      error.response?.data?.message || 'Failed to fetch collection detail',
       error.response?.status
     );
   }

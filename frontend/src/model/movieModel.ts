@@ -15,6 +15,8 @@ export class Movie {
     ratingCount?: number;
     runtime?: string;
     isTvShow?: boolean;
+    collectionNotes?: string;
+    collectionAddTime?: number;
 
     constructor(id: number, title: string, posterPath: string) {
         this.id = id;
