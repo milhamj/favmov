@@ -6,6 +6,8 @@ export class Collection {
   movies?: Movie[];
   userId?: string;
   createdAt?: string;
+  lastUpdated?: string;
+  moviesCount?: number;
 
   constructor(id: number, name: string) {
     this.id = id;

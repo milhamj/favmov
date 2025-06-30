@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, Image, TouchableOpacity } from 'react-native';
-import { useAuth } from '../hooks/useAuth';
+import React, { useState, useEffect } from 'react';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, Image, TouchableOpacity, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/navigationTypes';
@@ -10,11 +9,36 @@ import PageContainer from '../components/PageContainer';
 import TopBar from '../components/TopBar';
 import { COLORS } from '../styles/colors';
 import CreateCollectionSheet from '../components/CreateCollectionSheet';
+import { Collection as CollectionModel } from '../model/collectionModel';
+import { getUserCollections } from '../services/collectionService';
+import CollectionCard from '../components/CollectionCard';
+
+const numColumns = 2;
 
 const Collection = withAuth(() => {
-  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
-  const [collections, setCollections] = useState([]);
+  const [collections, setCollections] = useState<CollectionModel[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isCreateSheetVisible, setIsCreateSheetVisible] = useState(false);
+  
+  const fetchCollections = async () => {
+    setIsLoading(true);
+    const result = await getUserCollections();
+    if ('data' in result) {
+      setCollections(result.data);
+    } else {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: result.message,
+        position: 'bottom'
+      });
+    }
+    setIsLoading(false);
+  };
+  
+  useEffect(() => {
+    fetchCollections();
+  }, []);
   
   const handleCreateCollection = () => {
     setIsCreateSheetVisible(true);
@@ -28,18 +52,48 @@ const Collection = withAuth(() => {
         text2: `"${collectionName}" has been created successfully`,
         position: 'bottom'
       });
+      
+      // Refresh collections
+      fetchCollections();
     }
     
     setIsCreateSheetVisible(false);
   };
 
+  const handleCollectionPress = (collection: CollectionModel) => {
+    // Navigate to collection detail screen
+    // This is a placeholder - implement navigation as needed
+    console.log('Navigate to collection:', collection.id);
+    Toast.show({
+      type: 'success',
+      text1: 'TODO',
+      text2: `[WIP] Going to collection detail!`,
+      position: 'bottom'
+    });
+    // navigation.navigate('CollectionDetail', { collectionId: collection.id });
+  };
+
+  const renderItem = ({ item }: { item: CollectionModel }) => (
+    <CollectionCard 
+      collection={item} 
+      onPress={() => handleCollectionPress(item)} 
+    />
+  );
+
   return (
     <PageContainer>
       <TopBar
         title={'Collections'}
+        icons={[
+          { name: 'add-circle', onClick: handleCreateCollection }
+        ]}
       />
       <View style={styles.container}>
-        {collections.length === 0 ? (
+        { isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="tomato" />
+          </View>
+        ) : collections.length === 0 ? (
           <View style={styles.emptyState}>
             <Image 
               source={require('../../assets/empty_search.png')} 
@@ -59,17 +113,14 @@ const Collection = withAuth(() => {
             </TouchableOpacity>
           </View>
         ) : (
-          null
-          // <FlatList
-          //   data={collections}
-          //   keyExtractor={(item) => item.id}
-          //   renderItem={({ item }) => (
-          //     <View>
-          //       <Text style={styles.collectionName}>{item.name}</Text>
-          //       {/* Render movies in the collection */}
-          //     </View>
-          //   )}
-          // />
+          <FlatList
+            data={collections}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.id.toString()}
+            numColumns={numColumns}
+            contentContainerStyle={styles.listContent}
+            columnWrapperStyle={styles.columnWrapper}
+          />
         )}
       </View>
       
@@ -83,16 +134,22 @@ const Collection = withAuth(() => {
   );
 });
 
-// Keep the existing styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    paddingHorizontal: 16,
   },
-  collectionName: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginVertical: 8,
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  listContent: {
+    paddingVertical: 16,
+  },
+  columnWrapper: {
+    justifyContent: 'space-between',
+    marginBottom: 16,
   },
   emptyState: {
     flex: 1,
