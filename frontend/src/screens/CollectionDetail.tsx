@@ -11,7 +11,9 @@ import { searchMovie } from '../services/movieService';
 import { getCollectionDetail } from '../services/collectionService';
 import { Collection } from '../model/collectionModel';
 import Toast from 'react-native-toast-message';
-import { View, StyleSheet, Text, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, Text, ActivityIndicator, Image, TouchableOpacity, FlatList } from 'react-native';
+import { COLORS } from '../styles/colors';
+import MovieCard from '../components/MovieCard';
 
 const CollectionDetail = withAuth(() => {
     const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'CollectionDetail'>>();
@@ -19,18 +21,13 @@ const CollectionDetail = withAuth(() => {
     const collectionId = (route.params as { collectionId: string }).collectionId;
     const [collection, setCollection] = useState(null as Collection | null);
     const [isLoading, setIsLoading] = useState(false);
-    const [isEmpty, setIsEmpty] = useState(false);
 
     useEffect(() => {
         const fetchCollectionDetail = async () => {
             setIsLoading(true);
-            setIsEmpty(false);
             const result = await getCollectionDetail(collectionId);
             if (result instanceof Success) {
                 setCollection(result.data);
-                if (!result.data.movies) {
-                    setIsEmpty(true);
-                }
             } else {
                 Toast.show({
                     type: 'error',
@@ -44,6 +41,32 @@ const CollectionDetail = withAuth(() => {
 
         fetchCollectionDetail();
     }, [collectionId]);
+
+    const handleEmptyButton = () => {
+        navigation.navigate('SearchPage');
+    }
+
+    const renderMovieItem = ({ item, index }: { item: Movie, index: number }) => (
+        <TouchableOpacity style={{
+            width: '48%', 
+            marginRight: index % 2 === 0 ? 16 : 0,
+            marginBottom: 16, 
+            alignContent: 'center'
+        }}
+        onPress={() => navigation.navigate('MovieDetail', { movie: item })} 
+        >
+            <MovieCard 
+                movie={item}
+            />
+            {
+                item.collectionNotes ? (
+                    <Text style={styles.collectionNote}>
+                        {item.collectionNotes}
+                    </Text>
+                ) : null
+            }
+        </TouchableOpacity>
+    );
 
     return (
         <PageContainer>
@@ -59,8 +82,34 @@ const CollectionDetail = withAuth(() => {
                     <View style={styles.loadingContainer}>
                         <ActivityIndicator size="large" color="tomato" />
                     </View>
+                ) : collection?.movies?.length === 0 ? (
+                    <View style={styles.emptyState}>
+                        <Image 
+                            source={require('../../assets/empty_search.png')} 
+                            style={styles.emptyImage} 
+                        />
+                        <Text style={styles.emptyText}>
+                            No movies or TV show in this collection.
+                        </Text>
+                        <Text style={styles.emptySubText}>
+                            Browse movies and TV shows to add them to this collection.
+                        </Text>
+                        <TouchableOpacity 
+                          style={styles.createButton}
+                          onPress={handleEmptyButton}
+                        >
+                            <Text style={styles.createButtonText}>Search Movies or TV Shows</Text>
+                        </TouchableOpacity>
+                    </View>
                 ) : (
-                    <Text>Collection Name: {collection?.name}</Text>
+                    <FlatList
+                        data={collection?.movies}
+                        renderItem={renderMovieItem}
+                        keyExtractor={(item) => item.id.toString()}
+                        numColumns={2}
+                        columnWrapperStyle={styles.row}
+                        
+                    />
                 )}
             </View>
             <Toast/>
@@ -78,6 +127,54 @@ const styles = StyleSheet.create({
       justifyContent: 'center',
       alignItems: 'center',
     },
+    emptyState: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+    },
+    emptyImage: {
+      width: 120,
+      height: 120,
+      marginBottom: 20,
+      opacity: 0.8,
+    },
+    emptyText: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: '#333',
+      textAlign: 'center',
+      marginBottom: 8,
+    },
+    emptySubText: {
+      fontSize: 16,
+      color: COLORS.text_gray,
+      textAlign: 'center',
+      marginBottom: 32,
+    },
+    createButton: {
+      backgroundColor: 'tomato',
+      paddingVertical: 12,
+      paddingHorizontal: 24,
+      borderRadius: 8,
+      width: '80%',
+      alignItems: 'center',
+      marginTop: 16,
+    },
+    createButtonText: {
+      color: 'white',
+      fontSize: 16,
+      fontWeight: 'bold',
+    },
+    row: {
+      justifyContent: 'flex-start',
+    },
+    collectionNote: {
+        marginTop: 4,
+        fontSize: 12,
+        textAlign: 'left',
+        fontWeight: '300'
+    }
 })
 
 export default CollectionDetail;

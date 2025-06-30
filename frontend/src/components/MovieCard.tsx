@@ -5,12 +5,14 @@ import { COLORS } from '../styles/colors';
 
 interface MovieCardProps {
     movie: Movie;
-    onClick: (movie: Movie) => void;
+    onClick?: (movie: Movie) => void;
 }
 
-const MovieCard: React.FC<MovieCardProps> = ({ movie, onClick}) => {
+const MovieCard: React.FC<MovieCardProps> = ({ movie, onClick }) => {
+  const Container = onClick ? TouchableOpacity : View;
+
   return (
-    <TouchableOpacity onPress={() => onClick(movie)}>
+    <Container onPress={onClick ? () => onClick(movie) : undefined}>
       <View style={[styles.posterContainer]}>
         <Image source={{ uri: movie.smallPosterUrl() }} style={[styles.poster]} />
         <Text style={styles.posterTitle} numberOfLines={1} ellipsizeMode="tail">
@@ -33,7 +35,7 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, onClick}) => {
           </Text>
         )}
       </View>
-    </TouchableOpacity>
+    </Container>
   );
 }
 
