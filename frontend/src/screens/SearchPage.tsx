@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Platform, TextInput, FlatList, Image, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Platform, TextInput, FlatList, Image, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import PageContainer  from '../components/PageContainer';
 import { Movie } from '../model/movieModel';
 import { searchMovie } from '../services/movieService';
@@ -14,6 +14,7 @@ const SearchPage = () => {
     const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'SearchPage'>>();
     const [searchQuery, setSearchQuery]  = useState('');
     const [movies, setMovies] = useState([] as Movie[]);
+    const [isLoading, setIsLoading] = useState(true);
     const inputRef = useRef<TextInput>(null);
 
     useEffect(() => {
@@ -26,10 +27,12 @@ const SearchPage = () => {
 
     useEffect(() => {
         const fetchMovies = async () => {
-        const result = await searchMovie(searchQuery, 1);
+            setIsLoading(true);
+            const result = await searchMovie(searchQuery, 1);
             if (result instanceof Success) {
                 setMovies(result.data);
             }
+            setIsLoading(false);
         };
 
         const debounceFetch = setTimeout(() => {
@@ -88,6 +91,10 @@ const SearchPage = () => {
                                 }
                             </Text>
                         </View>
+                    ) : isLoading ? (
+                        <View style={styles.loadingContainer}>
+                            <ActivityIndicator style={styles.loadingItem} size="large" color="tomato" />
+                        </View>
                     ) : (
                         <FlatList
                             data={movies}
@@ -112,6 +119,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     marginHorizontal: 16,
     marginVertical: 12
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingItem: {
+    height: 100
   },
   row: {
     justifyContent: 'flex-start',
