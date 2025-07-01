@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, FlatList, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { fetchTrendingMovies, fetchPopularMovies, fetchFavoriteMovies, fetchTrendingShows } from '../services/movieService';
@@ -86,14 +86,22 @@ const Homepage = () => {
   const renderSection = (title: string, data: Movie[]) => (
     <View style={styles.section}>
       <Text style={styles.header}>{title}</Text>
-      <FlatList
-        data={data}
-        renderItem={renderMoviePoster}
-        keyExtractor={(item) => item.id.toString()}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.flatListContent}
-      />
+      {
+        data.length > 0 ? (
+          <FlatList
+            data={data}
+            renderItem={renderMoviePoster}
+            keyExtractor={(item) => item.id.toString()}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.flatListContent}
+          />
+        ) : (
+          <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="tomato" />
+          </View>
+        )
+      }
     </View>
   );
 
@@ -132,6 +140,12 @@ const styles = StyleSheet.create({
   },
   flatListContent: {
     paddingHorizontal: 16,
+  },
+  loadingContainer: {
+    width: '100%',
+    height: 250,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 
