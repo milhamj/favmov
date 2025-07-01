@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import PageContainer  from '../components/PageContainer';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Movie } from '../model/movieModel';
@@ -11,6 +11,7 @@ import ImageViewer from '../components/ImageViewer';
 import { COLORS } from '../styles/colors'; 
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/navigationTypes';
+import { Icon } from 'react-native-elements';
 
 const MovieDetail = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'MovieDetail'>>();
@@ -37,6 +38,21 @@ const MovieDetail = () => {
     loadMovieDetails();
   }, [])
 
+  const AddToCollectionButton = () => {
+    return (
+      <TouchableOpacity style={styles.addToCollectionButton} onPress={() => Toast.show(
+        {
+          type: 'info',
+          text1: 'TADA',
+          text2: '[Under construction]',
+          position: 'bottom'
+        }
+      )}>
+        <Icon name="favorite-outline" size={24} color='white' />
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <PageContainer>
       <TopBar
@@ -58,6 +74,7 @@ const MovieDetail = () => {
             style={styles.poster}
             imageStyle={styles.posterImage}
             smallImageUrl={movie.smallPosterUrl()} />
+          <AddToCollectionButton/>
         </View>
         <View style={styles.detailsContainer}>
           {/* Top Section */}
@@ -160,6 +177,23 @@ const styles = StyleSheet.create({
   },
   posterImage: {
     borderRadius: 12,
+  },
+  addToCollectionButton: {
+    position: 'absolute',
+    right: 16,
+    bottom: 16,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'tomato',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  addToCollectionText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   detailsContainer: {
     padding: 16,

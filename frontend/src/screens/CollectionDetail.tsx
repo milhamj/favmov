@@ -67,7 +67,7 @@ const CollectionDetail = withAuth(() => {
     return (
         <PageContainer>
             <TopBar
-                title={ collection?.name ? collection?.name : 'Collection' }
+                title={ collection?.name ? collection.name : 'Collection' }
                 backButton={ {
                     isShow: true,
                     onClick: () => navigation.goBack()
