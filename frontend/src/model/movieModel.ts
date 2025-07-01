@@ -6,6 +6,7 @@ export class Movie {
     id: number;
     title: string;
     posterPath: string;
+    backdropPath?: string;
     overview?: string;
     releaseDate?: string;
     genres?: string[];
@@ -22,6 +23,14 @@ export class Movie {
         this.id = id;
         this.title = title;
         this.posterPath = posterPath;
+    }
+
+    bigBackdropUrl(): string {
+        return this.backdropPath ? TMDB_IMAGE_BIG + this.backdropPath : this.bigPosterUrl();
+    }
+
+    smallBackdropUrl(): string {
+        return this.backdropPath ? TMDB_IMAGE_SMALL + this.backdropPath : this.smallPosterUrl();
     }
 
     bigPosterUrl(): string {

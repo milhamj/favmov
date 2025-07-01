@@ -6,6 +6,7 @@ const mTmdbApiClient = tmdbApiClient();
 
 const transformMovieData = (data: any, isTvShow?: boolean): Movie => {
   const movie = new Movie(data.id, data.title || data.name, data.poster_path)
+  movie.backdropPath = data.backdrop_path;
   movie.overview = data.overview;
   movie.releaseDate = data.release_date || data.first_air_date;
   movie.rating = data.vote_average?.toFixed(2);

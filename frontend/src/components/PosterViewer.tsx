@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { View, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Image, StyleSheet, TouchableOpacity, StyleProp, ViewStyle } from 'react-native';
 import FullImageViewer from './FullImageViewer';
 
 interface PosterViewerProps {
-  bigPosterUrl: string;
-  smallPosterUrl: string;
+  bigImageUrl: string;
+  smallImageUrl: string;
+  style?: StyleProp<ViewStyle>;
 }
 
-const PosterViewer: React.FC<PosterViewerProps> = ({ bigPosterUrl, smallPosterUrl }) => {
+const PosterViewer: React.FC<PosterViewerProps> = ({ bigImageUrl: bigPosterUrl, smallImageUrl: smallPosterUrl, style }) => {
   const [isImageViewerVisible, setImageViewerVisible] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState('');
   const [isBigImageLoaded, setIsBigImageLoaded] = useState(false);
@@ -19,21 +20,23 @@ const PosterViewer: React.FC<PosterViewerProps> = ({ bigPosterUrl, smallPosterUr
 
   return (
     <>
-      <FullImageViewer
-        visible={isImageViewerVisible}
-        imageUrl={selectedImageUrl}
-        onClose={() => setImageViewerVisible(false)}
-      />
-      <TouchableOpacity onPress={() => handleImagePress(bigPosterUrl)}>
-        <View style={styles.posterContainer}>
-          {!isBigImageLoaded && <Image source={{ uri: smallPosterUrl }} style={styles.poster} />}
-          <Image
-            source={{ uri: bigPosterUrl }}
-            style={[styles.poster, !isBigImageLoaded ? styles.posterBig : null]}
-            onLoadEnd={() => setIsBigImageLoaded(true)}
-          />
-        </View>
-      </TouchableOpacity>
+      <View style={style}>
+        <FullImageViewer
+          visible={isImageViewerVisible}
+          imageUrl={selectedImageUrl}
+          onClose={() => setImageViewerVisible(false)}
+        />
+        <TouchableOpacity onPress={() => handleImagePress(bigPosterUrl)}>
+          <View style={styles.posterContainer}>
+            {!isBigImageLoaded && <Image source={{ uri: smallPosterUrl }} style={styles.poster} />}
+            <Image
+              source={{ uri: bigPosterUrl }}
+              style={[styles.poster, !isBigImageLoaded ? styles.posterBig : null]}
+              onLoadEnd={() => setIsBigImageLoaded(true)}
+            />
+          </View>
+        </TouchableOpacity>
+      </View>
     </>
   );
 };

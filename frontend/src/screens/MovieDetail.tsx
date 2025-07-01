@@ -48,7 +48,16 @@ const MovieDetail = () => {
       />
       <ScrollView>
         {/* Poster Section */}
-        <PosterViewer bigPosterUrl={movie.bigPosterUrl()} smallPosterUrl={movie.smallPosterUrl()} />
+        <View style={styles.posterContainer}>
+          <PosterViewer 
+            style={styles.backdrop}
+            bigImageUrl={movie.bigBackdropUrl()} 
+            smallImageUrl={movie.smallBackdropUrl()} />
+          <Image
+            source={{ uri: movie.smallPosterUrl() }}
+            style={styles.poster}
+          />
+        </View>
         <View style={styles.detailsContainer}>
           {/* Top Section */}
           <Text style={styles.title}>{movie.title}</Text>
@@ -126,6 +135,27 @@ const MovieDetail = () => {
 };
 
 const styles = StyleSheet.create({
+  posterContainer: {
+    width: '100%',
+    height: 300,
+    position: 'relative',
+  },
+  backdrop: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  poster: {
+    position: 'absolute',
+    left: 16,
+    bottom: 16,
+    width: 120,
+    height: 180,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: 'white',
+    zIndex: 10,
+  },
   detailsContainer: {
     padding: 16,
   },
