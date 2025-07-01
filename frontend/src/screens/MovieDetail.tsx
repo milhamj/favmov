@@ -78,6 +78,7 @@ const MovieDetail = () => {
             {movie.runtime ? `${movie.runtime} minutes • ` : ''}
             {movie.releaseDate}
             {movie.director() ? ` • Directed by ${movie.director()?.name}` : ''}
+            {movie.isTvShow ? ` • TV Show` : ''}
           </Text>
 
           {/* Genre Section */}

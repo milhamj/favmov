@@ -80,7 +80,7 @@ export const fetchMovieDetails = async (movieId: string, isTvShow?: boolean): Pr
     let url = isTvShow === true ? `/tv/${movieId}` : `/movie/${movieId}`;
     url += `?append_to_response=credits`;
     const response = await mTmdbApiClient.get(url);
-    const movie = transformMovieData(response.data);
+    const movie = transformMovieData(response.data, isTvShow);
     return new Success<Movie>(movie);
   } catch (error: any) {
     console.error('Error fetching movie details:', error);
