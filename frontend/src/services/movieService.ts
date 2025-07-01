@@ -13,7 +13,7 @@ const transformMovieData = (data: any, isTvShow?: boolean): Movie => {
   movie.ratingCount = data.vote_count;
   movie.runtime = data.runtime;
   movie.genres = data.genres?.map((genre: any) => genre.name);
-  movie.isTvShow = isTvShow || false;
+  movie.isTvShow = isTvShow === true;
   movie.cast = data.credits?.cast?.slice(0, 10).map((actor: any) => {
     return new Actor(
       actor.id, 

@@ -78,7 +78,7 @@ const SearchPage = () => {
                 onChangeText={setSearchQuery}
                 autoFocus={Platform.OS === 'web'}
             />
-            <ScrollView style={{paddingHorizontal: 16}}>
+            <View style={styles.scrollContainer}>
                 {
                     isLoading ? (
                         <View style={styles.loadingContainer}>
@@ -106,7 +106,7 @@ const SearchPage = () => {
                         />
                     )
                 }
-            </ScrollView>
+            </View>
         </PageContainer>
     );
 };
@@ -135,22 +135,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   scrollContainer: {
-    
+    flex: 1,
+    paddingHorizontal: 16
   },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 20,
   },
   emptyImage: {
-    width: 100,
-    height: 100,
+    width: 120,
+    height: 120,
     marginBottom: 20,
   },
   emptyText: {
-    fontSize: 16,
-    color: 'gray',
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
     textAlign: 'center',
+    marginBottom: 8,
     paddingHorizontal: 20,
   },
 });
