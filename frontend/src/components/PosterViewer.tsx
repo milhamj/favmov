@@ -26,15 +26,15 @@ const PosterViewer: React.FC<PosterViewerProps> = ({ bigImageUrl: bigPosterUrl, 
           imageUrl={selectedImageUrl}
           onClose={() => setImageViewerVisible(false)}
         />
-        <TouchableOpacity onPress={() => handleImagePress(bigPosterUrl)}>
-          <View style={styles.posterContainer}>
-            {!isBigImageLoaded && <Image source={{ uri: smallPosterUrl }} style={styles.poster} />}
+        <TouchableOpacity 
+          onPress={() => handleImagePress(bigPosterUrl)} 
+          style={styles.posterContainer}>
+          {!isBigImageLoaded && <Image source={{ uri: smallPosterUrl }} style={styles.poster} />}
             <Image
               source={{ uri: bigPosterUrl }}
               style={[styles.poster, !isBigImageLoaded ? styles.posterBig : null]}
               onLoadEnd={() => setIsBigImageLoaded(true)}
             />
-          </View>
         </TouchableOpacity>
       </View>
     </>
@@ -43,11 +43,11 @@ const PosterViewer: React.FC<PosterViewerProps> = ({ bigImageUrl: bigPosterUrl, 
 
 const styles = StyleSheet.create({
   posterContainer: {
-    position: 'relative',
+    height: '100%',
   },
   poster: {
     width: '100%',
-    height: 300,
+    height: '100%',
   },
   posterBig: {
     position: 'absolute',
