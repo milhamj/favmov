@@ -7,7 +7,7 @@ import { fetchMovieDetails } from '../services/movieService';
 import { Result, Success } from '../model/apiResponse';
 import Toast from 'react-native-toast-message';
 import TopBar from '../components/TopBar';
-import PosterViewer from '../components/PosterViewer';
+import ImageViewer from '../components/ImageViewer';
 import { COLORS } from '../styles/colors'; 
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/navigationTypes';
@@ -49,14 +49,15 @@ const MovieDetail = () => {
       <ScrollView>
         {/* Poster Section */}
         <View style={styles.posterContainer}>
-          <PosterViewer 
+          <ImageViewer 
             style={styles.backdrop}
+            imageStyle={styles.posterImage}
             bigImageUrl={movie.bigBackdropUrl()} 
             smallImageUrl={movie.smallBackdropUrl()} />
-          <Image
-            source={{ uri: movie.smallPosterUrl() }}
+          <ImageViewer 
             style={styles.poster}
-          />
+            imageStyle={styles.posterImage}
+            smallImageUrl={movie.smallPosterUrl()} />
         </View>
         <View style={styles.detailsContainer}>
           {/* Top Section */}
@@ -155,6 +156,9 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'white',
     zIndex: 10,
+  },
+  posterImage: {
+    borderRadius: 12,
   },
   detailsContainer: {
     padding: 16,
