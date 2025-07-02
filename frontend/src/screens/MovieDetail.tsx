@@ -39,15 +39,12 @@ const MovieDetail = () => {
   }, [])
 
   const AddToCollectionButton = () => {
+    const handleFavoriteClick = () => {
+      navigation.navigate('AddToCollection', { movie });
+    }
+    
     return (
-      <TouchableOpacity style={styles.addToCollectionButton} onPress={() => Toast.show(
-        {
-          type: 'info',
-          text1: 'TADA',
-          text2: '[Under construction]',
-          position: 'bottom'
-        }
-      )}>
+      <TouchableOpacity style={styles.addToCollectionButton} onPress={handleFavoriteClick}>
         <Icon name="favorite-outline" size={24} color='white' />
       </TouchableOpacity>
     );
