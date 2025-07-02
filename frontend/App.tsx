@@ -3,6 +3,7 @@ import { Platform, ViewStyle } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Icon } from 'react-native-elements';
+import { RootStackParamList } from './src/navigation/navigationTypes';
 import Toast from 'react-native-toast-message';
 import Homepage from './src/screens/Homepage';
 import SearchPage from './src/screens/SearchPage';
@@ -10,8 +11,8 @@ import MovieDetail from './src/screens/MovieDetail';
 import LoginPage from './src/screens/LoginPage';
 import Collection from './src/screens/Collection';
 import ProfilePage from './src/screens/ProfilePage';
-import { RootStackParamList } from './src/navigation/navigationTypes';
 import CollectionDetail from './src/screens/CollectionDetail';
+import AddToCollection from './src/screens/AddToCollection';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -30,6 +31,7 @@ export default function App() {
           <Stack.Screen name="SearchPage" component={SearchPage} />
           <Stack.Screen name="MovieDetail" component={MovieDetail} />
           <Stack.Screen name="CollectionDetail" component={CollectionDetail} />
+          <Stack.Screen name="AddToCollection" component={AddToCollection} />
           <Stack.Screen name="Login" component={LoginPage} />
         </Stack.Navigator>
       </NavigationContainer>
