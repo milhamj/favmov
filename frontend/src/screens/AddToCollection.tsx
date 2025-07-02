@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, SafeAreaView, Modal, ActivityIndicator, Pressable, Image, TextInput, TouchableOpacity, View, Platform, Text } from 'react-native';
-import PageContainer from '../components/PageContainer';
+import { StyleSheet, SafeAreaView, Modal, ActivityIndicator, Pressable, Image, TextInput, TouchableOpacity, View, Platform, Text, FlatList } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/navigationTypes';
@@ -8,6 +7,7 @@ import { Movie } from '../model/movieModel';
 import { getUserCollections } from '../services/collectionService';
 import { Collection as CollectionModel } from '../model/collectionModel';
 import Toast from 'react-native-toast-message';
+import CollectionAddCard from '../components/CollectionAddCard';
 
 const AddToCollection = () => {
     const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'AddToCollection'>>();
@@ -47,6 +47,10 @@ const AddToCollection = () => {
     useEffect(() => {
         fetchCollections();
     }, []);
+
+    const renderCollection = ({ item }: { item: CollectionModel }) => (
+        <CollectionAddCard collection={item} />
+    )
 
     return (
         <SafeAreaView style={styles.container}>
@@ -94,7 +98,14 @@ const AddToCollection = () => {
                                     </TouchableOpacity>
                                 </View>
 
-                            ) : null
+                            ) : (
+                                <FlatList
+                                    data={collections}
+                                    renderItem={renderCollection}
+                                    keyExtractor={(item) => item.id.toString()}
+                                    contentContainerStyle={styles.listContent}
+                                />
+                            )
                         }
                     </View>
                     </Pressable>
@@ -178,6 +189,13 @@ const styles = StyleSheet.create({
       color: 'white',
       fontSize: 16,
       fontWeight: 'bold',
+    },
+    listContent: {
+        paddingVertical: 16,
+    },
+    columnWrapper: {
+        justifyContent: 'space-between',
+        marginBottom: 4,
     },
 })
 
