@@ -24,7 +24,8 @@ pnpm run web
 - [x] FE: Add activeTab param to Main stack navigation
 - [x] FE: Fix redirect before and after login
 - [x] FE: Fix logout
-- [ ] FE: Homepage - Add shimmering / loading state
+- [x] FE: Homepage - Add shimmering / loading state
+- [ ] FE: Bug - Main screen tab navigation using activeTab
 - [ ] FE: Search TV shows
 - [ ] BE: add movies to favorites (default collection)
 - [x] BE: create collection and add movies to it
