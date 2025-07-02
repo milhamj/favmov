@@ -323,6 +323,45 @@ exports.getCollectionMovies = asyncHandler(async (req, res) => {
   return successResponse(res, response, 'Collection movies retrieved successfully');
 });
 
+exports.checkMovieExistInCollection = asyncHandler(async (req, res) => {
+  const { collection_id, movie_or_tv_show_id } = req.params;
+  const is_tv_show  = req.query.is_tv_show === 'true';
+  const userId = req.user.id;
+
+  const { tableName: moviesCollectionsTable, error: moviesCollectionsTableError } = getTableName(MOVIES_COLLECTIONS);
+  if (moviesCollectionsTableError) {
+    console.error('Environment error:', moviesCollectionsTableError);
+    return errorResponse(res, moviesCollectionsTableError, 500);
+  }
+
+  const query = supabase
+  .from(moviesCollectionsTable)
+  .select(`*`)
+  .eq('collection_id', collection_id)
+  .eq('user_id', userId);
+
+  if (is_tv_show) {
+    query.eq('tv_show_id', movie_or_tv_show_id);
+  } else {
+    query.eq('movie_id', movie_or_tv_show_id);
+  }
+
+  const { data, error } = await query
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching collection movies:', error);
+    const debugMessage = error?.message
+    return errorResponse(res, 'Failed to fetch collection movies', 500, debugMessage);
+  }
+
+  const response = {
+    exist: data.length > 0
+  }
+
+  return successResponse(res, response, 'Collection movies retrieved successfully');
+});
+
 // Remove a movie from a collection
 exports.removeMovieFromCollection = asyncHandler(async (req, res) => {
   const { collection_id, movie_id } = req.params;

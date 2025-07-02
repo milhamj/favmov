@@ -6,6 +6,7 @@ const {
   getUserCollections,
   addMovieToCollection,
   getCollectionMovies,
+  checkMovieExistInCollection,
   removeMovieFromCollection,
   deleteCollection,
   validateCollection,
@@ -23,6 +24,7 @@ router.delete('/:collection_id', deleteCollection);
 // Movie in collection routes
 router.post('/:collection_id/movies', validateMovieToCollection, addMovieToCollection);
 router.get('/:collection_id/movies', getCollectionMovies);
+router.get('/:collection_id/check_exist/:movie_or_tv_show_id', checkMovieExistInCollection);
 router.delete('/:collection_id/movies/:movie_id', removeMovieFromCollection);
 
 module.exports = router;
