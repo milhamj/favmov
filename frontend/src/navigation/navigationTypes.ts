@@ -5,5 +5,6 @@ export type RootStackParamList = {
   MovieDetail: { movie: Movie };
   SearchPage: undefined;
   CollectionDetail: { collectionId: string };
+  AddToCollection: { movie: Movie };
   Login: undefined;
 };
