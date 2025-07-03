@@ -323,8 +323,8 @@ exports.getCollectionMovies = asyncHandler(async (req, res) => {
   return successResponse(res, response, 'Collection movies retrieved successfully');
 });
 
-exports.checkMovieExistInCollection = asyncHandler(async (req, res) => {
-  const { collection_id, movie_or_tv_show_id } = req.params;
+exports.getCheckMovieExistInCollection = asyncHandler(async (req, res) => {
+  const { movie_or_tv_show_id } = req.params;
   const is_tv_show  = req.query.is_tv_show === 'true';
   const userId = req.user.id;
 
@@ -337,7 +337,6 @@ exports.checkMovieExistInCollection = asyncHandler(async (req, res) => {
   const query = supabase
   .from(moviesCollectionsTable)
   .select(`*`)
-  .eq('collection_id', collection_id)
   .eq('user_id', userId);
 
   if (is_tv_show) {
@@ -346,20 +345,45 @@ exports.checkMovieExistInCollection = asyncHandler(async (req, res) => {
     query.eq('movie_id', movie_or_tv_show_id);
   }
 
-  const { data, error } = await query
+  const { data: moviesCollectionData, error: moviesCollectionError } = await query
     .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error('Error fetching collection movies:', error);
-    const debugMessage = error?.message
+  if (moviesCollectionError) {
+    console.error('Error fetching collection movies:', moviesCollectionError);
+    const debugMessage = moviesCollectionError?.message
     return errorResponse(res, 'Failed to fetch collection movies', 500, debugMessage);
   }
 
-  const response = {
-    exist: data.length > 0
+  const { tableName: collectionsTable, error: collectionsTableError } = getTableName(COLLECTIONS);
+  if (collectionsTableError) {
+    console.error('Environment error:', collectionsTableError);
+    return errorResponse(res, collectionsTableError, 500);
   }
 
-  return successResponse(res, response, 'Collection movies retrieved successfully');
+  const { data: collectionData, error: collectionError } = await supabase
+  .from(collectionsTable)
+  .select(`*`)
+  .eq('user_id', userId);
+
+  if (collectionError) {
+    console.error('Error fetching collection movies:', collectionError);
+    const debugMessage = collectionError?.message
+    return errorResponse(res, 'Failed to fetch collection movies', 500, debugMessage);
+  }
+
+  const response = [];
+  collectionData.forEach(collection => {
+    const isExist = moviesCollectionData.findIndex(
+      item => item.collection_id === collection.id
+    ) >= 0;
+    response.push({
+      collection_id: collection.id,
+      collection_name: collection.name,
+      exist: isExist
+    })
+  });
+
+  return successResponse(res, response, 'The movie/tv show has been checked successfully');
 });
 
 // Remove a movie from a collection
