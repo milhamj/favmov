@@ -146,9 +146,9 @@ const AddToCollection = () => {
                                 )
                             }
                         </View>
+                        <Toast />
                         </Pressable>
                     </Pressable>
-                    <Toast />
                 </Modal>
             </SafeAreaView> 
         : null

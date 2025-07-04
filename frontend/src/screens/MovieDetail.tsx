@@ -28,10 +28,13 @@ const MovieDetail = () => {
       ]);
 
       if (movieResult instanceof Success && collectionResult instanceof Success) {
-        // TODO milhamj: should still render movie detail even if collectionResult is error
         movieResult.data.collections = collectionResult.data
         setMovie(movieResult.data);
-      } else {
+      } if (movieResult instanceof Success) {
+        setMovie(movieResult.data);
+      }
+
+      if (movieResult instanceof Error || collectionResult instanceof Error) {
         const errorMessage = movieResult instanceof Error ? movieResult.message : collectionResult.message
         Toast.show({
           type: 'error',
