@@ -4,6 +4,8 @@ import Checkbox from 'expo-checkbox';
 import { CollectionCard } from '../model/collectionModel';
 import { deleteMovieFromCollection, postAddMovieToCollection } from '../services/collectionService';
 import { Movie } from '../model/movieModel';
+import { Error } from '../model/apiResponse';
+import Toast from 'react-native-toast-message';
 
 interface CollectionAddCardProps {
     collection: CollectionCard;
@@ -19,7 +21,12 @@ const CollectionAddCard = ({ collection, movie }: CollectionAddCardProps) => {
         if (value) {
             const response = await postAddMovieToCollection(collection.id.toString(), movie, movie.isTvShow || false);
             if (response instanceof Error) {
-                console.error('Error adding movie to collection:', response);
+                Toast.show({
+                    type: 'error',
+                    text1: 'Error',
+                    text2: response.message,
+                    position: 'bottom'
+                  });
             } else {
                 setIsSaved(!isSaved);
             }
@@ -27,7 +34,12 @@ const CollectionAddCard = ({ collection, movie }: CollectionAddCardProps) => {
         } else {
             const response = await deleteMovieFromCollection(collection.id.toString(), movie.id.toString(), movie.isTvShow || false);
             if (response instanceof Error) {
-                console.error('Error deleting movie from collection:', response);
+                Toast.show({
+                    type: 'error',
+                    text1: 'Error',
+                    text2: response.message,
+                    position: 'bottom'
+                  });
             } else {
                 setIsSaved(!isSaved);
             }

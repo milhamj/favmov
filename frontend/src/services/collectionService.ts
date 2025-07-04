@@ -133,7 +133,7 @@ export const postAddMovieToCollection = async (
 
     if (!response.data.success) {
       return new Error(
-        response.data.message || 'Failed to add movie to collection',
+        response.data.message || `Failed to add ${isTvShow ? "movie" : "tv show"} to the collection.`,
         response.data.status
       );
     }
@@ -156,11 +156,11 @@ export const postAddMovieToCollection = async (
       movieCollection.notes = response.data.data.notes;
     }
     
-    return new Success<MovieCollection>(movieCollection, 'Collection detail retrieved successfully');
+    return new Success<MovieCollection>(movieCollection, 'Movie has been added to the collection successfully.');
   } catch (error: any) {
-    console.error('Error fetching collection detail:', error);
+    console.error('Error removing movie from the collection:', error);
     return new Error(
-      error.response?.data?.message || 'Failed to fetch collection detail',
+      error.response?.data?.message || `Failed to add ${isTvShow ? "movie" : "tv show"} to the collection.`,
       error.response?.status
     );
   }
@@ -176,16 +176,16 @@ export const deleteMovieFromCollection = async (
     
     if (!response.data.success) {
       return new Error(
-        response.data.message || 'Failed to delete movie from collection',
+        response.data.message || `Failed to remove ${isTvShow ? "movie" : "tv show"} from the collection.`,
         response.data.status
       );
     }
     
-    return new Success<boolean>(true, 'Collection detail retrieved successfully');
+    return new Success<boolean>(true, 'Movie has been removed from the collection successfully.');
   } catch (error: any) {
-    console.error('Error fetching collection detail:', error);
+    console.error('Error removing movie from collection:', error);
     return new Error(
-      error.response?.data?.message || 'Failed to fetch collection detail',
+      error.response?.data?.message || `Failed to remove ${isTvShow ? "movie" : "tv show"} from the collection.`,
       error.response?.status
     );
   }
