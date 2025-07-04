@@ -4,7 +4,7 @@ import PageContainer  from '../components/PageContainer';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Movie } from '../model/movieModel';
 import { fetchMovieDetails } from '../services/movieService';
-import { Result, Success, Error } from '../model/apiResponse';
+import { Success, Error } from '../model/apiResponse';
 import Toast from 'react-native-toast-message';
 import TopBar from '../components/TopBar';
 import ImageViewer from '../components/ImageViewer';
@@ -13,7 +13,6 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/navigationTypes';
 import { Icon } from 'react-native-elements';
 import { getCheckMovieExistInCollection } from '../services/collectionService';
-import { Collection } from '../model/collectionModel';
 
 const MovieDetail = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'MovieDetail'>>();

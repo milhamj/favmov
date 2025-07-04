@@ -12,67 +12,6 @@ import MovieCard from '../components/MovieCard';
 
 const Homepage = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Main'>>();
-  
-  const defaultMovies: Movie[] = [];
-  const [trendingMovies, setTrendingMovies] = useState(defaultMovies);
-  const [trendingShows, setTrendingShows] = useState(defaultMovies);
-  const [popularMovies, setPopularMovies] = useState(defaultMovies);
-  const [favoriteMovies, setFavoriteMovies] = useState(null as Movie[] | null);
-
-  useEffect(() => {
-    const loadMovies = async () => {
-      // TODO milhamj make this parallel instead of sequential
-      const trendingMoviesResult: Result = await fetchTrendingMovies();
-      const trendingShowsResult: Result = await fetchTrendingShows();
-      const popularResult: Result = await fetchPopularMovies();
-      const favoritesResult: Result = await fetchFavoriteMovies();
-
-      if (trendingMoviesResult instanceof Success) {
-        setTrendingMovies(trendingMoviesResult.data);
-      } else {
-        Toast.show({
-          type: 'error',
-          text1: 'Error',
-          text2: trendingMoviesResult.message,
-          position: 'bottom'
-        });
-      }
-
-      if (trendingShowsResult instanceof Success) {
-        setTrendingShows(trendingShowsResult.data);
-      } else {
-        Toast.show({
-          type: 'error',
-          text1: 'Error',
-          text2: trendingShowsResult.message,
-          position: 'bottom'
-        });
-      }
-
-      if (popularResult instanceof Success) {
-        setPopularMovies(popularResult.data);
-      } else {
-        Toast.show({
-          type: 'error',
-          text1: 'Error',
-          text2: popularResult.message,
-          position: 'bottom'
-        });
-      }
-
-      if (favoritesResult instanceof Success) {
-        setFavoriteMovies(favoritesResult.data);
-      } else {
-        Toast.show({
-          type: 'error',
-          text1: 'Error',
-          text2: favoritesResult.message,
-          position: 'bottom'
-        });
-      }
-    };
-    loadMovies();
-  }, []);
 
   const renderMoviePoster = ({ item }: { item: Movie }) => (
     <View style={{ width: 120, marginEnd: 8 }}>
@@ -84,13 +23,62 @@ const Homepage = () => {
     
   );
 
-  const renderSection = (title: string, data: Movie[]) => (
-    <View style={styles.section}>
-      <Text style={styles.header}>{title}</Text>
+  const Section = {
+    TrendingMovies: 'Trending Movies',
+    TrendingShows: 'Trending TV Shows',
+    PopularMovies: 'Popular Movies',
+    YourFavorites: 'Your Favorites',
+  }
+
+  const renderSection = (sectionType: string) => {
+    const [movies, setMovies] = useState([] as Movie[] | null);
+    
+    useEffect(() => {
+      const loadMovieData = async () => {
+        let result: Result | null = null;
+        switch(sectionType) {
+          case Section.TrendingMovies:
+            result = await fetchTrendingMovies();
+            break;
+          case Section.TrendingShows:
+            result = await fetchTrendingShows();
+            break;
+          case Section.PopularMovies:
+            result = await fetchPopularMovies();
+            break;
+          case Section.YourFavorites:
+            result = await fetchFavoriteMovies();
+            break;
+          default:
+            return;
+        }
+        if (result == null){
+          setMovies(null)
+        } else if (result instanceof Success) {
+          setMovies(result.data);
+        } else {
+          setMovies(null);
+          Toast.show({
+            type: 'error',
+            text1: 'Error',
+            text2: result.message,
+            position: 'bottom'
+          });
+        }
+      }
+      loadMovieData();
+    }, []);
+
+    if (movies === null) {
+      return null;
+    }
+
+    return <View style={styles.section}>
+      <Text style={styles.header}>{sectionType}</Text>
       {
-        data.length > 0 ? (
+        movies.length > 0 ? (
           <FlatList
-            data={data}
+            data={movies}
             renderItem={renderMoviePoster}
             keyExtractor={(item) => item.id.toString()}
             horizontal
@@ -104,7 +92,7 @@ const Homepage = () => {
         )
       }
     </View>
-  );
+  };
 
   return (
     <View style={styles.container}>
@@ -115,10 +103,10 @@ const Homepage = () => {
         ]}
       />
       <ScrollView>
-        {renderSection('Trending Movies', trendingMovies)}
-        {renderSection('Trending TV Shows', trendingShows)}
-        {renderSection('Popular Movies', popularMovies)}
-        { favoriteMovies && renderSection('Your Favorites', favoriteMovies) }
+        {renderSection(Section.TrendingMovies)}
+        {renderSection(Section.TrendingShows)}
+        {renderSection(Section.PopularMovies)}
+        {renderSection(Section.YourFavorites) }
       </ScrollView>
       <Toast />
     </View>
