@@ -19,6 +19,7 @@ const MovieDetail = () => {
   const route = useRoute();
   const movieParams = (route.params as { movie: Movie }).movie;
 
+  // TODO milhamj: re-fetch the collection data after going back from AddToCollection
   const [movie, setMovie] = useState(movieParams);
   useEffect(() => {
     const loadData = async () => {
