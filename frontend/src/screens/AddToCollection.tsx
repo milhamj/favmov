@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, SafeAreaView, Modal, ActivityIndicator, Pressable, Image, TextInput, TouchableOpacity, View, Platform, Text, FlatList } from 'react-native';
+import { StyleSheet, ActivityIndicator, Image, TouchableOpacity, View, Text, FlatList, ScrollView } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/navigationTypes';
@@ -9,6 +9,8 @@ import { CollectionCard } from '../model/collectionModel';
 import Toast from 'react-native-toast-message';
 import CollectionAddCard from '../components/CollectionAddCard';
 import { Success } from '../model/apiResponse';
+import PageContainer from '../components/PageContainer';
+import TopBar from '../components/TopBar';
 
 const AddToCollection = () => {
     const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'AddToCollection'>>();
@@ -91,103 +93,56 @@ const AddToCollection = () => {
 
     return (
         shouldRender ? 
-            <SafeAreaView style={styles.container}>
-                <Modal
-                    visible={isModalVisible}
-                    transparent={true}
-                    animationType="fade"
-                    onRequestClose={handleClose}
-                >
-                    <Pressable 
-                        style={styles.overlay}
-                        onPress={handleClose}
-                    >
-                        <Pressable 
-                        style={styles.bottomSheet}
-                        onPress={(e) => {
-                            // Prevent closing when pressing on the bottom sheet itself
-                            e.stopPropagation();
-                        }}
-                        >
-                        <View style={styles.header}>
-                            <Text style={styles.title}>Add {shortTitle} to Collection</Text>
-                        </View>
-                        
-                        <View style={styles.content}>
-                            {
-                                isLoading ? (
-                                    <View style={styles.loadingContainer}>
-                                        <ActivityIndicator style={styles.loadingItem} size="large" color="tomato" />
-                                    </View>
-                                ) : collectionCards.length === 0 ? (
-                                    <View style={styles.emptyState}>
-                                        <Image 
-                                            source={require('../../assets/empty_search.png')} 
-                                            style={styles.emptyImage} 
-                                        />
-                                        <Text style={styles.emptyText}>
-                                            You don't have any collections yet.
-                                        </Text>
-                                        <TouchableOpacity 
-                                            style={styles.createButton}
-                                            onPress={handleCreateCollection}
-                                        >
-                                            <Text style={styles.createButtonText}>Create Collection</Text>
-                                        </TouchableOpacity>
-                                    </View>
+            <PageContainer>
+                <TopBar
+                    title= { `Add ${shortTitle} to Collection` }
+                    backButton={{
+                      isShow: true,
+                      onClick: () => navigation.goBack()
+                    }}
+                />
+                <ScrollView style={styles.content}>
+                    {
+                        isLoading ? (
+                            <View style={styles.loadingContainer}>
+                                <ActivityIndicator style={styles.loadingItem} size="large" color="tomato" />
+                            </View>
+                        ) : collectionCards.length === 0 ? (
+                            <View style={styles.emptyState}>
+                                <Image 
+                                    source={require('../../assets/empty_search.png')} 
+                                    style={styles.emptyImage} 
+                                />
+                                <Text style={styles.emptyText}>
+                                    You don't have any collections yet.
+                                </Text>
+                                <TouchableOpacity 
+                                    style={styles.createButton}
+                                    onPress={handleCreateCollection}
+                                >
+                                    <Text style={styles.createButtonText}>Create Collection</Text>
+                                </TouchableOpacity>
+                            </View>
 
-                                ) : (
-                                    <FlatList
-                                        data={collectionCards}
-                                        renderItem={renderCollection}
-                                        keyExtractor={(item) => item.id.toString()}
-                                        contentContainerStyle={styles.listContent}
-                                    />
-                                )
-                            }
-                        </View>
-                        <Toast />
-                        </Pressable>
-                    </Pressable>
-                </Modal>
-            </SafeAreaView> 
+                        ) : (
+                            <FlatList
+                                data={collectionCards}
+                                renderItem={renderCollection}
+                                keyExtractor={(item) => item.id.toString()}
+                                contentContainerStyle={styles.listContent}
+                            />
+                        )
+                    }
+                </ScrollView>
+                <Toast />
+            </PageContainer> 
         : null
     )
 }
 
 const styles = StyleSheet.create({
-    container: {
-        backgroundColor: 'rgba(0, 0, 0, 0)'
-    },
-    overlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'flex-end',
-    },
-    bottomSheet: {
-        backgroundColor: 'white',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        paddingBottom: Platform.OS === 'ios' ? 30 : 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: -3 },
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
-        elevation: 10,
-    },
-    header: {
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
-        paddingVertical: 15,
-        paddingHorizontal: 20,
-    },
-    title: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#333',
-    },
     content: {
-        padding: 20,
+        padding: 16,
     },
     loadingContainer: {
       flex: 1,
@@ -231,7 +186,7 @@ const styles = StyleSheet.create({
       fontWeight: 'bold',
     },
     listContent: {
-        paddingVertical: 16,
+        paddingBottom: 16,
     },
     columnWrapper: {
         justifyContent: 'space-between',
