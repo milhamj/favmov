@@ -376,11 +376,12 @@ exports.getCheckMovieExistInCollection = asyncHandler(async (req, res) => {
     const isExist = moviesCollectionData.findIndex(
       item => item.collection_id === collection.id
     ) >= 0;
-    response.push({
-      collection_id: collection.id,
-      collection_name: collection.name,
-      exist: isExist
-    })
+    if (isExist) {
+      response.push({
+        collection_id: collection.id,
+        collection_name: collection.name
+      })
+    }
   });
 
   return successResponse(res, response, 'The movie/tv show has been checked successfully');

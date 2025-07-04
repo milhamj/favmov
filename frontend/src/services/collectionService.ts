@@ -97,3 +97,21 @@ export const getCollectionDetail = async (id: string): Promise<Success<Collectio
     );
   }
 };
+
+export const getCheckMovieExistInCollection = async (movieId: string, isTvShow: boolean): Promise<Success<Collection[]> | Error> => {
+  try {
+    const response = await backendClient.get(`/collections/check_exist/${movieId}?is_tv_show=${isTvShow}`);
+    
+    const collections = response.data.data.map((item: any) => {
+      return transformCollectionData(item);
+    });
+    
+    return new Success<Collection[]>(collections, 'Collection detail retrieved successfully');
+  } catch (error: any) {
+    console.error('Error fetching collection detail:', error);
+    return new Error(
+      error.response?.data?.message || 'Failed to fetch collection detail',
+      error.response?.status
+    );
+  }
+};

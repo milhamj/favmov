@@ -18,6 +18,21 @@ const AddToCollection = () => {
     const [collections, setCollections] = useState<CollectionModel[]>([]);
     const [isModalVisible, setIsModalVisible] = useState(true);
     const [isLoading, setIsLoading] = useState(true);
+    const [shouldRender, setShouldRender] = useState(false);
+
+    useEffect(() => {
+        if (!movieParams.collections) {
+            Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: 'Movie collections are needed',
+                position: 'bottom'
+            });
+            navigation.goBack();
+        } else {
+            setShouldRender(true);
+        }
+    }, []);
 
     const handleClose = () => {
         setIsModalVisible(false);
@@ -48,70 +63,76 @@ const AddToCollection = () => {
         fetchCollections();
     }, []);
 
-    const renderCollection = ({ item }: { item: CollectionModel }) => (
-        <CollectionAddCard collection={item} />
-    )
+    const renderCollection = ({ item }: { item: CollectionModel }) => {
+        const isInCollection = movieParams.collections?.find((collection) => collection.id === item.id) !== undefined;
+
+        return (
+            <CollectionAddCard collection={item} movie={movieParams} isInCollection={isInCollection}/>
+        )
+    }
 
     return (
-        <SafeAreaView style={styles.container}>
-            <Modal
-                visible={isModalVisible}
-                transparent={true}
-                animationType="fade"
-                onRequestClose={handleClose}
-            >
-                <Pressable 
-                    style={styles.overlay}
-                    onPress={handleClose}
+        shouldRender ? 
+            <SafeAreaView style={styles.container}>
+                <Modal
+                    visible={isModalVisible}
+                    transparent={true}
+                    animationType="fade"
+                    onRequestClose={handleClose}
                 >
                     <Pressable 
-                    style={styles.bottomSheet}
-                    onPress={(e) => {
-                        // Prevent closing when pressing on the bottom sheet itself
-                        e.stopPropagation();
-                    }}
+                        style={styles.overlay}
+                        onPress={handleClose}
                     >
-                    <View style={styles.header}>
-                        <Text style={styles.title}>Add {shortTitle} to Collection</Text>
-                    </View>
-                    
-                    <View style={styles.content}>
-                        {
-                            isLoading ? (
-                                <View style={styles.loadingContainer}>
-                                    <ActivityIndicator style={styles.loadingItem} size="large" color="tomato" />
-                                </View>
-                            ) : collections.length === 0 ? (
-                                <View style={styles.emptyState}>
-                                    <Image 
-                                        source={require('../../assets/empty_search.png')} 
-                                        style={styles.emptyImage} 
-                                    />
-                                    <Text style={styles.emptyText}>
-                                        You don't have any collections yet.
-                                    </Text>
-                                    <TouchableOpacity 
-                                        style={styles.createButton}
-                                        onPress={handleCreateCollection}
-                                    >
-                                        <Text style={styles.createButtonText}>Create Collection</Text>
-                                    </TouchableOpacity>
-                                </View>
+                        <Pressable 
+                        style={styles.bottomSheet}
+                        onPress={(e) => {
+                            // Prevent closing when pressing on the bottom sheet itself
+                            e.stopPropagation();
+                        }}
+                        >
+                        <View style={styles.header}>
+                            <Text style={styles.title}>Add {shortTitle} to Collection</Text>
+                        </View>
+                        
+                        <View style={styles.content}>
+                            {
+                                isLoading ? (
+                                    <View style={styles.loadingContainer}>
+                                        <ActivityIndicator style={styles.loadingItem} size="large" color="tomato" />
+                                    </View>
+                                ) : collections.length === 0 ? (
+                                    <View style={styles.emptyState}>
+                                        <Image 
+                                            source={require('../../assets/empty_search.png')} 
+                                            style={styles.emptyImage} 
+                                        />
+                                        <Text style={styles.emptyText}>
+                                            You don't have any collections yet.
+                                        </Text>
+                                        <TouchableOpacity 
+                                            style={styles.createButton}
+                                            onPress={handleCreateCollection}
+                                        >
+                                            <Text style={styles.createButtonText}>Create Collection</Text>
+                                        </TouchableOpacity>
+                                    </View>
 
-                            ) : (
-                                <FlatList
-                                    data={collections}
-                                    renderItem={renderCollection}
-                                    keyExtractor={(item) => item.id.toString()}
-                                    contentContainerStyle={styles.listContent}
-                                />
-                            )
-                        }
-                    </View>
+                                ) : (
+                                    <FlatList
+                                        data={collections}
+                                        renderItem={renderCollection}
+                                        keyExtractor={(item) => item.id.toString()}
+                                        contentContainerStyle={styles.listContent}
+                                    />
+                                )
+                            }
+                        </View>
+                        </Pressable>
                     </Pressable>
-                </Pressable>
-            </Modal>
-        </SafeAreaView>
+                </Modal>
+            </SafeAreaView> 
+        : null
     )
 }
 

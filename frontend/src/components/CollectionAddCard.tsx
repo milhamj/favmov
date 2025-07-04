@@ -1,15 +1,20 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { TouchableOpacity, Text, StyleSheet, Dimensions, View, ActivityIndicator } from 'react-native';
 import Checkbox from 'expo-checkbox';
 import { Collection } from '../model/collectionModel';
+import { getCheckMovieExistInCollection } from '../services/collectionService';
+import { Movie } from '../model/movieModel';
+import { Success } from '../model/apiResponse';
 
 interface CollectionAddCardProps {
     collection: Collection;
+    movie: Movie;
+    isInCollection: boolean;
 }
 
-const CollectionAddCard = ({ collection }: CollectionAddCardProps) => {
+const CollectionAddCard = ({ collection, movie, isInCollection }: CollectionAddCardProps) => {
     const [isLoading, setIsLoading] = useState(false);
-    const [isSaved, setIsSaved] = useState(false);
+    const [isSaved, setIsSaved] = useState(isInCollection);
 
     const handleAddToCollection = async (value: boolean) => {
         setIsLoading(true);

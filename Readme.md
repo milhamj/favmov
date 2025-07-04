@@ -25,6 +25,7 @@ pnpm run web
 - [x] FE: Fix redirect before and after login
 - [x] FE: Fix logout
 - [x] FE: Homepage - Add shimmering / loading state
+- [ ] FE: All pages - Handle error states
 - [ ] FE: Bug - Main screen tab navigation using activeTab
 - [ ] FE: Search TV shows
 - [ ] BE: add movies to favorites (default collection)

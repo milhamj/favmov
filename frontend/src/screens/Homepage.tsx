@@ -21,6 +21,7 @@ const Homepage = () => {
 
   useEffect(() => {
     const loadMovies = async () => {
+      // TODO milhamj make this parallel instead of sequential
       const trendingMoviesResult: Result = await fetchTrendingMovies();
       const trendingShowsResult: Result = await fetchTrendingShows();
       const popularResult: Result = await fetchPopularMovies();

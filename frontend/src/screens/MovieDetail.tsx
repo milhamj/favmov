@@ -4,7 +4,7 @@ import PageContainer  from '../components/PageContainer';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Movie } from '../model/movieModel';
 import { fetchMovieDetails } from '../services/movieService';
-import { Result, Success } from '../model/apiResponse';
+import { Result, Success, Error } from '../model/apiResponse';
 import Toast from 'react-native-toast-message';
 import TopBar from '../components/TopBar';
 import ImageViewer from '../components/ImageViewer';
@@ -12,6 +12,8 @@ import { COLORS } from '../styles/colors';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/navigationTypes';
 import { Icon } from 'react-native-elements';
+import { getCheckMovieExistInCollection } from '../services/collectionService';
+import { Collection } from '../model/collectionModel';
 
 const MovieDetail = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'MovieDetail'>>();
@@ -19,24 +21,29 @@ const MovieDetail = () => {
   const movieParams = (route.params as { movie: Movie }).movie;
 
   const [movie, setMovie] = useState(movieParams);
-
   useEffect(() => {
-    const loadMovieDetails = async () => {
-      const result: Result = await fetchMovieDetails(movie.id.toString(), movie.isTvShow);
+    const loadData = async () => {
+      const [movieResult, collectionResult] = await Promise.all([
+        fetchMovieDetails(movie.id.toString(), movie.isTvShow),
+        getCheckMovieExistInCollection(movie.id.toString(), movie.isTvShow || false),
+      ]);
 
-      if (result instanceof Success) {
-        setMovie(result.data);
+      if (movieResult instanceof Success && collectionResult instanceof Success) {
+        movieResult.data.collections = collectionResult.data
+        setMovie(movieResult.data);
       } else {
+        const errorMessage = movieResult instanceof Error ? movieResult.message : collectionResult.message
         Toast.show({
           type: 'error',
           text1: 'Error',
-          text2: result.message,
+          text2: errorMessage,
           position: 'bottom'
         });
       }
     };
-    loadMovieDetails();
-  }, [])
+
+    loadData();
+  }, []);
 
   const AddToCollectionButton = () => {
     const handleFavoriteClick = () => {
@@ -44,9 +51,11 @@ const MovieDetail = () => {
     }
     
     return (
-      <TouchableOpacity style={styles.addToCollectionButton} onPress={handleFavoriteClick}>
-        <Icon name="favorite-outline" size={24} color='white' />
-      </TouchableOpacity>
+        movie.collections !== undefined ? (
+          <TouchableOpacity style={styles.addToCollectionButton} onPress={handleFavoriteClick}>
+            <Icon name={movie.collections.length > 0 ? "favorite" : "favorite-outline"} size={24} color='white' />
+          </TouchableOpacity>
+        ) : null
     );
   };
 

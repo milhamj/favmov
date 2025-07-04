@@ -1,4 +1,5 @@
 import { TMDB_IMAGE_BIG, TMDB_IMAGE_SMALL } from '../services/tmdbClient';
+import { Collection } from './collectionModel';
 
 const DEFAULT_MOVIE_POSTER = "https://gdlqv951tx.ufs.sh/f/C0k8wbELmJeDMbBjukx0ikxGAuhtN0IpoKq6Y8bXU5ERDZla";
 
@@ -18,6 +19,7 @@ export class Movie {
     isTvShow?: boolean;
     collectionNotes?: string;
     collectionAddTime?: number;
+    collections?: Collection[];
 
     constructor(id: number, title: string, posterPath: string) {
         this.id = id;
