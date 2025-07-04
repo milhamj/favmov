@@ -390,6 +390,7 @@ exports.getCheckMovieExistInCollection = asyncHandler(async (req, res) => {
 // Remove a movie from a collection
 exports.removeMovieFromCollection = asyncHandler(async (req, res) => {
   const { collection_id, movie_id } = req.params;
+  const is_tv_show  = req.query.is_tv_show === 'true';
   const userId = req.user.id; // Assuming user ID is available from auth middleware
 
   const { tableName: collectionsTable, error: collectionsTableError } = getTableName(COLLECTIONS);
@@ -416,13 +417,43 @@ exports.removeMovieFromCollection = asyncHandler(async (req, res) => {
     return errorResponse(res, moviesCollectionsTableError, 500);
   }
 
-  // Remove movie from collection
-  const { error } = await supabase
-    .from(moviesCollectionsTable)
-    .delete()
+  // Check whether the movie exists in the collection
+  const selectQuery = supabase.from(moviesCollectionsTable)
+    .select('*')
     .eq('collection_id', collection_id)
-    .eq('movie_id', movie_id)
     .eq('user_id', userId);
+
+  if (is_tv_show) {
+    selectQuery.eq('tv_show_id', movie_id);
+  } else {
+    selectQuery.eq('movie_id', movie_id);
+  }
+
+  const { data: selectData, error: selectError } = await selectQuery
+
+  if (selectError) {
+    console.error('Error fetching collection movies:', selectError);
+    const debugMessage = selectError?.message
+    return errorResponse(res, 'Failed to fetch collection movies', 500, debugMessage);
+  }
+
+  if (selectData.length === 0) {
+    return errorResponse(res, is_tv_show ? 'TV Show' : 'Movie' + ' not found in collection.', 400);
+  }
+
+  // Remove movie from collection
+  const query = supabase.from(moviesCollectionsTable)
+  .delete()
+  .eq('collection_id', collection_id)
+  .eq('user_id', userId);
+  
+  if (is_tv_show) {
+    query.eq('tv_show_id', movie_id);
+  } else {
+    query.eq('movie_id', movie_id);
+  }
+
+  const { error } = await query;
 
   if (error) {
     console.error('Error removing movie from collection:', error);
@@ -430,7 +461,11 @@ exports.removeMovieFromCollection = asyncHandler(async (req, res) => {
     return errorResponse(res, 'Failed to remove movie from collection', 500, debugMessage);
   }
 
-  return successResponse(res, null, 'Movie removed from collection successfully');
+  const response = {
+    is_success: true
+  }
+
+  return successResponse(res, response, 'Movie removed from collection successfully');
 });
 
 // Delete a collection
@@ -487,5 +522,9 @@ exports.deleteCollection = asyncHandler(async (req, res) => {
     return errorResponse(res, 'Failed to delete collection', 500, debugMessage);
   }
 
-  return successResponse(res, null, 'Collection deleted successfully');
+  const response = {
+    is_success: true
+  }
+
+  return successResponse(res, response, 'Collection deleted successfully');
 });
