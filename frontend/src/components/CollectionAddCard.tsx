@@ -1,27 +1,38 @@
-import React, { useEffect, useState } from 'react';
-import { TouchableOpacity, Text, StyleSheet, Dimensions, View, ActivityIndicator } from 'react-native';
+import React, { useState } from 'react';
+import { Text, StyleSheet, View, ActivityIndicator } from 'react-native';
 import Checkbox from 'expo-checkbox';
-import { Collection } from '../model/collectionModel';
-import { getCheckMovieExistInCollection } from '../services/collectionService';
+import { CollectionCard } from '../model/collectionModel';
+import { deleteMovieFromCollection, postAddMovieToCollection } from '../services/collectionService';
 import { Movie } from '../model/movieModel';
-import { Success } from '../model/apiResponse';
 
 interface CollectionAddCardProps {
-    collection: Collection;
+    collection: CollectionCard;
     movie: Movie;
-    isInCollection: boolean;
 }
 
-const CollectionAddCard = ({ collection, movie, isInCollection }: CollectionAddCardProps) => {
+const CollectionAddCard = ({ collection, movie }: CollectionAddCardProps) => {
     const [isLoading, setIsLoading] = useState(false);
-    const [isSaved, setIsSaved] = useState(isInCollection);
+    const [isSaved, setIsSaved] = useState(collection.isInCollection);
 
     const handleAddToCollection = async (value: boolean) => {
         setIsLoading(true);
-        setTimeout(() => {
+        if (value) {
+            const response = await postAddMovieToCollection(collection.id.toString(), movie, movie.isTvShow || false);
+            if (response instanceof Error) {
+                console.error('Error adding movie to collection:', response);
+            } else {
+                setIsSaved(!isSaved);
+            }
             setIsLoading(false);
-            setIsSaved(!isSaved);
-        }, 2000);
+        } else {
+            const response = await deleteMovieFromCollection(collection.id.toString(), movie.id.toString(), movie.isTvShow || false);
+            if (response instanceof Error) {
+                console.error('Error deleting movie from collection:', response);
+            } else {
+                setIsSaved(!isSaved);
+            }
+            setIsLoading(false);
+        }
     }
 
     return (

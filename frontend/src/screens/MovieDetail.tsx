@@ -28,6 +28,7 @@ const MovieDetail = () => {
       ]);
 
       if (movieResult instanceof Success && collectionResult instanceof Success) {
+        // TODO milhamj: should still render movie detail even if collectionResult is error
         movieResult.data.collections = collectionResult.data
         setMovie(movieResult.data);
       } else {

@@ -2,6 +2,7 @@ import { Collection } from '../model/collectionModel';
 import { Success, Error } from '../model/apiResponse';
 import backendClient from './backendClient';
 import { Movie } from '../model/movieModel';
+import { MovieCollection } from '../model/movieCollectionModel';
 
 const transformCollectionData = (data: any): Collection => {
   const collection = new Collection(
@@ -101,12 +102,86 @@ export const getCollectionDetail = async (id: string): Promise<Success<Collectio
 export const getCheckMovieExistInCollection = async (movieId: string, isTvShow: boolean): Promise<Success<Collection[]> | Error> => {
   try {
     const response = await backendClient.get(`/collections/check_exist/${movieId}?is_tv_show=${isTvShow}`);
-    
     const collections = response.data.data.map((item: any) => {
-      return transformCollectionData(item);
+      return new Collection(item.collection_id, item.collection_name);
     });
     
     return new Success<Collection[]>(collections, 'Collection detail retrieved successfully');
+  } catch (error: any) {
+    console.error('Error fetching collection detail:', error);
+    return new Error(
+      error.response?.data?.message || 'Failed to fetch collection detail',
+      error.response?.status
+    );
+  }
+};
+
+export const postAddMovieToCollection = async (
+  collectionId: string, 
+  movie: Movie, 
+  isTvShow: boolean
+): Promise<Success<MovieCollection> | Error> => {
+  try {
+    const response = await backendClient.post(`/collections/${collectionId}/movies?is_tv_show=${isTvShow}`, {
+      movie_id: movie.id,
+      title: movie.title,
+      poster_path: movie.posterPath,
+      rating: movie.rating,
+      rating_count: movie.ratingCount,
+      is_tv_show: isTvShow,
+    });
+
+    if (!response.data.success) {
+      return new Error(
+        response.data.message || 'Failed to add movie to collection',
+        response.data.status
+      );
+    }
+    
+    const movieCollection = new MovieCollection(
+      response.data.data.id,
+      response.data.data.user_id,
+      response.data.data.collection_id,
+      new Date(response.data.data.created_at).getTime(),
+      response.data.data.is_tv_show,
+    );
+
+    if (isTvShow) {
+      movieCollection.tvShowId = response.data.data.tv_show_id;
+    } else {
+      movieCollection.movieId = response.data.data.movie_id;
+    }
+
+    if (response.data.data.notes) {
+      movieCollection.notes = response.data.data.notes;
+    }
+    
+    return new Success<MovieCollection>(movieCollection, 'Collection detail retrieved successfully');
+  } catch (error: any) {
+    console.error('Error fetching collection detail:', error);
+    return new Error(
+      error.response?.data?.message || 'Failed to fetch collection detail',
+      error.response?.status
+    );
+  }
+};
+
+export const deleteMovieFromCollection = async (
+  collectionId: string, 
+  movieId: string, 
+  isTvShow: boolean
+): Promise<Success<boolean> | Error> => {
+  try {
+    const response = await backendClient.delete(`/collections/${collectionId}/movies/${movieId}?is_tv_show=${isTvShow}`);
+    
+    if (!response.data.success) {
+      return new Error(
+        response.data.message || 'Failed to delete movie from collection',
+        response.data.status
+      );
+    }
+    
+    return new Success<boolean>(true, 'Collection detail retrieved successfully');
   } catch (error: any) {
     console.error('Error fetching collection detail:', error);
     return new Error(

@@ -14,3 +14,12 @@ export class Collection {
     this.name = name;
   }
 }
+
+export class CollectionCard extends Collection {
+  isInCollection: boolean
+
+  constructor(id: number, name: string, isInCollection: boolean) {
+      super(id, name)
+      this.isInCollection = isInCollection;
+  }
+}

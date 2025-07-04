@@ -5,9 +5,10 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/navigationTypes';
 import { Movie } from '../model/movieModel';
 import { getUserCollections } from '../services/collectionService';
-import { Collection as CollectionModel } from '../model/collectionModel';
+import { CollectionCard } from '../model/collectionModel';
 import Toast from 'react-native-toast-message';
 import CollectionAddCard from '../components/CollectionAddCard';
+import { Success } from '../model/apiResponse';
 
 const AddToCollection = () => {
     const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'AddToCollection'>>();
@@ -15,7 +16,7 @@ const AddToCollection = () => {
     const movieParams = (route.params as { movie: Movie }).movie;
     const shortTitle = movieParams.title.length > 20 ? movieParams.title.substring(0,20) + "..." : movieParams.title;
 
-    const [collections, setCollections] = useState<CollectionModel[]>([]);
+    const [collectionCards, setCollectionCards] = useState<CollectionCard[]>([]);
     const [isModalVisible, setIsModalVisible] = useState(true);
     const [isLoading, setIsLoading] = useState(true);
     const [shouldRender, setShouldRender] = useState(false);
@@ -46,15 +47,31 @@ const AddToCollection = () => {
     const fetchCollections = async () => {
         setIsLoading(true);
         const result = await getUserCollections();
-        if ('data' in result) {
-          setCollections(result.data);
+        if (result instanceof Success) {
+            const collectionCardsResult = [] as CollectionCard[];
+            result.data.forEach((collection) => {
+                const isInCollection = movieParams.collections?.find((movieCollection) => { 
+                    return movieCollection.id === collection.id
+                }) !== undefined;
+                collectionCardsResult.push(new CollectionCard(collection.id, collection.name, isInCollection));
+            })
+            collectionCardsResult.sort((a, b) => {
+                if (a.isInCollection && !b.isInCollection) {
+                    return -1;
+                } else if (!a.isInCollection && b.isInCollection) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            })
+            setCollectionCards(collectionCardsResult);
         } else {
-          Toast.show({
-            type: 'error',
-            text1: 'Error',
-            text2: result.message,
-            position: 'bottom'
-          });
+            Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: result.message,
+                position: 'bottom'
+            });
         }
         setIsLoading(false);
     };
@@ -63,11 +80,12 @@ const AddToCollection = () => {
         fetchCollections();
     }, []);
 
-    const renderCollection = ({ item }: { item: CollectionModel }) => {
-        const isInCollection = movieParams.collections?.find((collection) => collection.id === item.id) !== undefined;
-
+    const renderCollection = ({ item }: { item: CollectionCard }) => {
+        const isInCollection = movieParams.collections?.find((collection) => { 
+            return collection.id === item.id
+        }) !== undefined;
         return (
-            <CollectionAddCard collection={item} movie={movieParams} isInCollection={isInCollection}/>
+            <CollectionAddCard collection={item} movie={movieParams}/>
         )
     }
 
@@ -101,7 +119,7 @@ const AddToCollection = () => {
                                     <View style={styles.loadingContainer}>
                                         <ActivityIndicator style={styles.loadingItem} size="large" color="tomato" />
                                     </View>
-                                ) : collections.length === 0 ? (
+                                ) : collectionCards.length === 0 ? (
                                     <View style={styles.emptyState}>
                                         <Image 
                                             source={require('../../assets/empty_search.png')} 
@@ -120,7 +138,7 @@ const AddToCollection = () => {
 
                                 ) : (
                                     <FlatList
-                                        data={collections}
+                                        data={collectionCards}
                                         renderItem={renderCollection}
                                         keyExtractor={(item) => item.id.toString()}
                                         contentContainerStyle={styles.listContent}
