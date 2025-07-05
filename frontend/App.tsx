@@ -5,14 +5,14 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { Icon } from 'react-native-elements';
 import { RootStackParamList } from './src/navigation/navigationTypes';
 import Toast from 'react-native-toast-message';
-import Homepage from './src/screens/Homepage';
+import HomePage from './src/screens/Homepage';
 import SearchPage from './src/screens/SearchPage';
-import MovieDetail from './src/screens/MovieDetail';
+import MovieDetailPage from './src/screens/MovieDetailPage';
 import LoginPage from './src/screens/LoginPage';
-import Collection from './src/screens/Collection';
+import CollectionPage from './src/screens/CollectionPage';
 import ProfilePage from './src/screens/ProfilePage';
-import CollectionDetail from './src/screens/CollectionDetail';
-import AddToCollection from './src/screens/AddToCollection';
+import CollectionDetailPage from './src/screens/CollectionDetail';
+import AddToCollectionPage from './src/screens/AddToCollectionPage';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -27,12 +27,12 @@ export default function App() {
     <>
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false, cardStyle: cardStyle, }}>
-          <Stack.Screen name="Main" component={MainTabs} />
+          <Stack.Screen name="MainPage" component={MainTabs} />
           <Stack.Screen name="SearchPage" component={SearchPage} />
-          <Stack.Screen name="MovieDetail" component={MovieDetail} />
-          <Stack.Screen name="CollectionDetail" component={CollectionDetail} />
-          <Stack.Screen name="AddToCollection" component={AddToCollection} />
-          <Stack.Screen name="Login" component={LoginPage} />
+          <Stack.Screen name="MovieDetailPage" component={MovieDetailPage} />
+          <Stack.Screen name="CollectionDetailPage" component={CollectionDetailPage} />
+          <Stack.Screen name="AddToCollectionPage" component={AddToCollectionPage} />
+          <Stack.Screen name="LoginPage" component={LoginPage} />
         </Stack.Navigator>
       </NavigationContainer>
       <Toast />
@@ -40,7 +40,7 @@ export default function App() {
   );
 }
 
-type MainTabsRouteProp = RouteProp<RootStackParamList, 'Main'>;
+type MainTabsRouteProp = RouteProp<RootStackParamList, 'MainPage'>;
 
 const MainTabs = () => {
   const route = useRoute<MainTabsRouteProp>();
@@ -52,11 +52,11 @@ const MainTabs = () => {
       screenOptions={({ route }) => ({
         tabBarIcon: ({ color, size }) => {
           let iconName: string = 'home';
-          if (route.name === 'Home') {
+          if (route.name === 'HomePage') {
             iconName = 'home';
-          } else if (route.name === 'Collection') {
+          } else if (route.name === 'CollectionPage') {
             iconName = 'collections';
-          } else if (route.name === 'Profile') {
+          } else if (route.name === 'ProfilePage') {
             iconName = 'person';
           }
           return <Icon name={iconName} color={color} size={size} />;
@@ -66,9 +66,9 @@ const MainTabs = () => {
         headerShown: false,
       })}
     >
-      <Tab.Screen name="Home" component={Homepage} />
-      <Tab.Screen name="Collection" component={Collection} />
-      <Tab.Screen name="Profile" component={ProfilePage} />
+      <Tab.Screen name="HomePage" component={HomePage} />
+      <Tab.Screen name="CollectionPage" component={CollectionPage} />
+      <Tab.Screen name="ProfilePage" component={ProfilePage} />
     </Tab.Navigator>
   );
 }

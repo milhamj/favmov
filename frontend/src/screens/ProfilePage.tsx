@@ -19,7 +19,7 @@ import Toast from 'react-native-toast-message';
 import withAuth from '../components/withAuth';
 
 const ProfilePage = withAuth(() => {
-  const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Main'>>();
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'MainPage'>>();
   const { user } = useAuth();
 
   const handleLogout = async () => {
@@ -39,8 +39,8 @@ const ProfilePage = withAuth(() => {
             index: 0,
             routes: [
                 { 
-                    name: 'Main',
-                    params: { activeTab: 'Home' }
+                    name: 'MainPage',
+                    params: { activeTab: 'HomePage' }
                 }
             ]
         });

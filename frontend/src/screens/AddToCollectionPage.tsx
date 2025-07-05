@@ -12,8 +12,8 @@ import { Success } from '../model/apiResponse';
 import PageContainer from '../components/PageContainer';
 import TopBar from '../components/TopBar';
 
-const AddToCollection = () => {
-    const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'AddToCollection'>>();
+const AddToCollectionPage = () => {
+    const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'AddToCollectionPage'>>();
     const route = useRoute();
     const movieParams = (route.params as { movie: Movie }).movie;
     const shortTitle = movieParams.title.length > 20 ? movieParams.title.substring(0,20) + "..." : movieParams.title;
@@ -43,7 +43,7 @@ const AddToCollection = () => {
     }
 
     const handleCreateCollection = () => {
-        navigation.navigate('Main', { activeTab: 'Collection'})
+        navigation.navigate('MainPage', { activeTab: 'CollectionPage'})
     }
 
     const fetchCollections = async () => {
@@ -194,4 +194,4 @@ const styles = StyleSheet.create({
     },
 })
 
-export default AddToCollection;
+export default AddToCollectionPage;

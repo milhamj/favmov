@@ -10,14 +10,14 @@ import Toast from 'react-native-toast-message';
 import { RootStackParamList } from '../navigation/navigationTypes';
 import MovieCard from '../components/MovieCard';
 
-const Homepage = () => {
-  const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Main'>>();
+const HomePage = () => {
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'MainPage'>>();
 
   const renderMoviePoster = ({ item }: { item: Movie }) => (
     <View style={{ width: 120, marginEnd: 8 }}>
       <MovieCard 
         movie={item} 
-        onClick={() => navigation.navigate('MovieDetail', { movie: item })}
+        onClick={() => navigation.navigate('MovieDetailPage', { movie: item })}
       />
     </View>
     
@@ -138,4 +138,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Homepage;
+export default HomePage;

@@ -53,7 +53,7 @@ const SearchPage = () => {
         }}>
             <MovieCard 
                 movie={item}
-                onClick={() => navigation.navigate('MovieDetail', { movie: item })} 
+                onClick={() => navigation.navigate('MovieDetailPage', { movie: item })} 
             />
         </View>
     );

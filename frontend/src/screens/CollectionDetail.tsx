@@ -15,8 +15,8 @@ import { View, StyleSheet, Text, ActivityIndicator, Image, TouchableOpacity, Fla
 import { COLORS } from '../styles/colors';
 import MovieCard from '../components/MovieCard';
 
-const CollectionDetail = withAuth(() => {
-    const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'CollectionDetail'>>();
+const CollectionDetailPage = withAuth(() => {
+    const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'CollectionDetailPage'>>();
     const route = useRoute();
     const collectionId = (route.params as { collectionId: string }).collectionId;
     const [collection, setCollection] = useState(null as Collection | null);
@@ -49,7 +49,7 @@ const CollectionDetail = withAuth(() => {
     const renderMovieItem = ({ item, index }: { item: Movie, index: number }) => (
         <TouchableOpacity 
         style={[styles.movieCard, { marginRight: index % 2 === 0 ? 16 : 0 }]}
-        onPress={() => navigation.navigate('MovieDetail', { movie: item })} 
+        onPress={() => navigation.navigate('MovieDetailPage', { movie: item })} 
         >
             <MovieCard 
                 movie={item}
@@ -178,4 +178,4 @@ const styles = StyleSheet.create({
     }
 })
 
-export default CollectionDetail;
+export default CollectionDetailPage;

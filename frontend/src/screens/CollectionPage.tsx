@@ -15,8 +15,8 @@ import CollectionCard from '../components/CollectionCard';
 
 const numColumns = 2;
 
-const Collection = withAuth(() => {
-  const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Main'>>();
+const CollectionPage = withAuth(() => {
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'MainPage'>>();
 
   const [collections, setCollections] = useState<CollectionModel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -63,7 +63,7 @@ const Collection = withAuth(() => {
   };
 
   const handleCollectionPress = (collection: CollectionModel) => {
-    navigation.navigate('CollectionDetail', { collectionId: collection.id.toString() });
+    navigation.navigate('CollectionDetailPage', { collectionId: collection.id.toString() });
   };
 
   const renderItem = ({ item }: { item: CollectionModel }) => (
@@ -185,4 +185,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Collection;
+export default CollectionPage;

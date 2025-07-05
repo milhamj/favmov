@@ -14,8 +14,8 @@ import { RootStackParamList } from '../navigation/navigationTypes';
 import { Icon } from 'react-native-elements';
 import { getCheckMovieExistInCollection } from '../services/collectionService';
 
-const MovieDetail = () => {
-  const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'MovieDetail'>>();
+const MovieDetailPage = () => {
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'MovieDetailPage'>>();
   const route = useRoute();
   const movieParams = (route.params as { movie: Movie }).movie;
 
@@ -51,7 +51,7 @@ const MovieDetail = () => {
 
   const AddToCollectionButton = () => {
     const handleFavoriteClick = () => {
-      navigation.navigate('AddToCollection', { movie });
+      navigation.navigate('AddToCollectionPage', { movie });
     }
     
     return (
@@ -285,4 +285,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default MovieDetail;
+export default MovieDetailPage;

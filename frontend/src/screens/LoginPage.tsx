@@ -28,7 +28,7 @@ const LoginPage = () => {
   const [canResend, setCanResend] = useState(false);
   const [timer, setTimer] = useState(TIMER_SECONDS);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Login'>>();
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'LoginPage'>>();
 
   // Timer effect for OTP resend countdown
   useEffect(() => {

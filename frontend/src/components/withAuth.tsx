@@ -15,8 +15,8 @@ const withAuth = (Component: React.ComponentType) => {
                  navigation.reset({
                         index: 1,
                         routes: [
-                        { name: 'Main', params: { activeTab: 'Home' } },
-                        { name: 'Login' },
+                        { name: 'MainPage', params: { activeTab: 'HomePage' } },
+                        { name: 'LoginPage' },
                         ],
                     });
             }

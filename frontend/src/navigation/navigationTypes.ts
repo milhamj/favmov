@@ -1,10 +1,10 @@
 import { Movie } from '../model/movieModel';
 
 export type RootStackParamList = {
-  Main: { activeTab?: string } | undefined;
-  MovieDetail: { movie: Movie };
+  MainPage: { activeTab?: string } | undefined;
+  MovieDetailPage: { movie: Movie };
   SearchPage: undefined;
-  CollectionDetail: { collectionId: string };
-  AddToCollection: { movie: Movie };
-  Login: undefined;
+  CollectionDetailPage: { collectionId: string };
+  AddToCollectionPage: { movie: Movie };
+  LoginPage: undefined;
 };
