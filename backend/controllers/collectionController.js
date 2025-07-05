@@ -93,13 +93,17 @@ exports.getUserCollections = asyncHandler(async (req, res) => {
     }
   });
 
-  const sortedData = data.sort((a, b) => {
+  data.sort((a, b) => {
     const unixA = new Date(a.last_updated).getTime();
     const unixB = new Date(b.last_updated).getTime();
     return unixB - unixA;
   });
 
-  return successResponse(res, sortedData, 'Collections retrieved successfully');
+  data.sort((a, b) => {
+    return b.movies_count - a.movies_count;
+  })
+
+  return successResponse(res, data, 'Collections retrieved successfully');
 });
 
 // Add a movie to a collection
