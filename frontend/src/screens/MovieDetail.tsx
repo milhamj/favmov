@@ -234,6 +234,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     padding: 4,
     marginRight: 8,
+    alignContent: 'center'
   },
   sectionTitle: {
     fontSize: 20,
