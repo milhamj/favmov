@@ -123,7 +123,8 @@ export const postAddMovieToCollection = async (
 ): Promise<Success<MovieCollection> | Error> => {
   try {
     const response = await backendClient.post(`/collections/${collectionId}/movies?is_tv_show=${isTvShow}`, {
-      movie_id: movie.id,
+      movie_id: !isTvShow ? movie.id : undefined,
+      tv_show_id: isTvShow ? movie.id : undefined,
       title: movie.title,
       poster_path: movie.posterPath,
       rating: movie.rating,

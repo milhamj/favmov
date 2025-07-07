@@ -83,9 +83,6 @@ const AddToCollectionPage = () => {
     }, []);
 
     const renderCollection = ({ item }: { item: CollectionCard }) => {
-        const isInCollection = movieParams.collections?.find((collection) => { 
-            return collection.id === item.id
-        }) !== undefined;
         return (
             <CollectionAddCard collection={item} movie={movieParams}/>
         )
