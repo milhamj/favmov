@@ -7,7 +7,11 @@ import { SearchResponse } from '../model/searchResponse';
 const mTmdbApiClient = tmdbApiClient();
 
 const transformMovieData = (data: any, isTvShow?: boolean): Movie => {
-  const movie = new Movie(data.id, data.title || data.name, data.poster_path)
+  const movie = new Movie({
+    id: data.id, 
+    title: data.title || data.name, 
+    posterPath: data.poster_path
+  })
   movie.backdropPath = data.backdrop_path;
   movie.overview = data.overview;
   movie.releaseDate = data.release_date || data.first_air_date;
@@ -116,11 +120,11 @@ export const fetchFavoriteMovies = async (): Promise<Success<Movie[]> | Error> =
     const response = await backendClient.get(`/collections/latest_movies`);
 
     const movies = response.data.data.map((item: any) => {
-      const movie = new Movie(
-        item.id,
-        item.title,
-        item.poster_path
-      );
+      const movie = new Movie({
+        id: item.id,
+        title: item.title,
+        posterPath: item.poster_path
+      });
       movie.isTvShow = item.is_tv_show;
       if (item.rating) {
         movie.rating = item.rating;

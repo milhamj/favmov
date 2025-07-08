@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import PageContainer  from '../components/PageContainer';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import { Movie } from '../model/movieModel';
 import { fetchMovieDetails } from '../services/movieService';
 import { Success, Error } from '../model/apiResponse';
@@ -19,10 +19,12 @@ const MovieDetailPage = () => {
   const route = useRoute();
   const movieParams = (route.params as { movie: Movie }).movie;
 
-  // TODO milhamj: re-fetch the collection data after going back from AddToCollection
   const [movie, setMovie] = useState(movieParams);
+  const isInitialLoad = useRef(true);
+
+  // Initial load - fetch both movie details and collection status
   useEffect(() => {
-    const loadData = async () => {
+    const loadInitialData = async () => {
       const [movieResult, collectionResult] = await Promise.all([
         fetchMovieDetails(movie.id.toString(), movie.isTvShow),
         getCheckMovieExistInCollection(movie.id.toString(), movie.isTvShow || false),
@@ -31,7 +33,7 @@ const MovieDetailPage = () => {
       if (movieResult instanceof Success && collectionResult instanceof Success) {
         movieResult.data.collections = collectionResult.data
         setMovie(movieResult.data);
-      } if (movieResult instanceof Success) {
+      } else if (movieResult instanceof Success) {
         setMovie(movieResult.data);
       }
 
@@ -44,10 +46,45 @@ const MovieDetailPage = () => {
           position: 'bottom'
         });
       }
+      
+      isInitialLoad.current = false
     };
 
-    loadData();
+    loadInitialData();
   }, []);
+
+  // Focus effect - only refresh collection status when returning from another page
+  useFocusEffect(
+    useCallback(() => {
+      // Skip on initial load since useEffect already handles it
+      if (isInitialLoad.current) return;
+
+      const refreshCollectionStatus = async () => {
+        const collectionResult = await getCheckMovieExistInCollection(
+          movie.id.toString(), 
+          movie.isTvShow || false
+        );
+
+        if (collectionResult instanceof Success) {
+          setMovie((prev) => new Movie({ ...prev, collections: collectionResult.data }));
+        } else if (collectionResult instanceof Error) {
+          Toast.show({
+            type: 'error',
+            text1: 'Error',
+            text2: collectionResult.message,
+            position: 'bottom'
+          });
+        }
+      };
+
+      refreshCollectionStatus();
+
+      // Optional cleanup when screen loses focus
+      return () => {
+        console.log('MovieDetailPage blurred');
+      };
+    }, [movie.id, movie.isTvShow])
+  );
 
   const AddToCollectionButton = () => {
     const handleFavoriteClick = () => {

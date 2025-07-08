@@ -15,7 +15,6 @@ export class Collection {
   }
 }
 
-// TODO milhamj: rename with model to avoid clash with component
 export class CollectionCard extends Collection {
   isInCollection: boolean
 

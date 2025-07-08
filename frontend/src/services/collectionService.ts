@@ -25,11 +25,11 @@ const transformCollectionData = (data: any): Collection => {
 }
 
 const transformMovieData = (item: any): Movie => {
-  const movie = new Movie(
-    item.id,
-    item.title,
-    item.poster_path
-  );
+  const movie = new Movie({
+    id: item.id,
+    title: item.title,
+    posterPath: item.poster_path
+  });
   movie.isTvShow = item.is_tv_show;
   if (item.rating) {
     movie.rating = item.rating;

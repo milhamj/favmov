@@ -21,10 +21,23 @@ export class Movie {
     collectionAddTime?: number;
     collections?: Collection[];
 
-    constructor(id: number, title: string, posterPath: string) {
-        this.id = id;
-        this.title = title;
-        this.posterPath = posterPath;
+    constructor(data: Partial<Movie>) {
+        this.id = data.id ?? 0;
+        this.title = data.title ?? '';
+        this.posterPath = data.posterPath ?? '';
+        this.backdropPath = data.backdropPath;
+        this.overview = data.overview;
+        this.releaseDate = data.releaseDate;
+        this.genres = data.genres;
+        this.cast = data.cast;
+        this.crew = data.crew;
+        this.rating = data.rating;
+        this.ratingCount = data.ratingCount;
+        this.runtime = data.runtime;
+        this.isTvShow = data.isTvShow;
+        this.collectionNotes = data.collectionNotes;
+        this.collectionAddTime = data.collectionAddTime;
+        this.collections = data.collections;
     }
 
     bigBackdropUrl(): string | null {
