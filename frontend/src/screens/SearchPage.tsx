@@ -61,7 +61,6 @@ const SearchPage = () => {
         const debounceFetch = setTimeout(() => {
             if (searchQuery) {
                 setPage(1);
-                setMovies([])
                 fetchMovies(page, true);
             }
         }, 300);
@@ -112,8 +111,8 @@ const SearchPage = () => {
         );
     };
 
-    const isEmptyResult = movies?.length === 0
-    const isEmptyQuery = searchQuery?.length == 0
+    const isEmptyResult = searchQuery.length > 0 && movies.length === 0 && !isLoading;
+    const isEmptyQuery = searchQuery.length === 0;
 
     return (
         <PageContainer>
