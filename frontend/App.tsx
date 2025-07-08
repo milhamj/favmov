@@ -5,7 +5,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { Icon } from 'react-native-elements';
 import { RootStackParamList } from './src/navigation/navigationTypes';
 import Toast from 'react-native-toast-message';
-import HomePage from './src/screens/Homepage';
+import HomePage from './src/screens/HomePage';
 import SearchPage from './src/screens/SearchPage';
 import MovieDetailPage from './src/screens/MovieDetailPage';
 import LoginPage from './src/screens/LoginPage';
