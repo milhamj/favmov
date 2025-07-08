@@ -75,11 +75,14 @@ const MovieDetailPage = () => {
       <ScrollView>
         {/* Poster Section */}
         <View style={styles.posterContainer}>
-          <ImageViewer 
-            style={styles.backdrop}
-            imageStyle={styles.posterImage}
-            bigImageUrl={movie.bigBackdropUrl()} 
-            smallImageUrl={movie.smallBackdropUrl()} />
+          { movie.bigBackdropUrl() && movie.smallBackdropUrl() ? (
+              <ImageViewer
+                style={styles.backdrop}
+                imageStyle={styles.posterImage}
+                bigImageUrl={movie.bigBackdropUrl()!!}
+                smallImageUrl={movie.smallBackdropUrl()!!} /> 
+            ) : null
+          }
           <ImageViewer 
             style={styles.poster}
             imageStyle={styles.posterImage}

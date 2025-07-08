@@ -27,12 +27,12 @@ export class Movie {
         this.posterPath = posterPath;
     }
 
-    bigBackdropUrl(): string {
-        return this.backdropPath ? TMDB_IMAGE_BIG + this.backdropPath : this.bigPosterUrl();
+    bigBackdropUrl(): string | null {
+        return this.backdropPath ? TMDB_IMAGE_BIG + this.backdropPath : null;
     }
 
-    smallBackdropUrl(): string {
-        return this.backdropPath ? TMDB_IMAGE_SMALL + this.backdropPath : this.smallPosterUrl();
+    smallBackdropUrl(): string | null{
+        return this.backdropPath ? TMDB_IMAGE_SMALL + this.backdropPath : null;
     }
 
     bigPosterUrl(): string {
