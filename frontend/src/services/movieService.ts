@@ -89,9 +89,9 @@ export const fetchMovieDetails = async (movieId: string, isTvShow?: boolean): Pr
   }
 };
 
-export const searchMovie = async (query: string, page: number, includeAdult?: boolean): Promise<Success<Movie[]> | Error> => {
+export const searchMovie = async (query: string, page: number, isTvShow?: boolean, includeAdult?: boolean): Promise<Success<Movie[]> | Error> => {
   try {
-    const response = await mTmdbApiClient.get('/search/movie', { params: {
+    const response = await mTmdbApiClient.get(`/search/${isTvShow === true ? 'tv' : 'movie'}`, { params: {
       query,
       page,
       include_adult: includeAdult ? true : false

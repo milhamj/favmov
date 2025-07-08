@@ -9,12 +9,15 @@ import { useNavigation } from '@react-navigation/native';
 import MovieCard from '../components/MovieCard';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/navigationTypes';
+import SelectableChip from '../components/SelectableChip';
 
 const SearchPage = () => {
     const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'SearchPage'>>();
     const [searchQuery, setSearchQuery]  = useState('');
     const [movies, setMovies] = useState([] as Movie[]);
     const [isLoading, setIsLoading] = useState(false);
+    const [showFilter, setShowFilter] = useState(true);
+    const [isMovieFilterSelected, setIsMovieFilterSelected] = useState(true);
     const inputRef = useRef<TextInput>(null);
 
     useEffect(() => {
@@ -28,7 +31,7 @@ const SearchPage = () => {
     useEffect(() => {
         const fetchMovies = async () => {
             setIsLoading(true);
-            const result = await searchMovie(searchQuery, 1);
+            const result = await searchMovie(searchQuery, 1, !isMovieFilterSelected);
             if (result instanceof Success) {
                 setMovies(result.data);
             }
@@ -42,7 +45,7 @@ const SearchPage = () => {
         }, 300);
 
         return () => clearTimeout(debounceFetch);
-    }, [searchQuery]);
+    }, [searchQuery, isMovieFilterSelected]);
 
     const renderMovieItem = ({ item, index }: { item: Movie, index: number }) => (
         <View style={{
@@ -78,6 +81,22 @@ const SearchPage = () => {
                 onChangeText={setSearchQuery}
                 autoFocus={Platform.OS === 'web'}
             />
+            {
+                showFilter ? (
+                    <View style={{flexDirection: 'row', marginBottom: 8, marginHorizontal: 16}}>
+                        <SelectableChip 
+                            text="Movie" 
+                            selected={isMovieFilterSelected}
+                            onSelect={(isSelected) => setIsMovieFilterSelected(isSelected)} 
+                        />
+                        <SelectableChip 
+                            text="TV Show" 
+                            selected={!isMovieFilterSelected} 
+                            onSelect={(isSelected) => setIsMovieFilterSelected(!isSelected)} 
+                        />
+                    </View>
+                ) : null
+            }
             <View style={styles.scrollContainer}>
                 {
                     isLoading ? (
@@ -102,7 +121,6 @@ const SearchPage = () => {
                             keyExtractor={(item) => item.id.toString()}
                             numColumns={2}
                             columnWrapperStyle={styles.row}
-                            
                         />
                     )
                 }
@@ -117,8 +135,9 @@ const styles = StyleSheet.create({
     borderColor: 'gray',
     borderWidth: 1,
     paddingHorizontal: 12,
+    marginTop: 16,
     marginHorizontal: 16,
-    marginVertical: 12
+    marginVertical: 8
   },
   loadingContainer: {
     flex: 1,
