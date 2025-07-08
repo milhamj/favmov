@@ -38,7 +38,7 @@ const transformMovieData = (item: any): Movie => {
     movie.ratingCount = item.rating_count;
   }
   if (item.notes) {
-    movie.collectionNotes = item.notes
+    movie.collectionNotes = item.notes;
   }
   if (item.created_at) {
     movie.collectionAddTime = new Date(item.created_at).getTime();

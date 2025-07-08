@@ -1,6 +1,7 @@
 import { Movie, Actor, Crew } from '../model/movieModel';
 import { Success, Error } from '../model/apiResponse';
 import tmdbApiClient from './tmdbClient';
+import backendClient from './backendClient';
 
 const mTmdbApiClient = tmdbApiClient();
 
@@ -104,11 +105,37 @@ export const searchMovie = async (query: string, page: number, includeAdult?: bo
 };
 
 export const fetchFavoriteMovies = async (): Promise<Success<Movie[]> | Error> => {
-  // Mock data for favorite movies
-  // return new Success<Movie[]>([
-  //   { id: 7, title: "Favorite Movie 1", posterUrl: "https://m.media-amazon.com/images/I/81SIVdnkUmL.jpg" },
-  //   { id: 8, title: "Favorite Movie 2", posterUrl: "https://upload.wikimedia.org/wikipedia/id/0/0d/Avengers_Endgame_poster.jpg" },
-  //   { id: 9, title: "Favorite Movie 3", posterUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRVVKXRFFc9BNtpnBRWifO2r1-wzFwKfNIGsg&s" },
-  // ]);
-  return new Error('Your Favorite section is not implemented, yet. Sorry!');
+  try {
+    const response = await backendClient.get(`/collections/latest_movies`);
+
+    const movies = response.data.data.map((item: any) => {
+      const movie = new Movie(
+        item.id,
+        item.title,
+        item.poster_path
+      );
+      movie.isTvShow = item.is_tv_show;
+      if (item.rating) {
+        movie.rating = item.rating;
+      }
+      if (item.rating_count) {
+        movie.ratingCount = item.rating_count;
+      }
+      if (item.notes) {
+        movie.collectionNotes = item.notes;
+      }
+      if (item.last_added_at) {
+        movie.collectionAddTime = new Date(item.last_added_at).getTime();
+      }
+      return movie;
+    });
+
+    return new Success<Movie[]>(movies, 'Favorite movies retrieved successfully');
+  } catch (error: any) {
+    console.error('Error fetching favorite movies:', error);
+    return new Error(
+      error.response?.data?.message || `Failed to fetch favorite movies.`,
+      error.response?.status
+    );
+  }
 };
