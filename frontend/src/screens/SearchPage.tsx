@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Platform, TextInput, FlatList, Image, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import PageContainer  from '../components/PageContainer';
 import { Movie } from '../model/movieModel';
@@ -16,10 +16,15 @@ const SearchPage = () => {
     const [searchQuery, setSearchQuery]  = useState('');
     const [movies, setMovies] = useState([] as Movie[]);
     const [isLoading, setIsLoading] = useState(false);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
     const [showFilter, setShowFilter] = useState(true);
     const [isMovieFilterSelected, setIsMovieFilterSelected] = useState(true);
     const inputRef = useRef<TextInput>(null);
+    const isFetchingRef = useRef(false);
 
+    // Auto-focus input
     useEffect(() => {
         const focusTimeout = setTimeout(() => {
             inputRef.current?.focus();
@@ -28,24 +33,61 @@ const SearchPage = () => {
         return () => clearTimeout(focusTimeout);
     }, []);
 
-    useEffect(() => {
-        const fetchMovies = async () => {
-            setIsLoading(true);
-            const result = await searchMovie(searchQuery, 1, !isMovieFilterSelected);
-            if (result instanceof Success) {
-                setMovies(result.data);
-            }
-            setIsLoading(false);
-        };
+    // Fetch movies when searchQuery, selectedFilter, or page changes
+    const fetchMovies = useCallback(async (newPage: number = 1, reset: boolean = false) => {
+        if (isFetchingRef.current || !searchQuery) return;
+    
+        isFetchingRef.current = true;
+        setIsLoading(newPage === 1);
+        setIsLoadingMore(newPage > 1);
+    
+        try {
+          const result = await searchMovie(searchQuery, newPage, !isMovieFilterSelected);
+          if (result instanceof Success) {
+            setMovies((prev) => (newPage === 1 || reset ? result.data.movies : [...prev, ...result.data.movies]));
+            setTotalPages(result.data.totalPages || 1);
+          }
+        } catch (error) {
+          console.error('Error fetching movies:', error);
+        } finally {
+          setIsLoading(false);
+          setIsLoadingMore(false);
+          isFetchingRef.current = false;
+        }
+      }, [searchQuery, isMovieFilterSelected]
+    );
 
+    useEffect(() => {
         const debounceFetch = setTimeout(() => {
             if (searchQuery) {
-                fetchMovies();
+                setPage(1);
+                setMovies([])
+                fetchMovies(page, true);
             }
         }, 300);
 
         return () => clearTimeout(debounceFetch);
     }, [searchQuery, isMovieFilterSelected]);
+
+    useEffect(() => {
+        const debounceFetch = setTimeout(() => {
+            if (searchQuery) {
+                setPage(1); // Reset to first page on new search or filter
+                setMovies([]); // Clear previous results
+                fetchMovies(page, true);
+            }
+        }, 300);
+
+        return () => clearTimeout(debounceFetch);
+    }, [searchQuery, isMovieFilterSelected, fetchMovies]);
+
+    const handleOnEndReached = () => {
+        if (!isFetchingRef.current && page < totalPages && !isLoadingMore) {
+            const nextPage = page + 1;
+            setPage(nextPage);
+            fetchMovies(nextPage);
+        }
+    };    
 
     const renderMovieItem = ({ item, index }: { item: Movie, index: number }) => (
         <View style={{
@@ -60,6 +102,15 @@ const SearchPage = () => {
             />
         </View>
     );
+
+    const renderFooter = () => {
+        if (!isLoadingMore) return null;
+        return (
+        <View style={styles.footerLoader}>
+            <ActivityIndicator size="small" color="tomato" />
+        </View>
+        );
+    };
 
     const isEmptyResult = movies?.length === 0
     const isEmptyQuery = searchQuery?.length == 0
@@ -121,6 +172,9 @@ const SearchPage = () => {
                             keyExtractor={(item) => item.id.toString()}
                             numColumns={2}
                             columnWrapperStyle={styles.row}
+                            onEndReached={handleOnEndReached}
+                            onEndReachedThreshold={0.3} // Trigger when 30% from bottom
+                            ListFooterComponent={renderFooter}
                         />
                     )
                 }
@@ -175,6 +229,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 8,
     paddingHorizontal: 20,
+  },
+  footerLoader: {
+    paddingVertical: 20,
+    alignItems: 'center',
   },
 });
 
