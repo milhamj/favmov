@@ -25,5 +25,6 @@ module.exports = {
   MOVIES: 'movies',
   TV_SHOWS: 'tv_shows',
   MOVIES_COLLECTIONS: 'movies_collections',
-  COLLECTIONS_WITH_MOVIE_COUNT: 'collections_with_movie_count'
+  COLLECTIONS_WITH_MOVIE_COUNT: 'collections_with_movie_count',
+  LATEST_MOVIES_IN_COLLECTION: 'latest_movies_added_to_collection',
 };

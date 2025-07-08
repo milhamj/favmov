@@ -4,6 +4,7 @@ const { authenticate } = require('../middleware/auth');
 const {
   createCollection,
   getUserCollections,
+  getLatestCollectionMovies,
   addMovieToCollection,
   getCollectionMovies,
   getCheckMovieExistInCollection,
@@ -22,6 +23,7 @@ router.get('/', getUserCollections);
 router.delete('/:collection_id', deleteCollection);
 
 // Movie in collection routes
+router.get('/latest_movies', getLatestCollectionMovies);
 router.post('/:collection_id/movies', validateMovieToCollection, addMovieToCollection);
 router.get('/:collection_id/movies', getCollectionMovies);
 router.get('/check_exist/:movie_or_tv_show_id', getCheckMovieExistInCollection);

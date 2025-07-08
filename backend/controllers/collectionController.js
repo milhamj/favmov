@@ -2,7 +2,15 @@ const { body, validationResult } = require('express-validator');
 const supabase = require('../config/supabase');
 const asyncHandler = require('../utils/asyncHandler');
 const { successResponse, errorResponse } = require('../utils/responses');
-const { getTableName, COLLECTIONS, MOVIES_COLLECTIONS, TV_SHOWS, MOVIES, COLLECTIONS_WITH_MOVIE_COUNT } = require('../utils/tableNames');
+const { 
+  getTableName, 
+  COLLECTIONS, 
+  MOVIES_COLLECTIONS, 
+  TV_SHOWS, 
+  MOVIES, 
+  COLLECTIONS_WITH_MOVIE_COUNT, 
+  LATEST_MOVIES_IN_COLLECTION 
+} = require('../utils/tableNames');
 
 // Validation rules
 exports.validateCollection = [
@@ -105,6 +113,37 @@ exports.getUserCollections = asyncHandler(async (req, res) => {
 
   return successResponse(res, data, 'Collections retrieved successfully');
 });
+
+// Get the latest movies added to the collections
+exports.getLatestCollectionMovies = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+
+  const { tableName: latestMoviesCollectionTable, error: latestMoviesCollectionTableError } = getTableName(LATEST_MOVIES_IN_COLLECTION);
+  if (latestMoviesCollectionTableError) {
+    console.error('Environment error:', latestMoviesCollectionTableError);
+    return errorResponse(res, latestMoviesCollectionTableError, 500);
+  }
+
+  const { data, error } = await supabase
+    .rpc(latestMoviesCollectionTable, { user_id_input: userId });
+
+  if (error) {
+    console.error('Error fetching latest movies:', error);
+    const debugMessage = error?.message
+    return errorResponse(res, 'Failed to fetch latest movies', 500, debugMessage);
+  }
+
+  const response = data.map(item => {
+    return {
+      ...item,
+      movie_id: undefined,
+      tv_show_id: undefined,
+      id: item.is_tv_show ? item.tv_show_id : item.movie_id,
+    }
+  })
+
+  return successResponse(res, response, 'Latest movies retrieved successfully');
+})
 
 // Add a movie to a collection
 exports.addMovieToCollection = asyncHandler(async (req, res) => {
