@@ -81,7 +81,7 @@ const MovieDetailPage = () => {
                 imageStyle={styles.posterImage}
                 bigImageUrl={movie.bigBackdropUrl()!!}
                 smallImageUrl={movie.smallBackdropUrl()!!} /> 
-            ) : null
+            ) : <View style={styles.backdropEmpty} />
           }
           <ImageViewer 
             style={styles.poster}
@@ -176,6 +176,12 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
+  },
+  backdropEmpty: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+    backgroundColor: COLORS.background_gray
   },
   poster: {
     position: 'absolute',
