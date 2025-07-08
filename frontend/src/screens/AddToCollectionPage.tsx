@@ -19,7 +19,6 @@ const AddToCollectionPage = () => {
     const shortTitle = movieParams.title.length > 20 ? movieParams.title.substring(0,20) + "..." : movieParams.title;
 
     const [collectionCards, setCollectionCards] = useState<CollectionCard[]>([]);
-    const [isModalVisible, setIsModalVisible] = useState(true);
     const [isLoading, setIsLoading] = useState(true);
     const [shouldRender, setShouldRender] = useState(false);
 
@@ -36,11 +35,6 @@ const AddToCollectionPage = () => {
             setShouldRender(true);
         }
     }, []);
-
-    const handleClose = () => {
-        setIsModalVisible(false);
-        navigation.goBack();
-    }
 
     const handleCreateCollection = () => {
         navigation.navigate('MainPage', { activeTab: 'CollectionPage'})
