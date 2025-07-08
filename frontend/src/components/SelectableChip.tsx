@@ -26,13 +26,10 @@ const SelectableChip: React.FC<SelectableChipProps> = ({
   selectedTextColor = '#ffffff', // Default selected text color (white)
   unselectedTextColor = '#000000', // Default unselected text color (black)
 }) => {
-  const [isSelected, setIsSelected] = useState(selected);
-
   // Handle chip press to toggle selection
   const handlePress = () => {
-    setIsSelected(!isSelected);
     if (onSelect) {
-      onSelect(!isSelected);
+      onSelect(!selected);
     }
   };
 
@@ -43,8 +40,7 @@ const SelectableChip: React.FC<SelectableChipProps> = ({
         styles.chip,
         style,
         {
-          backgroundColor: isSelected ? selectedColor : unselectedColor,
-          borderColor: isSelected ? selectedColor : '#000000',
+          backgroundColor: selected ? selectedColor : unselectedColor,
         },
       ]}
       activeOpacity={0.7}
@@ -53,7 +49,7 @@ const SelectableChip: React.FC<SelectableChipProps> = ({
         style={[
           styles.text,
           textStyle,
-          { color: isSelected ? selectedTextColor : unselectedTextColor },
+          { color: selected ? selectedTextColor : unselectedTextColor },
         ]}
       >
         {text}
@@ -71,7 +67,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     margin: 4,
     borderRadius: 16,
-    borderWidth: 1,
   },
   text: {
     fontSize: 14,
