@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import PageContainer  from '../components/PageContainer';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import { Movie } from '../model/movieModel';
@@ -20,6 +20,7 @@ const MovieDetailPage = () => {
   const movieParams = (route.params as { movie: Movie }).movie;
 
   const [movie, setMovie] = useState(movieParams);
+  const [isCollectionLoading, setIsCollectionLoading] = useState(false);
   const isInitialLoad = useRef(true);
 
   // Initial load - fetch both movie details and collection status
@@ -60,6 +61,8 @@ const MovieDetailPage = () => {
       if (isInitialLoad.current) return;
 
       const refreshCollectionStatus = async () => {
+        setIsCollectionLoading(true);
+
         const collectionResult = await getCheckMovieExistInCollection(
           movie.id.toString(), 
           movie.isTvShow || false
@@ -75,6 +78,8 @@ const MovieDetailPage = () => {
             position: 'bottom'
           });
         }
+
+        setIsCollectionLoading(false);
       };
 
       refreshCollectionStatus();
@@ -93,8 +98,12 @@ const MovieDetailPage = () => {
     
     return (
         movie.collections !== undefined ? (
-          <TouchableOpacity style={styles.addToCollectionButton} onPress={handleFavoriteClick}>
-            <Icon name={movie.collections.length > 0 ? "favorite" : "favorite-outline"} size={24} color='white' />
+          <TouchableOpacity style={styles.addToCollectionButton} onPress={handleFavoriteClick}> 
+            {
+              isCollectionLoading ? 
+                <ActivityIndicator style={{width: 24, height: 24}} color={'white'}/>
+              : <Icon name={movie.collections.length > 0 ? "favorite" : "favorite-outline"} size={24} color='white' />
+            }
           </TouchableOpacity>
         ) : null
     );
