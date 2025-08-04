@@ -82,6 +82,7 @@ export const fetchPopularMovies = async (): Promise<Success<Movie[]> | Error> =>
 };
 
 export const fetchMovieDetails = async (movieId: string, isTvShow?: boolean): Promise<Success<Movie> | Error> => {
+  console.log("fetchMovieDetails", { movieId, isTvShow });
   try {
     let url = isTvShow === true ? `/tv/${movieId}` : `/movie/${movieId}`;
     url += `?append_to_response=credits`;

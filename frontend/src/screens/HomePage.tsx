@@ -9,9 +9,11 @@ import { Result, Success } from '../model/apiResponse';
 import Toast from 'react-native-toast-message';
 import { RootStackParamList } from '../navigation/navigationTypes';
 import MovieCard from '../components/MovieCard';
+import { useAuth } from '../hooks/useAuth';
 
 const HomePage = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'MainPage'>>();
+  const { isAuthenticated } = useAuth();
 
   const renderMoviePoster = ({ item }: { item: Movie }) => (
     <View style={{ width: 120, marginEnd: 8 }}>
@@ -30,7 +32,7 @@ const HomePage = () => {
     YourFavorites: 'Your Favorites',
   }
 
-  const renderSection = (sectionType: string) => {
+  const renderTmdbSection = (sectionType: string) => {
     const [movies, setMovies] = useState([] as Movie[] | null);
     
     useEffect(() => {
@@ -45,9 +47,6 @@ const HomePage = () => {
             break;
           case Section.PopularMovies:
             result = await fetchPopularMovies();
-            break;
-          case Section.YourFavorites:
-            result = await fetchFavoriteMovies();
             break;
           default:
             return;
@@ -72,7 +71,45 @@ const HomePage = () => {
     if (movies === null) {
       return null;
     }
+    
+    return renderSection(sectionType, movies);
+  };
 
+  const renderFavoriteSection = () => {
+    const sectionType = Section.YourFavorites;
+    const [movies, setMovies] = useState(null as Movie[] | null);
+
+    useEffect(() => {
+      const loadMovieData = async () => {
+        if (!isAuthenticated) {
+          return;
+        }
+        
+        const result = await fetchFavoriteMovies();
+        if (result instanceof Success) {
+          setMovies(result.data);
+        } else {
+          setMovies(null);
+          Toast.show({
+            type: 'error',
+            text1: 'Error',
+            text2: result.message,
+            position: 'bottom'
+          });
+        }
+      }
+
+      loadMovieData();
+    }, [isAuthenticated]);
+
+    if (movies === null) {
+      return null;
+    }
+
+    return renderSection(sectionType, movies);
+  }
+
+  const renderSection = (sectionType: string, movies: Movie[]) => {
     return <View style={styles.section}>
       <Text style={styles.header}>{sectionType}</Text>
       {
@@ -92,7 +129,7 @@ const HomePage = () => {
         )
       }
     </View>
-  };
+  }
 
   return (
     <View style={styles.container}>
@@ -103,10 +140,10 @@ const HomePage = () => {
         ]}
       />
       <ScrollView>
-        {renderSection(Section.TrendingMovies)}
-        {renderSection(Section.TrendingShows)}
-        {renderSection(Section.PopularMovies)}
-        {renderSection(Section.YourFavorites) }
+        {renderTmdbSection(Section.TrendingMovies)}
+        {renderTmdbSection(Section.TrendingShows)}
+        {renderTmdbSection(Section.PopularMovies)}
+        {renderFavoriteSection() }
       </ScrollView>
       <Toast />
     </View>

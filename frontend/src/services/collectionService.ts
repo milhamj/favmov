@@ -100,6 +100,7 @@ export const getCollectionDetail = async (id: string): Promise<Success<Collectio
 };
 
 export const getCheckMovieExistInCollection = async (movieId: string, isTvShow: boolean): Promise<Success<Collection[]> | Error> => {
+  console.log("getCheckMovieExistInCollection", { movieId, isTvShow });
   try {
     const response = await backendClient.get(`/collections/check_exist/${movieId}?is_tv_show=${isTvShow}`);
     const collections = response.data.data.map((item: any) => {

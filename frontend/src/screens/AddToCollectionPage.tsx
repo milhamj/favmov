@@ -11,8 +11,9 @@ import CollectionAddCard from '../components/CollectionAddCard';
 import { Success } from '../model/apiResponse';
 import PageContainer from '../components/PageContainer';
 import TopBar from '../components/TopBar';
+import withAuth from '../components/withAuth';
 
-const AddToCollectionPage = () => {
+const AddToCollectionPage = withAuth(() => {
     const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'AddToCollectionPage'>>();
     const route = useRoute();
     const movieParams = (route.params as { movie: Movie }).movie;
@@ -129,7 +130,7 @@ const AddToCollectionPage = () => {
             </PageContainer> 
         : null
     )
-}
+})
 
 const styles = StyleSheet.create({
     content: {

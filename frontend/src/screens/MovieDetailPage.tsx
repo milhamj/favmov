@@ -13,11 +13,14 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/navigationTypes';
 import { Icon } from 'react-native-elements';
 import { getCheckMovieExistInCollection } from '../services/collectionService';
+import { useAuth } from '../hooks/useAuth';
 
 const MovieDetailPage = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'MovieDetailPage'>>();
   const route = useRoute();
   const movieParams = (route.params as { movie: Movie }).movie;
+
+  const { isAuthenticated } = useAuth();
 
   const [movie, setMovie] = useState(movieParams);
   const [isCollectionLoading, setIsCollectionLoading] = useState(false);
@@ -26,10 +29,18 @@ const MovieDetailPage = () => {
   // Initial load - fetch both movie details and collection status
   useEffect(() => {
     const loadInitialData = async () => {
-      const [movieResult, collectionResult] = await Promise.all([
-        fetchMovieDetails(movie.id.toString(), movie.isTvShow),
-        getCheckMovieExistInCollection(movie.id.toString(), movie.isTvShow || false),
-      ]);
+      let movieResult = null;
+      let collectionResult = null;
+
+      if (isAuthenticated) {
+        [movieResult, collectionResult] = await Promise.all([
+          fetchMovieDetails(movie.id.toString(), movie.isTvShow),
+          getCheckMovieExistInCollection(movie.id.toString(), movie.isTvShow || false),
+        ]);
+      } else {
+        movieResult = await fetchMovieDetails(movie.id.toString(), movie.isTvShow);
+        collectionResult = new Success([]);
+      }
 
       if (movieResult instanceof Success && collectionResult instanceof Success) {
         movieResult.data.collections = collectionResult.data
@@ -52,7 +63,7 @@ const MovieDetailPage = () => {
     };
 
     loadInitialData();
-  }, []);
+  }, [isAuthenticated]);
 
   // Focus effect - only refresh collection status when returning from another page
   useFocusEffect(
