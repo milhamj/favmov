@@ -28,41 +28,58 @@ const MovieDetailPage = () => {
 
   // Initial load - fetch both movie details and collection status
   useEffect(() => {
-    const loadInitialData = async () => {
-      let movieResult = null;
-      let collectionResult = null;
-
-      if (isAuthenticated) {
-        [movieResult, collectionResult] = await Promise.all([
-          fetchMovieDetails(movie.id.toString(), movie.isTvShow),
-          getCheckMovieExistInCollection(movie.id.toString(), movie.isTvShow || false),
-        ]);
-      } else {
-        movieResult = await fetchMovieDetails(movie.id.toString(), movie.isTvShow);
-        collectionResult = new Success([]);
+    let isMounted = true;
+  
+    const fetchDetails = async () => {
+      const movieResult = await fetchMovieDetails(movie.id.toString(), movie.isTvShow);
+      if (isMounted) {
+        if (movieResult instanceof Success) {
+          setMovie(
+            (prev) => {
+              const updatedMovie = movieResult.data
+              updatedMovie.collections = prev.collections || [];
+              return new Movie(updatedMovie);
+          });
+        } else if (movieResult instanceof Error) {
+          Toast.show({
+            type: 'error',
+            text1: 'Error',
+            text2: movieResult.message,
+            position: 'bottom'
+          });
+        }
       }
+    };
+  
+    fetchDetails();
+  
+    return () => { isMounted = false };
+  }, []);
 
-      if (movieResult instanceof Success && collectionResult instanceof Success) {
-        movieResult.data.collections = collectionResult.data
-        setMovie(movieResult.data);
-      } else if (movieResult instanceof Success) {
-        setMovie(movieResult.data);
-      }
-
-      if (movieResult instanceof Error || collectionResult instanceof Error) {
-        const errorMessage = movieResult instanceof Error ? movieResult.message : collectionResult.message
+  useEffect(() => {
+    if (!isAuthenticated) return;
+  
+    let isMounted = true;
+  
+    const checkCollection = async () => {
+      const collectionResult = await getCheckMovieExistInCollection(movie.id.toString(), movie.isTvShow || false);
+      if (isMounted && collectionResult instanceof Success) {
+        setMovie((prev) => new Movie({ ...prev, collections: collectionResult.data }));
+      } else if (collectionResult instanceof Error) {
         Toast.show({
           type: 'error',
           text1: 'Error',
-          text2: errorMessage,
+          text2: collectionResult.message,
           position: 'bottom'
         });
       }
-      
+
       isInitialLoad.current = false
     };
-
-    loadInitialData();
+  
+    checkCollection();
+  
+    return () => { isMounted = false };
   }, [isAuthenticated]);
 
   // Focus effect - only refresh collection status when returning from another page
