@@ -102,7 +102,7 @@ export const searchMovie = async (query: string, page: number, isTvShow?: boolea
       include_adult: includeAdult ? true : false
     }})
 
-    const movies = response.data.results.map(transformMovieData);
+    const movies = response.data.results.map((data: any) => transformMovieData(data, isTvShow === true));
     const searchResponse = new SearchResponse(
       movies,
       response.data.total_pages
