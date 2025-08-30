@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const path = require('path');
 const { errorResponse } = require('./utils/responses');
 const routes = require('./routes');
 
@@ -11,22 +12,23 @@ const port = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 
-// API Routes
+// API Routes first
 app.use('/api', routes);
 
-// Root route
-app.get('/', (req, res) => {
-  res.json({ message: 'Welcome to FavMov API' });
-});
+// Static files after API routes
+app.use(express.static(path.join(__dirname, 'public')));
 
-// 404 handler
+// Catch-all route for SPA - must be last
 app.use((req, res) => {
-  return errorResponse(res, 'Route not found', 404);
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Error handler
@@ -37,5 +39,5 @@ app.use((err, req, res, next) => {
 
 // Start server
 app.listen(port, () => {
-  console.log(`Server is running at http://localhost:${port}`);
+  console.log(`Server is running on port ${port}`);
 });
