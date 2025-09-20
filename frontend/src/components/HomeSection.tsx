@@ -66,7 +66,7 @@ const HomeSection: React.FC<{ section: string }> = ({ section }) => {
                     <Text style={styles.header}>{section}</Text>
                     <View style={styles.loadingContainer}>
                         <ActivityIndicator size="large" color="tomato" />
-                    </View>;
+                    </View>
                 </View>
         case 'success':
           return <View style={styles.section}>
