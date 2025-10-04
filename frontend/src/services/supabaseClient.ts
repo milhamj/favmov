@@ -1,14 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@env';
-import { isDevelopment } from '../utils/util';
+import { FAVMOV_SUPABASE_URL, FAVMOV_SUPABASE_ANON_KEY } from '@env';
 
-if (isDevelopment()) {
-    console.log('Supabase URL:', SUPABASE_URL);
-    console.log('Supabase Anon Key:', SUPABASE_ANON_KEY ? 'Loaded' : 'Not Loaded');
-}
-
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+export const supabase = createClient(FAVMOV_SUPABASE_URL, FAVMOV_SUPABASE_ANON_KEY, {
     auth: {
       storage: AsyncStorage,
       autoRefreshToken: true,

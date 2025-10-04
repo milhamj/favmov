@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import { TMDB_API_KEY } from '@env';
+import { FAVMOV_TMDB_API_KEY } from '@env';
 
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 export const TMDB_IMAGE_SMALL = 'https://image.tmdb.org/t/p/w500';
@@ -10,7 +10,7 @@ const tmdbApiClient = (headers: Record<string, string> = {}): AxiosInstance => {
     baseURL: TMDB_BASE_URL,
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${TMDB_API_KEY}`,
+      'Authorization': `Bearer ${FAVMOV_TMDB_API_KEY}`,
       ...headers,
     },
   });

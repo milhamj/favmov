@@ -8,7 +8,7 @@ const { errorResponse } = require('./utils/responses');
 const routes = require('./routes');
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.FAVMOV_PORT || 3000;
 
 // Middleware
 app.use(cors());
@@ -39,5 +39,5 @@ app.use((err, req, res, next) => {
 
 // Start server
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+  console.log(`Server is running on port ${port} with environment ${process.env.FAVMOV_NODE_ENV}`);
 });

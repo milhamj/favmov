@@ -2,7 +2,7 @@
  * Standard success response
  */
 const successResponse = (res, data, message = 'Success', statusCode = 200, debugMessage = '') => {
-  const env = process.env.NODE_ENV;
+  const env = process.env.FAVMOV_NODE_ENV;
   if (env != 'development') {
       debugMessage = undefined
   }
@@ -18,7 +18,7 @@ const successResponse = (res, data, message = 'Success', statusCode = 200, debug
  * Standard error response
  */
 const errorResponse = (res, message = 'Server Error', statusCode = 500, debugMessage = '') => {
-  const env = process.env.NODE_ENV;
+  const env = process.env.FAVMOV_NODE_ENV;
   if (env != 'development') {
       debugMessage = undefined
   }

@@ -1,10 +1,10 @@
 # Pre-Requisite
 ### backend/.env
 ```
-PORT=3000
-NODE_ENV=development || production
-SUPABASE_URL=
-SUPABASE_ANON_KEY=
+FAVMOV_PORT=3080
+FAVMOV_NODE_ENV=development || production
+FAVMOV_SUPABASE_URL=
+FAVMOV_SUPABASE_ANON_KEY=
 ```
 ```
 pnpm run dev
@@ -12,9 +12,11 @@ pnpm run dev
 
 ### frontend/.env
 ```
-TMDB_API_KEY=
-SUPABASE_URL=
-SUPABASE_ANON_KEY=
+FAVMOV_NODE_ENV=
+FAVMOV_TMDB_API_KEY=
+FAVMOV_SUPABASE_URL=
+FAVMOV_SUPABASE_ANON_KEY=
+FAVMOV_API_BASE_URL= http://127.0.0.1:3080/api
 ```
 ```
 pnpm run web
@@ -27,6 +29,12 @@ rm -rf .expo
 
 pnpm install
 
+pnpm exec expo export -p web
+```
+#### Clear build cache
+```
+rm -rf .expo .expo-shared dist node_modules/.pnpm
+pnpm install
 pnpm exec expo export -p web
 ```
 
