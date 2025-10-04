@@ -1,7 +1,0 @@
-@font-face {
-    font-family: 'material';
-    font-style: normal;
-    font-weight: normal;
-    src: url('/fonts/MaterialIcons.ttf'); /* For IE6-8 */
-    src: url('/fonts/MaterialIcons.ttf') format('truetype');
-  }

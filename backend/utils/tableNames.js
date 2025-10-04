@@ -1,5 +1,5 @@
 const getTableName = (baseName) => {
-  const env = process.env.NODE_ENV;
+  const env = process.env.FAVMOV_NODE_ENV;
   
   if (env === 'development') {
     return { 
