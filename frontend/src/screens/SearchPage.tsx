@@ -127,6 +127,7 @@ const SearchPage = () => {
                 ref={inputRef}
                 style={styles.searchBox}
                 placeholder="Type any Movie title..."
+                placeholderTextColor="#666666"
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 autoFocus={Platform.OS === 'web'}
@@ -185,12 +186,13 @@ const SearchPage = () => {
 const styles = StyleSheet.create({
   searchBox: {
     minHeight: 40,
-    borderColor: 'gray',
+    borderColor: '#e0e0e0',
     borderWidth: 1,
+    borderRadius: 8,
     paddingHorizontal: 12,
     marginTop: 16,
     marginHorizontal: 16,
-    marginVertical: 8
+    marginVertical: 8,
   },
   loadingContainer: {
     flex: 1,

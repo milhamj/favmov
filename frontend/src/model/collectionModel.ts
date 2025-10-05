@@ -8,6 +8,7 @@ export class Collection {
   createdAt?: string;
   lastUpdated?: string;
   moviesCount?: number;
+  moviesCollectionNotes?: string;
 
   constructor(id: number, name: string) {
     this.id = id;
