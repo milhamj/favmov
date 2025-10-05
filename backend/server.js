@@ -23,6 +23,13 @@ app.use(morgan('dev'));
 // API Routes first
 app.use('/api', routes);
 
+// 404 handler for unmatched /api routes
+app.use('/api', (req, res) => {
+  const errorMessage = `Unknown API endpoint: ${req.originalUrl}`;
+  console.error('Not Found: ', errorMessage);
+  return errorResponse(res, 'Not Found', 404, errorMessage);
+});
+
 // Static files after API routes
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -34,7 +41,7 @@ app.use((req, res) => {
 // Error handler
 app.use((err, req, res, next) => {
   console.error('Server error:', err);
-  return errorResponse(res, err.message || 'Internal server error', err.status || 500);
+  return errorResponse(res, err.message || 'Internal server error', err.status || 500, err.details || null);
 });
 
 // Start server
