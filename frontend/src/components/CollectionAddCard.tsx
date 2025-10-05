@@ -74,7 +74,7 @@ const CollectionAddCard = ({ collection, movie }: CollectionAddCardProps) => {
         }
 
         setIsLoading(false);
-    }, 300);
+    }, 1000);
 
     return (
         <View>
