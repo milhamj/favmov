@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Text, StyleSheet, View, ActivityIndicator, TextInput } from 'react-native';
 import Checkbox from 'expo-checkbox';
 import { CollectionCard } from '../model/collectionModel';
 import { deleteMovieFromCollection, postAddMovieToCollection, updateNotes } from '../services/collectionService';
 import { Movie } from '../model/movieModel';
-import { Error } from '../model/apiResponse';
+import { Error, Success } from '../model/apiResponse';
 import Toast from 'react-native-toast-message';
+import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
 
 interface CollectionAddCardProps {
     collection: CollectionCard;
@@ -50,8 +51,30 @@ const CollectionAddCard = ({ collection, movie }: CollectionAddCardProps) => {
 
     const handleNotesUpdate = async (newNotes: string) => {
         setNotes(newNotes);
-        const response = await updateNotes(collection.id.toString(), movie.id.toString(), movie.isTvShow || false, newNotes);
+        debouncedUpdateNotes(newNotes);
     }
+
+    const debouncedUpdateNotes = useDebouncedCallback(async (newNotes: string) => {
+        setIsLoading(true);
+
+        newNotes = newNotes.trim();
+        const result = await updateNotes(
+            collection.id.toString(), 
+            movie.id.toString(), 
+            movie.isTvShow || false, newNotes
+        );
+
+        if (result instanceof Error) {
+            Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: result.message,
+                position: 'bottom',
+            });
+        }
+
+        setIsLoading(false);
+    }, 300);
 
     return (
         <View>

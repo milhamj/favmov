@@ -48,7 +48,8 @@ const SearchPage = () => {
             setTotalPages(result.data.totalPages || 1);
           }
         } catch (error) {
-          console.error('Error fetching movies:', error);
+            //TODO milhamj: update error handling and also remove the try-catch
+            console.error('Error fetching movies:', error);
         } finally {
           setIsLoading(false);
           setIsLoadingMore(false);
@@ -56,17 +57,6 @@ const SearchPage = () => {
         }
       }, [searchQuery, isMovieFilterSelected]
     );
-
-    useEffect(() => {
-        const debounceFetch = setTimeout(() => {
-            if (searchQuery) {
-                setPage(1);
-                fetchMovies(page, true);
-            }
-        }, 300);
-
-        return () => clearTimeout(debounceFetch);
-    }, [searchQuery, isMovieFilterSelected]);
 
     useEffect(() => {
         const debounceFetch = setTimeout(() => {
