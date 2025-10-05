@@ -25,7 +25,6 @@ exports.validateMovieToCollection = [
 
 exports.validateMovieCollectionNotes = [
   body('is_tv_show').isBoolean().withMessage('is_tv_show is requires and must be boolean.'),
-  body('notes').trim().notEmpty().withMessage('notes is required.')
 ];
 
 // Create a new collection
@@ -306,7 +305,14 @@ exports.updateMovieCollectionNotes = asyncHandler(async (req, res) => {
   }
 
   const { collection_id, movie_id } = req.params;
-  const { notes, is_tv_show } = req.body;
+  const { is_tv_show } = req.body;
+  let { notes } = req.body;
+
+  if (notes) {
+    notes = notes.trim();
+  } else {
+    notes = '';
+  }
 
   const userId = req.user.id;
 
