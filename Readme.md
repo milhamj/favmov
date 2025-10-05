@@ -23,19 +23,15 @@ pnpm run web
 ```
 #### Export
 ```
-rm -rf node_modules
-rm -rf $HOME/Library/Caches/pnpm/dlx
-rm -rf .expo
-
-pnpm install
-
 pnpm exec expo export -p web
 ```
 #### Clear build cache
 ```
+rm -rf node_modules
+rm -rf $HOME/Library/Caches/pnpm/dlx
 rm -rf .expo .expo-shared dist node_modules/.pnpm
+
 pnpm install
-pnpm exec expo export -p web
 ```
 
 # TODOs
