@@ -52,6 +52,7 @@ const AddToCollectionPage = withAuth(() => {
                 }) !== undefined;
                 collectionCardsResult.push(new CollectionCard(collection.id, collection.name, isInCollection));
             })
+            // Sort so that the collections the movie is already in appear first
             collectionCardsResult.sort((a, b) => {
                 if (a.isInCollection && !b.isInCollection) {
                     return -1;

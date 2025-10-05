@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Text, StyleSheet, View, ActivityIndicator } from 'react-native';
+import { Text, StyleSheet, View, ActivityIndicator, TextInput } from 'react-native';
 import Checkbox from 'expo-checkbox';
 import { CollectionCard } from '../model/collectionModel';
-import { deleteMovieFromCollection, postAddMovieToCollection } from '../services/collectionService';
+import { deleteMovieFromCollection, postAddMovieToCollection, updateNotes } from '../services/collectionService';
 import { Movie } from '../model/movieModel';
 import { Error } from '../model/apiResponse';
 import Toast from 'react-native-toast-message';
@@ -15,6 +15,7 @@ interface CollectionAddCardProps {
 const CollectionAddCard = ({ collection, movie }: CollectionAddCardProps) => {
     const [isLoading, setIsLoading] = useState(false);
     const [isSaved, setIsSaved] = useState(collection.isInCollection);
+    const [notes, setNotes]  = useState(movie.notesInCollection(collection.id) || '');
 
     const handleAddToCollection = async (value: boolean) => {
         setIsLoading(true);
@@ -47,6 +48,11 @@ const CollectionAddCard = ({ collection, movie }: CollectionAddCardProps) => {
         }
     }
 
+    const handleNotesUpdate = async (newNotes: string) => {
+        setNotes(newNotes);
+        const response = await updateNotes(collection.id.toString(), movie.id.toString(), movie.isTvShow || false, newNotes);
+    }
+
     return (
         <View>
             <View style={styles.selectionContainer}>
@@ -61,6 +67,17 @@ const CollectionAddCard = ({ collection, movie }: CollectionAddCardProps) => {
                     }
                 </View>
             </View>
+            {   
+                    isSaved ? (
+                        <TextInput
+                            style={styles.notesInput}
+                            placeholder="Write custom notes..."
+                            placeholderTextColor="#898989"
+                            value={notes}
+                            onChangeText={handleNotesUpdate}
+                        />
+                    ) : null
+            }
             <View style={styles.separator}/>
         </View>
     )
@@ -86,6 +103,15 @@ const styles = StyleSheet.create({
     checkbox: {
         width: 18,
         height: 18
+    },
+    notesInput: {
+        minHeight: 32,
+        borderColor: '#e0e0e0',
+        borderWidth: 0.5,
+        borderRadius: 4,
+        paddingHorizontal: 4,
+        marginTop: 6,
+        marginBottom: 2,
     },
     separator: {
         width: '100%',

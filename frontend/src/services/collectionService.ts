@@ -103,7 +103,11 @@ export const getCheckMovieExistInCollection = async (movieId: string, isTvShow: 
   try {
     const response = await backendClient.get(`/collections/check_exist/${movieId}?is_tv_show=${isTvShow}`);
     const collections = response.data.data.map((item: any) => {
-      return new Collection(item.collection_id, item.collection_name);
+      const collection = new Collection(item.collection_id, item.collection_name);
+      if (item.notes) {
+        collection.moviesCollectionNotes = item.notes;
+      }
+      return collection;
     });
     
     return new Success<Collection[]>(collections, 'Collection detail retrieved successfully');
@@ -122,7 +126,7 @@ export const postAddMovieToCollection = async (
   isTvShow: boolean
 ): Promise<Success<MovieCollection> | Error> => {
   try {
-    const response = await backendClient.post(`/collections/${collectionId}/movies?is_tv_show=${isTvShow}`, {
+    const response = await backendClient.post(`/collections/${collectionId}/movies`, {
       movie_id: !isTvShow ? movie.id : undefined,
       tv_show_id: isTvShow ? movie.id : undefined,
       title: movie.title,
@@ -187,6 +191,35 @@ export const deleteMovieFromCollection = async (
     console.error('Error removing movie from collection:', error);
     return new Error(
       error.response?.data?.message || `Failed to remove ${isTvShow ? "movie" : "tv show"} from the collection.`,
+      error.response?.status
+    );
+  }
+};
+
+export const updateNotes = async (
+  collectionId: string, 
+  movieId: string, 
+  isTvShow: boolean,
+  notes: string
+): Promise<Success<boolean> | Error> => {
+  try {
+    const response = await backendClient.post(`/collections/${collectionId}/movies/${movieId}/notes`, {
+      notes: notes,
+      is_tv_show: isTvShow,
+    });
+    
+    if (!response.data.success) {
+      return new Error(
+        response.data.message || `Failed to update the ${isTvShow ? "movie" : "tv show"}'s notes to the collection.`,
+        response.data.status
+      );
+    }
+    
+    return new Success<boolean>(true, `${isTvShow ? "Movie" : "TV Show"}'s notes has been updated successfully.`);
+  } catch (error: any) {
+    console.error('Error removing movie from collection:', error);
+    return new Error(
+      error.response?.data?.message || `Failed to update the ${isTvShow ? "movie" : "tv show"}'s notes to the collection.`,
       error.response?.status
     );
   }

@@ -59,6 +59,10 @@ export class Movie {
     director(): Crew | undefined {
         return this.crew?.find(member => member.job === 'Director');
     }
+
+    notesInCollection(collectionId: number): string | undefined {
+        return this.collections ? this.collections.find(c => c.id === collectionId)?.moviesCollectionNotes : undefined;
+    }
 }
 
 export class Actor {

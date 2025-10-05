@@ -23,6 +23,11 @@ exports.validateMovieToCollection = [
   body('poster_path').trim().notEmpty().withMessage('poster path is required.')
 ];
 
+exports.validateMovieCollectionNotes = [
+  body('is_tv_show').isBoolean().withMessage('is_tv_show is requires and must be boolean.'),
+  body('notes').trim().notEmpty().withMessage('notes is required.')
+];
+
 // Create a new collection
 exports.createCollection = asyncHandler(async (req, res) => {
   // Check for validation errors
@@ -293,6 +298,55 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
   return successResponse(res, data[0], 'Movie added to collection successfully', 201);
 });
 
+exports.updateMovieCollectionNotes = asyncHandler(async (req, res) => {
+  // Check for validation errors
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return errorResponse(res, errors.array()[0].msg, 400);
+  }
+
+  const { collection_id, movie_id } = req.params;
+  const { notes, is_tv_show } = req.body;
+
+  const userId = req.user.id;
+
+  const { tableName: moviesCollectionsTable, error: moviesCollectionsTableError } = getTableName(MOVIES_COLLECTIONS);
+  if (moviesCollectionsTableError) {
+    console.error('Environment error:', moviesCollectionsTableError);
+    return errorResponse(res, moviesCollectionsTableError, 500);
+  }
+
+  // Check if the movie/tv show exists in the collection
+  const { data: existData, error: existError } = await supabase
+  .from(moviesCollectionsTable)
+  .select('*')
+  .eq('collection_id', collection_id)
+  .eq('user_id', userId)
+  .eq(is_tv_show ? 'tv_show_id' : 'movie_id', movie_id)
+  .single();
+
+  if (existError || !existData) {
+    return errorResponse(res, `${is_tv_show ? 'TV Show' : 'Movie'} not found in collection.`, 404, existError?.message);
+  }
+
+  // Update movie/tv show notes in collection
+  const { data, error } = await supabase
+  .from(moviesCollectionsTable)
+  .update({ notes })
+  .eq('collection_id', collection_id)
+  .eq('user_id', userId)
+  .eq(is_tv_show ? 'tv_show_id' : 'movie_id', movie_id)
+  .select();
+
+  if (error) {
+    console.error('Error updating movie/tv show\'s collection notes:', error);
+    const debugMessage = error?.message
+    return errorResponse(res, 'Failed to update notes', 500, debugMessage);
+  }
+
+  return successResponse(res, data[0], 'Collection notes updated successfully', 201);
+});
+
 // Get all movies in a collection
 exports.getCollectionMovies = asyncHandler(async (req, res) => {
   const { collection_id } = req.params;
@@ -416,13 +470,14 @@ exports.getCheckMovieExistInCollection = asyncHandler(async (req, res) => {
 
   const response = [];
   collectionData.forEach(collection => {
-    const isExist = moviesCollectionData.findIndex(
+    const moviesCollectionItem = moviesCollectionData.find(
       item => item.collection_id === collection.id
-    ) >= 0;
-    if (isExist) {
+    );
+    if (moviesCollectionItem) {
       response.push({
         collection_id: collection.id,
-        collection_name: collection.name
+        collection_name: collection.name,
+        notes: moviesCollectionItem.notes,
       })
     }
   });
