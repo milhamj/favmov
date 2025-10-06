@@ -35,13 +35,17 @@ pnpm install
 ```
 
 # TODOs
+
+## FE
 - [x] FE: Add activeTab param to Main stack navigation
 - [x] FE: Fix redirect before and after login
 - [x] FE: Fix logout
 - [x] FE: Homepage - Add shimmering / loading state
+- [x] FE: Search TV shows
 - [ ] FE: All pages - Handle error states
 - [ ] FE: Bug - Main screen tab navigation using activeTab
 - [ ] FE: AddToCollection - Change to BottomSheet with transparent background
-- [ ] FE: Search TV shows
+
+## BE
 - [x] BE: add movies to favorites (default collection)
 - [x] BE: create collection and add movies to it
