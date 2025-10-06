@@ -283,7 +283,6 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
     tv_show_id: is_tv_show ? tv_show_id : null,
     is_tv_show,
     notes,
-    user_id: userId
   }])
   .select();
 
