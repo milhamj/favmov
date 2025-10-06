@@ -9,6 +9,15 @@ if (!supabaseUrl || !supabaseKey) {
   process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const createAuthenticatedSupabaseClient = (token) => {
+  if (token) {
+    return createClient(supabaseUrl, supabaseKey, {
+      global: {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    });
+  }
+  throw new Error('Token is required to create an authenticated Supabase client');
+}
 
-module.exports = supabase;
+module.exports = createAuthenticatedSupabaseClient;

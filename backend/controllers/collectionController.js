@@ -1,5 +1,4 @@
 const { body, validationResult } = require('express-validator');
-const supabase = require('../config/supabase');
 const asyncHandler = require('../utils/asyncHandler');
 const { successResponse, errorResponse } = require('../utils/responses');
 const { 
@@ -45,7 +44,7 @@ exports.createCollection = asyncHandler(async (req, res) => {
   }
 
   // Check if user already has a collection with the same name.
-  const { data: selectData, error: selectError } = await supabase
+  const { data: selectData, error: selectError } = await req.supabase
     .from(tableName)
     .select('*')
     .eq('user_id', userId);
@@ -66,9 +65,9 @@ exports.createCollection = asyncHandler(async (req, res) => {
     }
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await req.supabase
     .from(tableName)
-    .insert([{ name, user_id: userId }])
+    .insert([{ name }])
     .select();
 
   if (error) {
@@ -90,7 +89,7 @@ exports.getUserCollections = asyncHandler(async (req, res) => {
     return errorResponse(res, collectionsTableError, 500);
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await req.supabase
     .rpc(collectionsTable, { user_id_input: userId });
 
   if (error) {
@@ -128,7 +127,7 @@ exports.getLatestCollectionMovies = asyncHandler(async (req, res) => {
     return errorResponse(res, latestMoviesCollectionTableError, 500);
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await req.supabase
     .rpc(latestMoviesCollectionTable, { user_id_input: userId });
 
   if (error) {
@@ -166,7 +165,7 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
     return errorResponse(res, 'movie_id is required when is_tv_show is false', 400);
   }
 
-  const userId = req.user.id; 
+  const userId = req.user.id;
 
   const { tableName: collectionsTable, error: collectionsTableError } = getTableName(COLLECTIONS);
   if (collectionsTableError) {
@@ -175,7 +174,7 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
   }
 
   // First verify the collection belongs to the user
-  const { data: collectionData, error: collectionError } = await supabase
+  const { data: collectionData, error: collectionError } = await req.supabase
     .from(collectionsTable)
     .select('*')
     .eq('id', collection_id)
@@ -194,7 +193,7 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
 
   if (is_tv_show) {
     // Check if tv show already exists in the collection
-    const { data: existingTvShowInCollection } = await supabase
+    const { data: existingTvShowInCollection } = await req.supabase
     .from(moviesCollectionsTable)
     .select('*')
     .eq('collection_id', collection_id)
@@ -212,14 +211,14 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
       return errorResponse(res, tvShowsTableError, 500);
     }
 
-    const { data: existingTvShow } = await supabase
+    const { data: existingTvShow } = await req.supabase
     .from(tvShowsTable)
     .select('*')
     .eq('id', tv_show_id)
     .single();
 
     if (!existingTvShow) {
-      const { error: insertTvShowError } = await supabase.from(tvShowsTable).insert([{
+      const { error: insertTvShowError } = await req.supabase.from(tvShowsTable).insert([{
         id: tv_show_id,
         title,
         poster_path,
@@ -234,7 +233,7 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
       }
     }
   } else {
-    const { data: existingMovieInCollection } = await supabase
+    const { data: existingMovieInCollection } = await req.supabase
     .from(moviesCollectionsTable)
     .select('*')
     .eq('collection_id', collection_id)
@@ -252,14 +251,14 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
       return errorResponse(res, moviesTableError, 500);
     }
 
-    const { data: existingMovie } = await supabase
+    const { data: existingMovie } = await req.supabase
     .from(moviesTable)
     .select('*')
     .eq('id', movie_id)
     .single();
 
     if (!existingMovie) {
-      const { error: insertMovieError } = await supabase.from(moviesTable).insert([{
+      const { error: insertMovieError } = await req.supabase.from(moviesTable).insert([{
         id: movie_id,
         title,
         poster_path,
@@ -276,7 +275,7 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
   }
 
   // Add movie/tv show to collection
-  const { data, error } = await supabase
+  const { data, error } = await req.supabase
   .from(moviesCollectionsTable)
   .insert([{
     collection_id,
@@ -323,7 +322,7 @@ exports.updateMovieCollectionNotes = asyncHandler(async (req, res) => {
   }
 
   // Check if the movie/tv show exists in the collection
-  const { data: existData, error: existError } = await supabase
+  const { data: existData, error: existError } = await req.supabase
   .from(moviesCollectionsTable)
   .select('*')
   .eq('collection_id', collection_id)
@@ -331,12 +330,16 @@ exports.updateMovieCollectionNotes = asyncHandler(async (req, res) => {
   .eq(is_tv_show ? 'tv_show_id' : 'movie_id', movie_id)
   .single();
 
+  console.log(existData);
+
   if (existError || !existData) {
     return errorResponse(res, `${is_tv_show ? 'TV Show' : 'Movie'} not found in collection.`, 404, existError?.message);
   }
 
+  console.log('Updating notes to:', notes);
+
   // Update movie/tv show notes in collection
-  const { data, error } = await supabase
+  const { data, error } = await req.supabase
   .from(moviesCollectionsTable)
   .update({ notes })
   .eq('collection_id', collection_id)
@@ -349,6 +352,8 @@ exports.updateMovieCollectionNotes = asyncHandler(async (req, res) => {
     const debugMessage = error?.message
     return errorResponse(res, 'Failed to update notes', 500, debugMessage);
   }
+
+  console.log(data);
 
   return successResponse(res, data[0], 'Collection notes updated successfully', 201);
 });
@@ -365,7 +370,7 @@ exports.getCollectionMovies = asyncHandler(async (req, res) => {
   }
 
   // First verify the collection belongs to the user
-  const { data: collectionData, error: collectionError } = await supabase
+  const { data: collectionData, error: collectionError } = await req.supabase
     .from(collectionsTable)
     .select('*')
     .eq('id', collection_id)
@@ -387,7 +392,7 @@ exports.getCollectionMovies = asyncHandler(async (req, res) => {
   }
 
   // Get all movies in the collection
-  const { data, error } = await supabase
+  const { data, error } = await req.supabase
     .from(moviesCollectionsTable)
     .select(`
       id,
@@ -437,7 +442,7 @@ exports.getCheckMovieExistInCollection = asyncHandler(async (req, res) => {
     return errorResponse(res, moviesCollectionsTableError, 500);
   }
 
-  const query = supabase
+  const query = req.supabase
   .from(moviesCollectionsTable)
   .select(`*`)
   .eq('user_id', userId);
@@ -463,7 +468,7 @@ exports.getCheckMovieExistInCollection = asyncHandler(async (req, res) => {
     return errorResponse(res, collectionsTableError, 500);
   }
 
-  const { data: collectionData, error: collectionError } = await supabase
+  const { data: collectionData, error: collectionError } = await req.supabase
   .from(collectionsTable)
   .select(`*`)
   .eq('user_id', userId);
@@ -504,7 +509,7 @@ exports.removeMovieFromCollection = asyncHandler(async (req, res) => {
   }
 
   // First verify the collection belongs to the user
-  const { data: collectionData, error: collectionError } = await supabase
+  const { data: collectionData, error: collectionError } = await req.supabase
     .from(collectionsTable)
     .select('*')
     .eq('id', collection_id)
@@ -522,7 +527,7 @@ exports.removeMovieFromCollection = asyncHandler(async (req, res) => {
   }
 
   // Check whether the movie exists in the collection
-  const selectQuery = supabase.from(moviesCollectionsTable)
+  const selectQuery = req.supabase.from(moviesCollectionsTable)
     .select('*')
     .eq('collection_id', collection_id)
     .eq('user_id', userId);
@@ -546,7 +551,7 @@ exports.removeMovieFromCollection = asyncHandler(async (req, res) => {
   }
 
   // Remove movie from collection
-  const query = supabase.from(moviesCollectionsTable)
+  const query = req.supabase.from(moviesCollectionsTable)
   .delete()
   .eq('collection_id', collection_id)
   .eq('user_id', userId);
@@ -584,7 +589,7 @@ exports.deleteCollection = asyncHandler(async (req, res) => {
   }
 
   // First verify the collection belongs to the user
-  const { data: collectionData, error: collectionError } = await supabase
+  const { data: collectionData, error: collectionError } = await req.supabase
     .from(collectionsTable)
     .select('*')
     .eq('id', collection_id)
@@ -602,7 +607,7 @@ exports.deleteCollection = asyncHandler(async (req, res) => {
   }
 
   // First delete all movies in the collection
-  const { error: moviesDeleteError } = await supabase
+  const { error: moviesDeleteError } = await req.supabase
     .from(moviesCollectionsTable)
     .delete()
     .eq('collection_id', collection_id)
@@ -614,7 +619,7 @@ exports.deleteCollection = asyncHandler(async (req, res) => {
   }
 
   // Then delete the collection
-  const { error } = await supabase
+  const { error } = await req.supabase
     .from(collectionsTable)
     .delete()
     .eq('id', collection_id)

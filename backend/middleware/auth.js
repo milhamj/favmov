@@ -1,4 +1,4 @@
-const supabase = require('../config/supabase');
+const createAuthenticatedSupabaseClient = require('../config/supabase');
 const { errorResponse } = require('../utils/responses');
 
 /**
@@ -13,16 +13,20 @@ const authenticate = async (req, res, next) => {
     }
     
     const token = authHeader.split(' ')[1];
+
+    const supabase = createAuthenticatedSupabaseClient(token);
     
     // Verify the token with Supabase
-    const { data, error } = await supabase.auth.getUser(token);
+    const { data: { user }, error } = await supabase.auth.getUser();
     
-    if (error || !data.user) {
+    if (error || !user) {
       return errorResponse(res, 'Invalid or expired token', 401);
     }
     
-    // Add user to request object
-    req.user = data.user;
+    // Add user and client to request object
+    req.user = user;
+    req.supabase = supabase;
+
     next();
   } catch (error) {
     console.error('Authentication error:', error);
