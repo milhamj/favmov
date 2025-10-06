@@ -56,7 +56,6 @@ exports.createCollection = asyncHandler(async (req, res) => {
   }
 
   if (selectData) {
-    console.log("selectData:", selectData)
     const existingCollection = selectData.find(
       collection => collection.name.toLowerCase() === name.toLowerCase()
     );
@@ -329,13 +328,9 @@ exports.updateMovieCollectionNotes = asyncHandler(async (req, res) => {
   .eq(is_tv_show ? 'tv_show_id' : 'movie_id', movie_id)
   .single();
 
-  console.log(existData);
-
   if (existError || !existData) {
     return errorResponse(res, `${is_tv_show ? 'TV Show' : 'Movie'} not found in collection.`, 404, existError?.message);
   }
-
-  console.log('Updating notes to:', notes);
 
   // Update movie/tv show notes in collection
   const { data, error } = await req.supabase
@@ -351,8 +346,6 @@ exports.updateMovieCollectionNotes = asyncHandler(async (req, res) => {
     const debugMessage = error?.message
     return errorResponse(res, 'Failed to update notes', 500, debugMessage);
   }
-
-  console.log(data);
 
   return successResponse(res, data[0], 'Collection notes updated successfully', 201);
 });
