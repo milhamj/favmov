@@ -1,9 +1,9 @@
 import axios, { AxiosInstance } from 'axios';
-import { FAVMOV_API_BASE_URL } from '@env';
+import { FAVMOV_API_BASE_URL_PROD } from '@env';
 import { supabase } from './supabaseClient';
 
 const axiosInstance = axios.create({
-  baseURL: FAVMOV_API_BASE_URL,
+  baseURL: FAVMOV_API_BASE_URL_PROD,
   headers: {
     'Content-Type': 'application/json',
   },

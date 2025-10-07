@@ -16,12 +16,13 @@ interface CollectionAddCardProps {
 const CollectionAddCard = ({ collection, movie }: CollectionAddCardProps) => {
     const [isLoading, setIsLoading] = useState(false);
     const [isSaved, setIsSaved] = useState(collection.isInCollection);
+    // console.log(`milhamj: `, movie);
     const [notes, setNotes]  = useState(movie.notesInCollection(collection.id) || '');
 
     const handleAddToCollection = async (value: boolean) => {
         setIsLoading(true);
         if (value) {
-            const response = await postAddMovieToCollection(collection.id.toString(), movie, movie.isTvShow || false);
+            const response = await postAddMovieToCollection(collection.id, movie, movie.isTvShow || false);
             if (response instanceof Error) {
                 Toast.show({
                     type: 'error',
@@ -34,7 +35,7 @@ const CollectionAddCard = ({ collection, movie }: CollectionAddCardProps) => {
             }
             setIsLoading(false);
         } else {
-            const response = await deleteMovieFromCollection(collection.id.toString(), movie.id.toString(), movie.isTvShow || false);
+            const response = await deleteMovieFromCollection(collection.id, movie.id.toString(), movie.isTvShow || false);
             if (response instanceof Error) {
                 Toast.show({
                     type: 'error',
@@ -59,7 +60,7 @@ const CollectionAddCard = ({ collection, movie }: CollectionAddCardProps) => {
 
         newNotes = newNotes.trim();
         const result = await updateNotes(
-            collection.id.toString(), 
+            collection.id, 
             movie.id.toString(), 
             movie.isTvShow || false, newNotes
         );

@@ -1,7 +1,6 @@
 import { Success, Error } from '../model/apiResponse';
 import { supabase } from './supabaseClient';
 import { Session, User } from '@supabase/supabase-js';
-import { isDevelopment } from '../utils/util';
 
 export const checkAuthStatus = async (): Promise<{
   session: Session | null;
@@ -10,9 +9,6 @@ export const checkAuthStatus = async (): Promise<{
   try {
     const { data: { session }, error } = await supabase.auth.getSession();
     if (error) throw error;
-    if (isDevelopment()) {
-      console.log("Supabase session:", session);
-    }
     return {
       session,
       user: session?.user ?? null
