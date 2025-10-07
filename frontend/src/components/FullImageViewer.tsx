@@ -19,6 +19,7 @@ const FullImageViewer: React.FC<FullImageViewerProps> = ({ visible, imageUrl, on
         <ImageViewer
           imageUrls={[{ url: imageUrl }]}
           enableSwipeDown={true}
+          saveToLocalByLongPress={false}
           onSwipeDown={onClose}
         />
       </View>
