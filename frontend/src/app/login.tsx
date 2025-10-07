@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(243, 143, 77, 0.1)',
   },
   loginBox: {
-    width: Platform.OS === 'web' ? 400 : '100%',
+    width: '100%',
     backgroundColor: 'white',
     borderRadius: 10,
     padding: 20,
