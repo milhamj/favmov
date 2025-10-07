@@ -1,28 +1,29 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
-import PageContainer  from '../components/PageContainer';
-import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
-import { Movie } from '../model/movieModel';
-import { fetchMovieDetails } from '../services/movieService';
-import { Success, Error } from '../model/apiResponse';
-import Toast from 'react-native-toast-message';
-import TopBar from '../components/TopBar';
-import ImageViewer from '../components/ImageViewer';
-import { COLORS } from '../styles/colors'; 
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../navigation/navigationTypes';
+import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Icon } from 'react-native-elements';
-import { getCheckMovieExistInCollection } from '../services/collectionService';
-import { useAuth } from '../hooks/useAuth';
+import Toast from 'react-native-toast-message';
+import PageContainer  from '../../components/PageContainer';
+import { Movie } from '../../model/movieModel';
+import { fetchMovieDetails } from '../../services/movieService';
+import { Success, Error } from '../../model/apiResponse';
+import TopBar from '../../components/TopBar';
+import ImageViewer from '../../components/ImageViewer';
+import { COLORS } from '../../styles/colors'; 
+import { getCheckMovieExistInCollection } from '../../services/collectionService';
+import { useAuth } from '../../hooks/useAuth';
+import { parseBooleanParam, parseIntParam } from '../../utils/util';
+import { router } from '../../navigation/router';
+import { routes } from '../../navigation/routes';
 
 const MovieDetailPage = () => {
-  const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'MovieDetailPage'>>();
-  const route = useRoute();
-  const movieParams = (route.params as { movie: Movie }).movie;
+  const params = useLocalSearchParams();
+  const movieId = parseIntParam(params.id);
+  const isTvShow = parseBooleanParam(params.is_tv_show);
 
   const { isAuthenticated } = useAuth();
 
-  const [movie, setMovie] = useState(movieParams);
+  const [movie, setMovie] = useState(new Movie({id : movieId, isTvShow: isTvShow}));
   const [isCollectionLoading, setIsCollectionLoading] = useState(false);
   const isInitialLoad = useRef(true);
 
@@ -121,7 +122,7 @@ const MovieDetailPage = () => {
 
   const AddToCollectionButton = () => {
     const handleFavoriteClick = () => {
-      navigation.navigate('AddToCollectionPage', { movie });
+      router.navigate(routes.addToCollection(movie.id, movie.isTvShow) );
     }
     
     return (
@@ -143,7 +144,7 @@ const MovieDetailPage = () => {
         title= { movie.title }
         backButton={{
           isShow: true,
-          onClick: () => navigation.goBack()
+          onClick: () => router.goBackSafely()
         }}
       />
       <ScrollView>

@@ -5,21 +5,16 @@ import {
   StyleSheet,
   Platform,
   TouchableOpacity,
-  ActivityIndicator,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { Icon } from 'react-native-elements';
-import PageContainer from '../components/PageContainer';
-import TopBar from '../components/TopBar';
-import { useAuth } from '../hooks/useAuth';
-import { supabase } from '../services/supabaseClient';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../navigation/navigationTypes';
+import PageContainer from '../../components/PageContainer';
+import TopBar from '../../components/TopBar';
+import { useAuth } from '../../hooks/useAuth';
+import { supabase } from '../../services/supabaseClient';
 import Toast from 'react-native-toast-message';
-import withAuth from '../components/withAuth';
+import withAuth from '../../components/withAuth';
+import { router } from '../../navigation/router';
 
 const ProfilePage = withAuth(() => {
-  const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'MainPage'>>();
   const { user } = useAuth();
 
   const handleLogout = async () => {
@@ -35,16 +30,8 @@ const ProfilePage = withAuth(() => {
             position: 'bottom'
         });
 
-        navigation.reset({
-            index: 0,
-            routes: [
-                { 
-                    name: 'MainPage',
-                    params: { activeTab: 'HomePage' }
-                }
-            ]
-        });
-
+        router.dismissAll();
+        router.replace('/');
     } catch (error) {
         console.error('Logout error:', error);
         Toast.show({

@@ -5,14 +5,12 @@ import { Movie } from '../model/movieModel';
 import { searchMovie } from '../services/movieService';
 import { Success } from '../model/apiResponse';
 import TopBar from '../components/TopBar';
-import { useNavigation } from '@react-navigation/native';
 import MovieCard from '../components/MovieCard';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../navigation/navigationTypes';
 import SelectableChip from '../components/SelectableChip';
+import { router } from '../navigation/router';
+import { routes } from '../navigation/routes';
 
 const SearchPage = () => {
-    const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'SearchPage'>>();
     const [searchQuery, setSearchQuery]  = useState('');
     const [movies, setMovies] = useState([] as Movie[]);
     const [isLoading, setIsLoading] = useState(false);
@@ -87,7 +85,7 @@ const SearchPage = () => {
         }}>
             <MovieCard 
                 movie={item}
-                onClick={() => navigation.navigate('MovieDetailPage', { movie: item })} 
+                onClick={() => router.navigate(routes.movie(item.id, item.isTvShow))} // TODO milhamj: pass movie detail as query param?
             />
         </View>
     );
@@ -110,7 +108,7 @@ const SearchPage = () => {
                 title= 'Search'
                 backButton={{
                 isShow: true,
-                onClick: () => navigation.goBack()
+                onClick: () => router.goBackSafely()
                 }}
             />
             <TextInput 

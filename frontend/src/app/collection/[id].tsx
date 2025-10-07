@@ -1,24 +1,23 @@
 import React, { useEffect, useState } from 'react';
-import PageContainer from '../components/PageContainer';
-import TopBar from '../components/TopBar';
-import withAuth from '../components/withAuth';
-import { Success } from '../model/apiResponse';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { Movie } from '../model/movieModel';
-import { RootStackParamList } from '../navigation/navigationTypes';
-import { searchMovie } from '../services/movieService';
-import { getCollectionDetail } from '../services/collectionService';
-import { Collection } from '../model/collectionModel';
-import Toast from 'react-native-toast-message';
 import { View, StyleSheet, Text, ActivityIndicator, Image, TouchableOpacity, FlatList } from 'react-native';
-import { COLORS } from '../styles/colors';
-import MovieCard from '../components/MovieCard';
+import { useLocalSearchParams } from 'expo-router';
+import Toast from 'react-native-toast-message';
+import PageContainer from '../../components/PageContainer';
+import TopBar from '../../components/TopBar';
+import withAuth from '../../components/withAuth';
+import { Success } from '../../model/apiResponse';
+import { Movie } from '../../model/movieModel';
+import { getCollectionDetail } from '../../services/collectionService';
+import { Collection } from '../../model/collectionModel';
+import { COLORS } from '../../styles/colors';
+import MovieCard from '../../components/MovieCard';
+import { parseStrParam } from '../../utils/util';
+import { router } from '../../navigation/router';
+import { routes } from '../../navigation/routes';
 
 const CollectionDetailPage = withAuth(() => {
-    const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'CollectionDetailPage'>>();
-    const route = useRoute();
-    const collectionId = (route.params as { collectionId: string }).collectionId;
+    const params = useLocalSearchParams();
+    const collectionId = parseStrParam(params.id);
     const [collection, setCollection] = useState(null as Collection | null);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -43,13 +42,13 @@ const CollectionDetailPage = withAuth(() => {
     }, [collectionId]);
 
     const handleEmptyButton = () => {
-        navigation.navigate('SearchPage');
+        router.navigate(routes.search);
     }
 
     const renderMovieItem = ({ item, index }: { item: Movie, index: number }) => (
         <TouchableOpacity 
         style={[styles.movieCard, { marginRight: index % 2 === 0 ? 16 : 0 }]}
-        onPress={() => navigation.navigate('MovieDetailPage', { movie: item })} 
+        onPress={() => router.navigate(routes.movie(item.id, item.isTvShow)) } 
         >
             <MovieCard 
                 movie={item}
@@ -70,7 +69,7 @@ const CollectionDetailPage = withAuth(() => {
                 title={ collection?.name ? collection.name : 'Collection' }
                 backButton={ {
                     isShow: true,
-                    onClick: () => navigation.goBack()
+                    onClick: () => router.goBackSafely()
                 } }
             />
             <View style={styles.container}>
@@ -81,7 +80,7 @@ const CollectionDetailPage = withAuth(() => {
                 ) : collection?.movies?.length === 0 ? (
                     <View style={styles.emptyState}>
                         <Image 
-                            source={require('../../assets/empty_search.png')} 
+                            source={require('../../../assets/empty_search.png')} 
                             style={styles.emptyImage} 
                         />
                         <Text style={styles.emptyText}>

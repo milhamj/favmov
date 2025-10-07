@@ -1,7 +1,7 @@
 import { Movie } from './movieModel';
 
 export class Collection {
-  id: number;
+  id: string;
   name: string;
   movies?: Movie[];
   userId?: string;
@@ -10,7 +10,7 @@ export class Collection {
   moviesCount?: number;
   moviesCollectionNotes?: string;
 
-  constructor(id: number, name: string) {
+  constructor(id: string, name: string) {
     this.id = id;
     this.name = name;
   }
@@ -19,7 +19,7 @@ export class Collection {
 export class CollectionCard extends Collection {
   isInCollection: boolean
 
-  constructor(id: number, name: string, isInCollection: boolean) {
+  constructor(id: string, name: string, isInCollection: boolean) {
       super(id, name)
       this.isInCollection = isInCollection;
   }
