@@ -32,6 +32,7 @@ export default function TabLayout() {
             tabs.map(tab => (
                 <Tabs.Screen
                     name={tab.name}
+                    key={tab.name}
                     options={{
                         title: tab.title,
                         tabBarIcon: ({ color, size }) => (
