@@ -1,15 +1,13 @@
 import React, { useEffect } from 'react';
 import { Text, StyleSheet, View, ActivityIndicator, FlatList } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../navigation/navigationTypes';
 import { fetchTrendingMovies, fetchPopularMovies, fetchFavoriteMovies, fetchTrendingShows } from '../services/movieService';
 import { Result, Success } from '../model/apiResponse';
 import MovieCard from '../components/MovieCard';
 import { Movie } from '../model/movieModel';
 import { useAuth } from '../hooks/useAuth';
 import { Loadable } from '../model/uiState';
-
+import { router } from '../navigation/router';
+import { routes } from '../navigation/routes';
 
 export const SectionType = {
     TrendingMovies: 'Trending Movies',
@@ -19,7 +17,6 @@ export const SectionType = {
 }
 
 const HomeSection: React.FC<{ section: string }> = ({ section }) => {
-    const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'MainPage'>>();
     const [movieState, setMovieState] = React.useState<Loadable<Movie[]>>({ status: 'idle' });
     const { isAuthenticated } = useAuth();
   
@@ -27,7 +24,7 @@ const HomeSection: React.FC<{ section: string }> = ({ section }) => {
       <View style={{ width: 120, marginEnd: 8 }}>
         <MovieCard 
           movie={item} 
-          onClick={() => navigation.navigate('MovieDetailPage', { movie: item })}
+          onClick={() => router.navigate(routes.movie(item.id, item.isTvShow))}
         />
       </View>
     );

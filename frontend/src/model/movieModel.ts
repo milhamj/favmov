@@ -60,7 +60,7 @@ export class Movie {
         return this.crew?.find(member => member.job === 'Director');
     }
 
-    notesInCollection(collectionId: number): string | undefined {
+    notesInCollection(collectionId: string): string | undefined {
         return this.collections ? this.collections.find(c => c.id === collectionId)?.moviesCollectionNotes : undefined;
     }
 }

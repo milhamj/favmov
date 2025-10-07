@@ -1,22 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, ActivityIndicator, Image, TouchableOpacity, View, Text, FlatList, ScrollView } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../navigation/navigationTypes';
-import { Movie } from '../model/movieModel';
-import { getUserCollections } from '../services/collectionService';
-import { CollectionCard } from '../model/collectionModel';
+import { Movie } from '../../model/movieModel';
+import { getUserCollections } from '../../services/collectionService';
+import { CollectionCard } from '../../model/collectionModel';
 import Toast from 'react-native-toast-message';
-import CollectionAddCard from '../components/CollectionAddCard';
-import { Success } from '../model/apiResponse';
-import PageContainer from '../components/PageContainer';
-import TopBar from '../components/TopBar';
-import withAuth from '../components/withAuth';
+import CollectionAddCard from '../../components/CollectionAddCard';
+import { Success } from '../../model/apiResponse';
+import PageContainer from '../../components/PageContainer';
+import TopBar from '../../components/TopBar';
+import withAuth from '../../components/withAuth';
+import { router } from '../../navigation/router';
+import { routes } from '../../navigation/routes';
 
 const AddToCollectionPage = withAuth(() => {
-    const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'AddToCollectionPage'>>();
-    const route = useRoute();
-    const movieParams = (route.params as { movie: Movie }).movie;
+    const movieParams = new Movie({}); // TODO milhamj: fix movie params from storage
     const shortTitle = movieParams.title.length > 20 ? movieParams.title.substring(0,20) + "..." : movieParams.title;
 
     const [collectionCards, setCollectionCards] = useState<CollectionCard[]>([]);
@@ -31,14 +28,14 @@ const AddToCollectionPage = withAuth(() => {
                 text2: 'Movie collections are needed',
                 position: 'bottom'
             });
-            navigation.goBack();
+            router.goBackSafely();
         } else {
             setShouldRender(true);
         }
     }, []);
 
     const handleCreateCollection = () => {
-        navigation.navigate('MainPage', { activeTab: 'CollectionPage'})
+        router.navigate(routes.home)
     }
 
     const fetchCollections = async () => {
@@ -91,7 +88,7 @@ const AddToCollectionPage = withAuth(() => {
                     title= { `Add ${shortTitle} to Collection` }
                     backButton={{
                       isShow: true,
-                      onClick: () => navigation.goBack()
+                      onClick: () => router.goBackSafely()
                     }}
                 />
                 <ScrollView style={styles.content}>
@@ -103,7 +100,7 @@ const AddToCollectionPage = withAuth(() => {
                         ) : collectionCards.length === 0 ? (
                             <View style={styles.emptyState}>
                                 <Image 
-                                    source={require('../../assets/empty_search.png')} 
+                                    source={require('../../../assets/empty_search.png')} 
                                     style={styles.emptyImage} 
                                 />
                                 <Text style={styles.emptyText}>
@@ -121,7 +118,7 @@ const AddToCollectionPage = withAuth(() => {
                             <FlatList
                                 data={collectionCards}
                                 renderItem={renderCollection}
-                                keyExtractor={(item) => item.id.toString()}
+                                keyExtractor={(item) => item.id}
                                 contentContainerStyle={styles.listContent}
                             />
                         )
