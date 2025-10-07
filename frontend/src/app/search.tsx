@@ -9,6 +9,7 @@ import MovieCard from '../components/MovieCard';
 import SelectableChip from '../components/SelectableChip';
 import { router } from '../navigation/router';
 import { routes } from '../navigation/routes';
+import { MovieStore } from '../stores/movieStore';
 
 const SearchPage = () => {
     const [searchQuery, setSearchQuery]  = useState('');
@@ -85,7 +86,10 @@ const SearchPage = () => {
         }}>
             <MovieCard 
                 movie={item}
-                onClick={() => router.navigate(routes.movie(item.id, item.isTvShow))} // TODO milhamj: pass movie detail as query param?
+                onClick={() => { 
+                    MovieStore.cacheMovie(item);
+                    router.navigate(routes.movie(item.id, item.isTvShow))
+                }}
             />
         </View>
     );

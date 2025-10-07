@@ -15,7 +15,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { parseBooleanParam, parseIntParam } from '../../utils/util';
 import { router } from '../../navigation/router';
 import { routes } from '../../navigation/routes';
-import { MovieStore } from '../../stores/movieCache';
+import { MovieStore } from '../../stores/movieStore';
 
 const MovieDetailPage = () => {
   const params = useLocalSearchParams();
@@ -24,7 +24,10 @@ const MovieDetailPage = () => {
 
   const { isAuthenticated } = useAuth();
 
-  const [movie, setMovie] = useState(new Movie({id : movieId, isTvShow: isTvShow}));
+  const [movie, setMovie] = useState(() => {
+    const cached = MovieStore.getCachedMovie(movieId, isTvShow);
+    return cached || new Movie({id : movieId, isTvShow: isTvShow});
+  });
   const [isCollectionLoading, setIsCollectionLoading] = useState(false);
   const isInitialLoad = useRef(true);
 

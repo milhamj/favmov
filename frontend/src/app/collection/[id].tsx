@@ -14,6 +14,7 @@ import MovieCard from '../../components/MovieCard';
 import { parseStrParam } from '../../utils/util';
 import { router } from '../../navigation/router';
 import { routes } from '../../navigation/routes';
+import { MovieStore } from '../../stores/movieStore';
 
 const CollectionDetailPage = withAuth(() => {
     const params = useLocalSearchParams();
@@ -48,7 +49,10 @@ const CollectionDetailPage = withAuth(() => {
     const renderMovieItem = ({ item, index }: { item: Movie, index: number }) => (
         <TouchableOpacity 
         style={[styles.movieCard, { marginRight: index % 2 === 0 ? 16 : 0 }]}
-        onPress={() => router.navigate(routes.movie(item.id, item.isTvShow)) } 
+        onPress={() => {
+            MovieStore.cacheMovie(item);
+            router.navigate(routes.movie(item.id, item.isTvShow)) 
+        }} 
         >
             <MovieCard 
                 movie={item}
