@@ -29,8 +29,6 @@ const ProfilePage = withAuth(() => {
             text1: 'Logout successful',
             position: 'bottom'
         });
-
-        router.dismissAll();
         router.replace('/');
     } catch (error) {
         console.error('Logout error:', error);
