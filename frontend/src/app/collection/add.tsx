@@ -13,7 +13,7 @@ import { router } from '../../navigation/router';
 import { routes } from '../../navigation/routes';
 import { useLocalSearchParams } from 'expo-router';
 import { parseBooleanParam, parseIntParam } from '../../utils/util';
-import { MovieStore } from '../../stores/movieCache';
+import { MovieStore } from '../../stores/movieStore';
 
 const AddToCollectionPage = withAuth(() => {
     const params = useLocalSearchParams();
@@ -22,7 +22,6 @@ const AddToCollectionPage = withAuth(() => {
     
     const [movie] = useState(() => {
         const cached = MovieStore.getCachedMovie(movieId, isTvShow);
-        console.log("milhamj: movieCached", cached);
         return cached || new Movie({});
     });
 

@@ -8,6 +8,7 @@ import { useAuth } from '../hooks/useAuth';
 import { Loadable } from '../model/uiState';
 import { router } from '../navigation/router';
 import { routes } from '../navigation/routes';
+import { MovieStore } from '../stores/movieStore';
 
 export const SectionType = {
     TrendingMovies: 'Trending Movies',
@@ -24,7 +25,10 @@ const HomeSection: React.FC<{ section: string }> = ({ section }) => {
       <View style={{ width: 120, marginEnd: 8 }}>
         <MovieCard 
           movie={item} 
-          onClick={() => router.navigate(routes.movie(item.id, item.isTvShow))}
+          onClick={() => { 
+            MovieStore.cacheMovie(item);
+            router.navigate(routes.movie(item.id, item.isTvShow))
+          }}
         />
       </View>
     );
