@@ -12,5 +12,5 @@ export const routes = {
         `/collection/${id}`,
     
     addToCollection: (movieId: number, isTvShow?: boolean) => 
-        `/collection/add?movie_id=${movieId}${isTvShow ? '?is_tv_show=true' : ''}`,
+        `/collection/add?movie_id=${movieId}${isTvShow ? '&is_tv_show=true' : ''}`,
 };

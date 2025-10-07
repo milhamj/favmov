@@ -11,17 +11,29 @@ import TopBar from '../../components/TopBar';
 import withAuth from '../../components/withAuth';
 import { router } from '../../navigation/router';
 import { routes } from '../../navigation/routes';
+import { useLocalSearchParams } from 'expo-router';
+import { parseBooleanParam, parseIntParam } from '../../utils/util';
+import { MovieStore } from '../../stores/movieCache';
 
 const AddToCollectionPage = withAuth(() => {
-    const movieParams = new Movie({}); // TODO milhamj: fix movie params from storage
-    const shortTitle = movieParams.title.length > 20 ? movieParams.title.substring(0,20) + "..." : movieParams.title;
+    const params = useLocalSearchParams();
+    const movieId = parseIntParam(params.movie_id);
+    const isTvShow = parseBooleanParam(params.is_tv_show);
+    
+    const [movie] = useState(() => {
+        const cached = MovieStore.getCachedMovie(movieId, isTvShow);
+        console.log("milhamj: movieCached", cached);
+        return cached || new Movie({});
+    });
+
+    const shortTitle = movie.title.length > 20 ? movie.title.substring(0,20) + "..." : movie.title;
 
     const [collectionCards, setCollectionCards] = useState<CollectionCard[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [shouldRender, setShouldRender] = useState(false);
 
     useEffect(() => {
-        if (!movieParams.collections) {
+        if (!movie.collections) {
             Toast.show({
                 type: 'error',
                 text1: 'Error',
@@ -44,7 +56,7 @@ const AddToCollectionPage = withAuth(() => {
         if (result instanceof Success) {
             const collectionCardsResult = [] as CollectionCard[];
             result.data.forEach((collection) => {
-                const isInCollection = movieParams.collections?.find((movieCollection) => { 
+                const isInCollection = movie.collections?.find((movieCollection) => { 
                     return movieCollection.id === collection.id
                 }) !== undefined;
                 collectionCardsResult.push(new CollectionCard(collection.id, collection.name, isInCollection));
@@ -77,7 +89,7 @@ const AddToCollectionPage = withAuth(() => {
 
     const renderCollection = ({ item }: { item: CollectionCard }) => {
         return (
-            <CollectionAddCard collection={item} movie={movieParams}/>
+            <CollectionAddCard collection={item} movie={movie}/>
         )
     }
 

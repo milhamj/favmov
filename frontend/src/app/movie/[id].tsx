@@ -15,6 +15,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { parseBooleanParam, parseIntParam } from '../../utils/util';
 import { router } from '../../navigation/router';
 import { routes } from '../../navigation/routes';
+import { MovieStore } from '../../stores/movieCache';
 
 const MovieDetailPage = () => {
   const params = useLocalSearchParams();
@@ -122,7 +123,13 @@ const MovieDetailPage = () => {
 
   const AddToCollectionButton = () => {
     const handleFavoriteClick = () => {
-      router.navigate(routes.addToCollection(movie.id, movie.isTvShow) );
+      if (!isAuthenticated) {
+        router.navigate(routes.login);
+        return;
+      }
+
+      MovieStore.cacheMovie(movie);
+      router.navigate(routes.addToCollection(movie.id, movie.isTvShow));
     }
     
     return (

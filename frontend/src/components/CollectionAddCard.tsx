@@ -16,6 +16,7 @@ interface CollectionAddCardProps {
 const CollectionAddCard = ({ collection, movie }: CollectionAddCardProps) => {
     const [isLoading, setIsLoading] = useState(false);
     const [isSaved, setIsSaved] = useState(collection.isInCollection);
+    // console.log(`milhamj: `, movie);
     const [notes, setNotes]  = useState(movie.notesInCollection(collection.id) || '');
 
     const handleAddToCollection = async (value: boolean) => {
