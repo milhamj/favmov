@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(243, 143, 77, 0.1)',
   },
   profileBox: {
-    width: Platform.OS === 'web' ? 400 : '100%',
+    width: '100%',
     alignSelf: 'center',
     backgroundColor: 'white',
     borderRadius: 10,
