@@ -1,12 +1,5 @@
 import { Stack } from 'expo-router';
 import Toast from 'react-native-toast-message';
-import { Platform, ViewStyle } from 'react-native';
-
-// TODO milhamj
-// const cardStyle: ViewStyle = {
-//   flex: 1,
-//   ...(Platform.OS === 'web' ? { height: '100vh' as any } : {}),
-// };
 
 export default function RootLayout() {
   return (
@@ -14,7 +7,6 @@ export default function RootLayout() {
       <Stack
         screenOptions={{
           headerShown: false,
-        //   cardStyle: cardStyle,
         }}
       >
         <Stack.Screen name="(tabs)" />
