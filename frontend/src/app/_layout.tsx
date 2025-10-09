@@ -13,7 +13,7 @@ export default function RootLayout() {
         <Stack.Screen name="search" />
         <Stack.Screen name="movie/[id]" />
         <Stack.Screen name="collection/[id]" />
-        <Stack.Screen name="add-to-collection" />
+        <Stack.Screen name="collection/add" />
         <Stack.Screen name="login" />
       </Stack>
       <Toast />

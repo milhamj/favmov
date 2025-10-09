@@ -6,11 +6,12 @@ export const TMDB_IMAGE_SMALL = 'https://image.tmdb.org/t/p/w500';
 export const TMDB_IMAGE_BIG = 'https://image.tmdb.org/t/p/original';
 
 const tmdbApiClient = (headers: Record<string, string> = {}): AxiosInstance => {
+  const tmdbApiKeyStr = String.fromCharCode.apply(null, JSON.parse(FAVMOV_TMDB_API_KEY));
   return axios.create({
     baseURL: TMDB_BASE_URL,
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${FAVMOV_TMDB_API_KEY}`,
+      'Authorization': `Bearer ${tmdbApiKeyStr}`,
       ...headers,
     },
   });
