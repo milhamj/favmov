@@ -1,9 +1,12 @@
 import { Stack } from 'expo-router';
 import Toast from 'react-native-toast-message';
+import { SeoHead } from '../components/SeoHead';
+import React from 'react';
 
-export default function RootLayout() {
+const RootLayout = () => {
   return (
     <>
+      <SeoHead/>
       <Stack
         screenOptions={{
           headerShown: false,
@@ -20,3 +23,5 @@ export default function RootLayout() {
     </>
   );
 }
+
+export default RootLayout;
