@@ -1,9 +1,19 @@
 import { Stack } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import { SeoHead } from '../components/SeoHead';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { supabase } from '../services/supabaseClient';
+import { ActivityIndicator } from 'react-native';
 
 const RootLayout = () => {
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    setReady(true)
+  }, [])
+
+  if (!ready) return <ActivityIndicator style={{ flex: 1 }} size="large" color="tomato"/>
+
   return (
     <>
       <SeoHead/>
