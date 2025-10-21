@@ -12,8 +12,7 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, onClick }) => {
   const Container = onClick ? TouchableOpacity : View;
 
   return (
-    <Container onPress={onClick ? () => onClick(movie) : undefined}>
-      <View style={[styles.posterContainer]}>
+    <Container onPress={onClick ? () => onClick(movie) : undefined} style={[styles.posterContainer]}>
         <Image source={{ uri: movie.smallPosterUrl() }} style={[styles.poster]} />
         {movie.rating && (
           <Text
@@ -34,7 +33,6 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, onClick }) => {
         <Text style={styles.posterTitle} numberOfLines={1} ellipsizeMode="tail">
           {movie.title}
         </Text>
-      </View>
     </Container>
   );
 }
@@ -50,7 +48,7 @@ const styles = StyleSheet.create({
   },
   posterTitle: {
     marginTop: 2,
-    fontSize: 10,
+    fontSize: 12,
     textAlign: 'left',
     fontWeight: '500'
   },
