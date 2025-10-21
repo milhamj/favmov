@@ -43,9 +43,10 @@ pnpm install
 - [x] FE: Fix logout
 - [x] FE: Homepage - Add shimmering / loading state
 - [x] FE: Search TV shows
-- [ ] FE: Collection detail page - Change UI so that the notes are shown
+- [x] FE: Bug - Main screen tab navigation using activeTab
+- [x] FE: Collection detail page - Change UI so that the notes are shown
+- [ ] FE: SEO for each movie detail (need SSR)
 - [ ] FE: All pages - Handle error states
-- [ ] FE: Bug - Main screen tab navigation using activeTab
 - [ ] FE: AddToCollection - Change to BottomSheet with transparent background
 
 ## BE
