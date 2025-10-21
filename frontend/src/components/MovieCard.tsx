@@ -15,9 +15,6 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, onClick }) => {
     <Container onPress={onClick ? () => onClick(movie) : undefined}>
       <View style={[styles.posterContainer]}>
         <Image source={{ uri: movie.smallPosterUrl() }} style={[styles.poster]} />
-        <Text style={styles.posterTitle} numberOfLines={1} ellipsizeMode="tail">
-          {movie.title}
-        </Text>
         {movie.rating && (
           <Text
             style={[
@@ -34,6 +31,9 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, onClick }) => {
             )}
           </Text>
         )}
+        <Text style={styles.posterTitle} numberOfLines={1} ellipsizeMode="tail">
+          {movie.title}
+        </Text>
       </View>
     </Container>
   );
@@ -46,16 +46,17 @@ const styles = StyleSheet.create({
   poster: {
     aspectRatio: 9 / 16,
     borderRadius: 8,
+    marginBottom: 2,
   },
   posterTitle: {
-    marginTop: 4,
-    fontSize: 14,
+    marginTop: 2,
+    fontSize: 10,
     textAlign: 'left',
     fontWeight: '500'
   },
   posterRating: {
     marginTop: 2,
-    fontSize: 10,
+    fontSize: 14,
     textAlign: 'left',
   },
   posterRatingCount: {
