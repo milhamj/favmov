@@ -157,6 +157,7 @@ const styles = StyleSheet.create({
     movieCard: {
         width: '100%',
         marginBottom: 16, 
+        paddingHorizontal: 2,
         alignContent: 'center'
     },
     collectionNote: {

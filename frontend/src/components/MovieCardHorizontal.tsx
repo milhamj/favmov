@@ -16,8 +16,8 @@ const MovieCardHorizontal: React.FC<MovieCardHorizontalProps> = ({ movie, onClic
         <Container onPress={onClick ? () => onClick(movie) : undefined} style={styles.posterContainer}>
             <Image source={{ uri: movie.smallPosterUrl() }} style={[styles.poster]} />
             <View style={styles.posterInfo}>
-                <Text style={styles.posterTitle}>
-                    {movie.title}
+                <Text style={styles.posterTitle} numberOfLines={1} ellipsizeMode="tail">
+                    {movie.title}{movie.releaseYear() ? ` (${movie.releaseYear()})` : ''}
                 </Text>
                 { movie.rating && (
                     <Text
@@ -28,6 +28,8 @@ const MovieCardHorizontal: React.FC<MovieCardHorizontalProps> = ({ movie, onClic
                         fontWeight: 'bold',
                         },
                     ]}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
                     >
                     ⭐ {movie.rating}{' '}
                     {movie.ratingCount && (

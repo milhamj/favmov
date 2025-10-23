@@ -63,6 +63,13 @@ export class Movie {
     notesInCollection(collectionId: string): string | undefined {
         return this.collections ? this.collections.find(c => c.id === collectionId)?.moviesCollectionNotes : undefined;
     }
+
+    releaseYear(): string | null {
+        if (!this.releaseDate) return null;
+
+        const dateArr = this.releaseDate.split('-');
+        return dateArr.length > 0 && dateArr[0] ? dateArr[0] : null;
+    }
 }
 
 export class Actor {

@@ -395,8 +395,8 @@ exports.getCollectionMovies = asyncHandler(async (req, res) => {
       notes,
       user_id,
       created_at,
-      ${moviesTable}(title, poster_path, rating, rating_count),
-      ${tvShowsTable}(title, poster_path, rating, rating_count)
+      ${moviesTable}(title, poster_path, rating, rating_count, release_date),
+      ${tvShowsTable}(title, poster_path, rating, rating_count, release_date)
     `)
     .eq('collection_id', collection_id)
     .eq('user_id', userId)

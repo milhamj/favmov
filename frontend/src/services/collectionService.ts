@@ -43,6 +43,9 @@ const transformMovieData = (item: any): Movie => {
   if (item.created_at) {
     movie.collectionAddTime = new Date(item.created_at).getTime();
   }
+  if (item.release_date) {
+    movie.releaseDate = item.release_date;
+  }
   return movie;
 }
 
