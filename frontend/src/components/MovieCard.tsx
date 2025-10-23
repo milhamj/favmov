@@ -19,7 +19,7 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, onClick }) => {
             style={[
               styles.posterRating,
               {
-                color: movie.rating > 5.0 ? COLORS.rating_green : COLORS.rating_red,
+                color: movie.rating >= 5.0 ? COLORS.rating_green : COLORS.rating_red,
                 fontWeight: 'bold',
               },
             ]}

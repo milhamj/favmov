@@ -24,8 +24,8 @@ const MovieCardHorizontal: React.FC<MovieCardHorizontalProps> = ({ movie, onClic
                     style={[
                         styles.posterRating,
                         {
-                        color: movie.rating > 5.0 ? COLORS.rating_green : COLORS.rating_red,
-                        fontWeight: 'bold',
+                            color: movie.rating >= 5.0 ? COLORS.rating_green : COLORS.rating_red,
+                            fontWeight: 'bold',
                         },
                     ]}
                     numberOfLines={1}
