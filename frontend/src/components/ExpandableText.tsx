@@ -6,7 +6,7 @@ interface ExpandableTextProps {
   maxLines?: number;
 }
 
-const ExpandableText = ({ text, maxLines = 3 }: ExpandableTextProps) => {
+const ExpandableText = ({ text, maxLines = 2 }: ExpandableTextProps) => {
   const [isTruncated, setIsTruncated] = useState<boolean>(false);
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const textRef = useRef<Text>(null);
@@ -26,11 +26,14 @@ const ExpandableText = ({ text, maxLines = 3 }: ExpandableTextProps) => {
     }
   }, [text, maxLines]);
 
+  // If expanded, show all lines; if truncated, show maxLines - 1 to accommodate "See More"
+  const numberOfLines = isExpanded ? undefined : isTruncated ? maxLines - 1 : maxLines;
+
   return (
     <View style={styles.container}>
       <Text
         ref={textRef}
-        numberOfLines={isExpanded ? undefined : maxLines}
+        numberOfLines={numberOfLines}
         onTextLayout={handleTextLayout}
         style={styles.text}
       >
