@@ -12,18 +12,14 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, onClick }) => {
   const Container = onClick ? TouchableOpacity : View;
 
   return (
-    <Container onPress={onClick ? () => onClick(movie) : undefined}>
-      <View style={[styles.posterContainer]}>
+    <Container onPress={onClick ? () => onClick(movie) : undefined} style={[styles.posterContainer]}>
         <Image source={{ uri: movie.smallPosterUrl() }} style={[styles.poster]} />
-        <Text style={styles.posterTitle} numberOfLines={1} ellipsizeMode="tail">
-          {movie.title}
-        </Text>
         {movie.rating && (
           <Text
             style={[
               styles.posterRating,
               {
-                color: movie.rating > 5.0 ? COLORS.rating_green : COLORS.rating_red,
+                color: movie.rating >= 5.0 ? COLORS.rating_green : COLORS.rating_red,
                 fontWeight: 'bold',
               },
             ]}
@@ -34,7 +30,9 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, onClick }) => {
             )}
           </Text>
         )}
-      </View>
+        <Text style={styles.posterTitle} numberOfLines={1} ellipsizeMode="tail">
+          {movie.title}
+        </Text>
     </Container>
   );
 }
@@ -46,16 +44,17 @@ const styles = StyleSheet.create({
   poster: {
     aspectRatio: 9 / 16,
     borderRadius: 8,
+    marginBottom: 2,
   },
   posterTitle: {
-    marginTop: 4,
-    fontSize: 14,
+    marginTop: 2,
+    fontSize: 12,
     textAlign: 'left',
     fontWeight: '500'
   },
   posterRating: {
     marginTop: 2,
-    fontSize: 10,
+    fontSize: 14,
     textAlign: 'left',
   },
   posterRatingCount: {

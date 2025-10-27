@@ -156,7 +156,7 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
   }
 
   const { collection_id } = req.params;
-  const { is_tv_show, movie_id, tv_show_id, notes, title, poster_path, rating, rating_count } = req.body;
+  const { is_tv_show, movie_id, tv_show_id, notes, title, poster_path, rating, rating_count, release_date } = req.body;
 
   if (is_tv_show && !tv_show_id) {
     return errorResponse(res, 'tv_show_id is required when is_tv_show is true', 400);
@@ -222,7 +222,8 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
         title,
         poster_path,
         rating,
-        rating_count
+        rating_count,
+        release_date
       }])
 
       if (insertTvShowError) {
@@ -262,7 +263,8 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
         title,
         poster_path,
         rating,
-        rating_count
+        rating_count,
+        release_date
       }])
 
       if (insertMovieError) {
@@ -395,8 +397,8 @@ exports.getCollectionMovies = asyncHandler(async (req, res) => {
       notes,
       user_id,
       created_at,
-      ${moviesTable}(title, poster_path, rating, rating_count),
-      ${tvShowsTable}(title, poster_path, rating, rating_count)
+      ${moviesTable}(title, poster_path, rating, rating_count, release_date),
+      ${tvShowsTable}(title, poster_path, rating, rating_count, release_date)
     `)
     .eq('collection_id', collection_id)
     .eq('user_id', userId)

@@ -163,7 +163,6 @@ const MovieDetailPage = () => {
           { movie.bigBackdropUrl() && movie.smallBackdropUrl() ? (
               <ImageViewer
                 style={styles.backdrop}
-                imageStyle={styles.posterImage}
                 bigImageUrl={movie.bigBackdropUrl()!!}
                 smallImageUrl={movie.smallBackdropUrl()!!} /> 
             ) : <View style={styles.backdropEmpty} />

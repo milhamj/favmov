@@ -10,11 +10,11 @@ import { Movie } from '../../model/movieModel';
 import { getCollectionDetail } from '../../services/collectionService';
 import { Collection } from '../../model/collectionModel';
 import { COLORS } from '../../styles/colors';
-import MovieCard from '../../components/MovieCard';
 import { parseStrParam } from '../../utils/util';
 import { router } from '../../navigation/router';
 import { routes } from '../../navigation/routes';
 import { MovieStore } from '../../stores/movieStore';
+import MovieCardHorizontal from '../../components/MovieCardHorizontal';
 
 const CollectionDetailPage = withAuth(() => {
     const params = useLocalSearchParams();
@@ -47,24 +47,15 @@ const CollectionDetailPage = withAuth(() => {
     }
 
     const renderMovieItem = ({ item, index }: { item: Movie, index: number }) => (
-        <TouchableOpacity 
-        style={[styles.movieCard, { marginRight: index % 2 === 0 ? 16 : 0 }]}
-        onPress={() => {
-            MovieStore.cacheMovie(item);
-            router.navigate(routes.movie(item.id, item.isTvShow)) 
-        }} 
-        >
-            <MovieCard 
+        <View style={[styles.movieCard, { marginTop: index === 0 ? 16 : 0 }]}>
+            <MovieCardHorizontal
                 movie={item}
+                onClick={() => {
+                    MovieStore.cacheMovie(item);
+                    router.navigate(routes.movie(item.id, item.isTvShow))
+                }}
             />
-            {
-                item.collectionNotes ? (
-                    <Text style={styles.collectionNote}>
-                        {item.collectionNotes}
-                    </Text>
-                ) : null
-            }
-        </TouchableOpacity>
+        </View>
     );
 
     return (
@@ -105,9 +96,7 @@ const CollectionDetailPage = withAuth(() => {
                         data={collection?.movies}
                         renderItem={renderMovieItem}
                         keyExtractor={(item) => item.id.toString()}
-                        numColumns={2}
-                        columnWrapperStyle={styles.row}
-                        
+                        numColumns={1}
                     />
                 )}
             </View>
@@ -165,12 +154,10 @@ const styles = StyleSheet.create({
       fontSize: 16,
       fontWeight: 'bold',
     },
-    row: {
-      justifyContent: 'flex-start',
-    },
     movieCard: {
-        width: '48%', 
+        width: '100%',
         marginBottom: 16, 
+        paddingHorizontal: 2,
         alignContent: 'center'
     },
     collectionNote: {
