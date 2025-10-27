@@ -45,6 +45,7 @@ pnpm install
 - [x] FE: Search TV shows
 - [x] FE: Bug - Main screen tab navigation using activeTab
 - [x] FE: Collection detail page - Change UI so that the notes are shown
+- [ ] FE: Trending & Popular list page with pagination
 - [ ] FE: SEO for each movie detail (need SSR)
 - [ ] FE: All pages - Handle error states
 - [ ] FE: AddToCollection - Change to BottomSheet with transparent background
