@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Text, ActivityIndicator, Image, TouchableOpacity, FlatList } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import PageContainer from '../../components/PageContainer';
 import TopBar from '../../components/TopBar';
@@ -15,32 +15,46 @@ import { router } from '../../navigation/router';
 import { routes } from '../../navigation/routes';
 import { MovieStore } from '../../stores/movieStore';
 import MovieCardHorizontal from '../../components/MovieCardHorizontal';
+import { CollectionStateStore } from '../../stores/collectionStateStore';
 
 const CollectionDetailPage = withAuth(() => {
     const params = useLocalSearchParams();
     const collectionId = parseStrParam(params.id);
     const [collection, setCollection] = useState(null as Collection | null);
     const [isLoading, setIsLoading] = useState(false);
+    const lastFetchedTimestamp = useRef<number | null>(null);
+
+    const fetchCollectionDetail = async () => {
+        setIsLoading(true);
+        const result = await getCollectionDetail(collectionId);
+        if (result instanceof Success) {
+            setCollection(result.data);
+            lastFetchedTimestamp.current = Date.now();
+        } else {
+            Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: result.message,
+                position: 'bottom',
+            });
+        }
+        setIsLoading(false);
+    }
 
     useEffect(() => {
-        const fetchCollectionDetail = async () => {
-            setIsLoading(true);
-            const result = await getCollectionDetail(collectionId);
-            if (result instanceof Success) {
-                setCollection(result.data);
-            } else {
-                Toast.show({
-                    type: 'error',
-                    text1: 'Error',
-                    text2: result.message,
-                    position: 'bottom',
-                });
-            }
-            setIsLoading(false);
-        }
-
         fetchCollectionDetail();
     }, [collectionId]);
+
+    useFocusEffect(
+        useCallback(() => {
+            const collectionLastUpdated = CollectionStateStore.getLastUpdated();
+            if (collectionLastUpdated
+                && lastFetchedTimestamp.current
+                && collectionLastUpdated > lastFetchedTimestamp.current) {
+                fetchCollectionDetail();
+            }
+        }, [collectionId])
+    )
 
     const handleEmptyButton = () => {
         router.navigate(routes.search);
