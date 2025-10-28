@@ -2,7 +2,7 @@ import { Stack } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import { SeoHead } from '../components/SeoHead';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator } from 'react-native';
+import FullPageLoader from '../components/FullPageLoader';
 
 const RootLayout = () => {
   const [ready, setReady] = useState(false)
@@ -30,7 +30,7 @@ const RootLayout = () => {
           </Stack>
           <Toast />
         </>
-        : <ActivityIndicator size="large" color="tomato" style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }} />
+        : <FullPageLoader />
       }
     </>
   );

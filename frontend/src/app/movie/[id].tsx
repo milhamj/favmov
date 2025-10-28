@@ -25,7 +25,7 @@ const MovieDetailPage = () => {
   const { isAuthenticated } = useAuth();
 
   const [movie, setMovie] = useState(() => {
-    const cached = MovieStore.getCachedMovie(movieId, isTvShow);
+    const cached = MovieStore.getCachedMovieAndDelete(movieId.toString(), isTvShow);
     return cached || new Movie({id : movieId, isTvShow: isTvShow});
   });
   const [isCollectionLoading, setIsCollectionLoading] = useState(false);

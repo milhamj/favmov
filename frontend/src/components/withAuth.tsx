@@ -1,8 +1,8 @@
 import { useEffect } from "react";
-import { ActivityIndicator } from "react-native";
 import { useAuth } from "../hooks/useAuth";
 import { router } from "../navigation/router";
 import { routes } from "../navigation/routes";
+import FullPageLoader from "./FullPageLoader";
 
 const withAuth = (Component: React.ComponentType) => {
     return (props: any) => {
@@ -14,7 +14,7 @@ const withAuth = (Component: React.ComponentType) => {
             }
         }, [isAuthenticated, loading, router]);
 
-        if (loading) return <ActivityIndicator />;
+        if (loading) return <FullPageLoader />;
         if (!isAuthenticated) return null;
 
         return <Component {...props} />;

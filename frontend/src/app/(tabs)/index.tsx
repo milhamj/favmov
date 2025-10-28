@@ -1,12 +1,22 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import Toast from 'react-native-toast-message';
 import TopBar from '../../components/TopBar';
 import HomeSection, { SectionType } from '../../components/HomeSection';
 import { router } from '../../navigation/router';
 import { routes } from '../../navigation/routes';
+import { useFocusEffect } from 'expo-router';
+import { CollectionStateStore } from '../../stores/collectionStateStore';
 
 const HomePage = () => {
+  const [collectionLastUpdated, setCollectionLastUpdated] = useState<number | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      setCollectionLastUpdated(CollectionStateStore.getLastUpdated());
+    }, [])
+  );
+
   return (
     <View style={styles.container}>
       <TopBar
@@ -19,7 +29,7 @@ const HomePage = () => {
         <HomeSection section={SectionType.TrendingMovies} />
         <HomeSection section={SectionType.TrendingShows} />
         <HomeSection section={SectionType.PopularMovies} />
-        <HomeSection section={SectionType.YourFavorites} />
+        <HomeSection section={SectionType.YourFavorites} collectionLastUpdated={collectionLastUpdated} />
       </ScrollView>
       <Toast />
     </View>

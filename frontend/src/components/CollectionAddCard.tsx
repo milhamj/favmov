@@ -7,6 +7,7 @@ import { Movie } from '../model/movieModel';
 import { Error, Success } from '../model/apiResponse';
 import Toast from 'react-native-toast-message';
 import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
+import { CollectionStateStore } from '../stores/collectionStateStore';
 
 interface CollectionAddCardProps {
     collection: CollectionCard;
@@ -16,7 +17,6 @@ interface CollectionAddCardProps {
 const CollectionAddCard = ({ collection, movie }: CollectionAddCardProps) => {
     const [isLoading, setIsLoading] = useState(false);
     const [isSaved, setIsSaved] = useState(collection.isInCollection);
-    // console.log(`milhamj: `, movie);
     const [notes, setNotes]  = useState(movie.notesInCollection(collection.id) || '');
 
     const handleAddToCollection = async (value: boolean) => {
@@ -32,6 +32,7 @@ const CollectionAddCard = ({ collection, movie }: CollectionAddCardProps) => {
                   });
             } else {
                 setIsSaved(!isSaved);
+                CollectionStateStore.setLastUpdated(Date.now());
             }
             setIsLoading(false);
         } else {
@@ -45,6 +46,7 @@ const CollectionAddCard = ({ collection, movie }: CollectionAddCardProps) => {
                   });
             } else {
                 setIsSaved(!isSaved);
+                CollectionStateStore.setLastUpdated(Date.now());
             }
             setIsLoading(false);
         }
@@ -72,6 +74,8 @@ const CollectionAddCard = ({ collection, movie }: CollectionAddCardProps) => {
                 text2: result.message,
                 position: 'bottom',
             });
+        } else {
+            CollectionStateStore.setLastUpdated(Date.now());
         }
 
         setIsLoading(false);

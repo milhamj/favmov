@@ -1,5 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Text, StyleSheet, View, ActivityIndicator, FlatList } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native'; // Add this import
 import { fetchTrendingMovies, fetchPopularMovies, fetchFavoriteMovies, fetchTrendingShows } from '../services/movieService';
 import { Result, Success } from '../model/apiResponse';
 import MovieCard from '../components/MovieCard';
@@ -17,9 +18,13 @@ export const SectionType = {
     YourFavorites: 'Your Favorites',
 }
 
-const HomeSection: React.FC<{ section: string }> = ({ section }) => {
+const HomeSection: React.FC<{ 
+  section: string, 
+  collectionLastUpdated?: number | null 
+}> = ({ section, collectionLastUpdated }) => {
     const [movieState, setMovieState] = React.useState<Loadable<Movie[]>>({ status: 'idle' });
     const { isAuthenticated } = useAuth();
+    const lastFetchedTimestamp = useRef<number | null>(null);
   
     const renderMoviePoster = ({ item }: { item: Movie }) => (
       <View style={{ width: 120, marginEnd: 8 }}>
@@ -32,34 +37,50 @@ const HomeSection: React.FC<{ section: string }> = ({ section }) => {
         />
       </View>
     );
+
+    const fetchMovies = async () => {
+      if (section === SectionType.YourFavorites && !isAuthenticated) {
+          setMovieState({ status: 'empty' });
+          return;
+      }
+
+      setMovieState({ status: 'loading' });
+
+      const result =
+        section === SectionType.TrendingMovies ? await fetchTrendingMovies() :
+        section === SectionType.TrendingShows ? await fetchTrendingShows() :
+        section === SectionType.PopularMovies ? await fetchPopularMovies() :
+        section === SectionType.YourFavorites && isAuthenticated ? await fetchFavoriteMovies() :
+        null
+
+      if (result instanceof Success) {
+          setMovieState(
+              result.data.length ? 
+                  { status: 'success', data: result.data } : 
+                  { status: 'empty' }
+          );
+          lastFetchedTimestamp.current = Date.now();
+      } else {
+          setMovieState({ status: 'error', error: result?.message ?? 'Failed to load ' + section });
+      }
+    };
   
+    // Initial load
     useEffect(() => {
-      (async () => {
-        if (section === SectionType.YourFavorites && !isAuthenticated) {
-            setMovieState({ status: 'empty' });
-            return;
-        }
-
-        setMovieState({ status: 'loading' });
-
-        const result =
-          section === SectionType.TrendingMovies ? await fetchTrendingMovies() :
-          section === SectionType.TrendingShows ? await fetchTrendingShows() :
-          section === SectionType.PopularMovies ? await fetchPopularMovies() :
-          section === SectionType.YourFavorites && isAuthenticated ? await fetchFavoriteMovies() :
-          null
-  
-        if (result instanceof Success) {
-            setMovieState(
-                result.data.length ? 
-                    { status: 'success', data: result.data } : 
-                    { status: 'empty' }
-            );
-        } else {
-            setMovieState({ status: 'error', error: result?.message ?? 'Failed to load ' + section });
-        }
-      })();
+      fetchMovies();
     }, [section, isAuthenticated]);
+
+    // Check for updates when screen comes into focus
+    useEffect(() => {
+      // Only refetch "Your Favorites" section if collections were updated
+      if (section === SectionType.YourFavorites) {
+        if (collectionLastUpdated 
+          && lastFetchedTimestamp.current 
+          && collectionLastUpdated > lastFetchedTimestamp.current) {
+          fetchMovies();
+        }
+      }
+    }, [section, collectionLastUpdated, isAuthenticated]);
     
     switch (movieState.status) {
         case 'loading':
