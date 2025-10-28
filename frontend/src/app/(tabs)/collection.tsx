@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, Image, TouchableOpacity, Dimensions } from 'react-native';
 import Toast from 'react-native-toast-message';
 import withAuth from '../../components/withAuth';
@@ -11,6 +11,8 @@ import { getUserCollections } from '../../services/collectionService';
 import CollectionCard from '../../components/CollectionCard';
 import { router } from '../../navigation/router';
 import { routes } from '../../navigation/routes';
+import { useFocusEffect } from 'expo-router';
+import { CollectionStateStore } from '../../stores/collectionStateStore';
 
 const numColumns = 2;
 
@@ -18,26 +20,39 @@ const CollectionPage = withAuth(() => {
     const [collections, setCollections] = useState<CollectionModel[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isCreateSheetVisible, setIsCreateSheetVisible] = useState(false);
+    const lastFetchedTimestamp = useRef<number | null>(null);
     
     const fetchCollections = async () => {
         setIsLoading(true);
         const result = await getUserCollections();
         if ('data' in result) {
-        setCollections(result.data);
+          setCollections(result.data);
+          lastFetchedTimestamp.current = Date.now();
         } else {
-        Toast.show({
-            type: 'error',
-            text1: 'Error',
-            text2: result.message,
-            position: 'bottom'
-        });
+          Toast.show({
+              type: 'error',
+              text1: 'Error',
+              text2: result.message,
+              position: 'bottom'
+          });
         }
         setIsLoading(false);
     };
     
     useEffect(() => {
-        fetchCollections();
+      fetchCollections();
     }, []);
+
+    useFocusEffect(
+      useCallback(() => {
+        const collectionLastUpdated = CollectionStateStore.getLastUpdated();
+        if (collectionLastUpdated 
+          && lastFetchedTimestamp.current 
+          && collectionLastUpdated > lastFetchedTimestamp.current) {
+          fetchCollections();
+        }
+      }, [])
+    )
     
     const handleCreateCollection = () => {
         setIsCreateSheetVisible(true);
@@ -45,15 +60,15 @@ const CollectionPage = withAuth(() => {
 
     const handleSaveCollection = (isSuccess: boolean, collectionName?: string) => {
         if (isSuccess && collectionName) {
-        Toast.show({
-            type: 'success',
-            text1: 'Collection Created',
-            text2: `"${collectionName}" has been created successfully`,
-            position: 'bottom'
-        });
-        
-        // Refresh collections
-        fetchCollections();
+          Toast.show({
+              type: 'success',
+              text1: 'Collection Created',
+              text2: `"${collectionName}" has been created successfully`,
+              position: 'bottom'
+          });
+          
+          // Refresh collections
+          fetchCollections();
         }
         
         setIsCreateSheetVisible(false);
