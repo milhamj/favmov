@@ -21,7 +21,7 @@ const AddToCollectionPage = withAuth(() => {
     const isTvShow = parseBooleanParam(params.is_tv_show);
     
     const [movie] = useState(() => {
-        const cached = MovieStore.getCachedMovie(movieId, isTvShow);
+        const cached = MovieStore.getCachedMovieAndDelete(movieId.toString(), isTvShow);
         return cached || new Movie({});
     });
 
