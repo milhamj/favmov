@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   poster: {
-    aspectRatio: 9 / 16,
+    aspectRatio: 2 / 3,
     borderRadius: 8,
     marginBottom: 2,
   },
