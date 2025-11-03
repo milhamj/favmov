@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Text, StyleSheet, View, ActivityIndicator, FlatList } from 'react-native';
+import { Text, StyleSheet, View, ActivityIndicator, FlatList, Pressable } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native'; // Add this import
 import { fetchTrendingMovies, fetchPopularMovies, fetchFavoriteMovies, fetchTrendingShows } from '../services/movieService';
 import { Result, Success } from '../model/apiResponse';
@@ -81,27 +81,38 @@ const HomeSection: React.FC<{
         }
       }
     }, [section, collectionLastUpdated, isAuthenticated]);
+
+    const handleHeaderPress = () => {
+      router.navigate(routes.explore(section));
+    }
     
     switch (movieState.status) {
         case 'loading':
           return <View style={styles.section}>
-                    <Text style={styles.header}>{section}</Text>
-                    <View style={styles.loadingContainer}>
-                        <ActivityIndicator size="large" color="tomato" />
-                    </View>
-                </View>
+            <View style={styles.header}>
+              <Text style={[styles.headerTitle]}>{section}</Text>
+            </View>
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="tomato" />
+            </View>
+          </View>
         case 'success':
           return <View style={styles.section}>
-                    <Text style={styles.header}>{section}</Text>
-                    <FlatList
-                        data={movieState.data}
-                        renderItem={renderMoviePoster}
-                        keyExtractor={(item) => item.id.toString()}
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.flatListContent}
-                    /> 
-                </View>;
+            <Pressable style={styles.header} onPress={handleHeaderPress}>
+              <Text style={styles.headerTitle}>{section}</Text>
+              { section !== SectionType.YourFavorites &&
+                <Text style={styles.headerAction}>View All</Text>
+              }
+            </Pressable>
+            <FlatList
+              data={movieState.data}
+              renderItem={renderMoviePoster}
+              keyExtractor={(item) => item.id.toString()}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.flatListContent}
+            /> 
+          </View>;
         default: // 'error' | 'empty' | 'idle'
           return null; // 'idle'
     }
@@ -112,10 +123,20 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     header: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginVertical: 8,
-        paddingHorizontal: 16,
+      flexDirection: 'row', 
+      justifyContent: 'space-between', 
+      alignItems: 'center',
+      marginVertical: 8,
+      paddingHorizontal: 16,
+    },
+    headerTitle: { 
+      fontSize: 24,
+      fontWeight: 'bold',
+    },
+    headerAction: { 
+      fontSize: 14,
+      fontWeight: '500',
+      color: 'tomato',
     },
     flatListContent: {
         paddingHorizontal: 16,

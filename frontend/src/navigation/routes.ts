@@ -13,4 +13,7 @@ export const routes = {
     
     addToCollection: (movieId: number, isTvShow?: boolean) => 
         `/collection/add?movie_id=${movieId}${isTvShow ? '&is_tv_show=true' : ''}`,
+
+    explore: (sectionType: string) => 
+        `/explore?section_type=${encodeURIComponent(sectionType)}`,
 };
