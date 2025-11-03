@@ -10,16 +10,17 @@ import SelectableChip from '../components/SelectableChip';
 import { router } from '../navigation/router';
 import { routes } from '../navigation/routes';
 import { MovieStore } from '../stores/movieStore';
+import FullPageLoader from '../components/FullPageLoader';
 
 const SearchPage = () => {
     const [searchQuery, setSearchQuery]  = useState('');
     const [movies, setMovies] = useState([] as Movie[]);
     const [isLoading, setIsLoading] = useState(false);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
-    const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [showFilter, setShowFilter] = useState(true);
     const [isMovieFilterSelected, setIsMovieFilterSelected] = useState(true);
+    const page = useRef(1);
     const inputRef = useRef<TextInput>(null);
     const isFetchingRef = useRef(false);
 
@@ -60,9 +61,9 @@ const SearchPage = () => {
     useEffect(() => {
         const debounceFetch = setTimeout(() => {
             if (searchQuery) {
-                setPage(1); // Reset to first page on new search or filter
+                page.current = 1; // Reset to first page on new search or filter
                 setMovies([]); // Clear previous results
-                fetchMovies(page, true);
+                fetchMovies(page.current, true);
             }
         }, 300);
 
@@ -70,10 +71,9 @@ const SearchPage = () => {
     }, [searchQuery, isMovieFilterSelected, fetchMovies]);
 
     const handleOnEndReached = () => {
-        if (!isFetchingRef.current && page < totalPages && !isLoadingMore) {
-            const nextPage = page + 1;
-            setPage(nextPage);
-            fetchMovies(nextPage);
+        if (!isFetchingRef.current && page.current < totalPages && !isLoadingMore) {
+            page.current += 1;
+            fetchMovies(page.current);
         }
     };    
 
@@ -143,9 +143,7 @@ const SearchPage = () => {
             <View style={styles.scrollContainer}>
                 {
                     isLoading ? (
-                        <View style={styles.loadingContainer}>
-                            <ActivityIndicator style={styles.loadingItem} size="large" color="tomato" />
-                        </View>
+                        <FullPageLoader />
                     ) : isEmptyQuery || isEmptyResult ? (
                         <View style={styles.emptyState}>
                             <Image source={require('../../assets/empty_search.png')} style={styles.emptyImage} />
@@ -186,19 +184,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginVertical: 8,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingItem: {
-    height: 100
-  },
   row: {
     justifyContent: 'flex-start',
-  },
-  flatListContent: {
-    paddingHorizontal: 16,
   },
   scrollContainer: {
     flex: 1,

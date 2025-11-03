@@ -13,6 +13,7 @@ import { router } from '../../navigation/router';
 import { routes } from '../../navigation/routes';
 import { useFocusEffect } from 'expo-router';
 import { CollectionStateStore } from '../../stores/collectionStateStore';
+import FullPageLoader from '../../components/FullPageLoader';
 
 const numColumns = 2;
 
@@ -95,9 +96,7 @@ const CollectionPage = withAuth(() => {
         />
         <View style={styles.container}>
             { isLoading ? (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="tomato" />
-            </View>
+              <FullPageLoader />
             ) : collections.length === 0 ? (
             <View style={styles.emptyState}>
                 <Image 
@@ -143,11 +142,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 16,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   listContent: {
     paddingVertical: 16,

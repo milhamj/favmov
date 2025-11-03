@@ -48,9 +48,9 @@ const transformMovieData = (data: any, isTvShow?: boolean): Movie => {
   return movie;
 }
 
-export const fetchTrendingMovies = async (): Promise<Success<Movie[]> | Error> => {
+export const fetchTrendingMovies = async (page: number = 1): Promise<Success<Movie[]> | Error> => {
   try {
-    const response = await mTmdbApiClient.get(`/trending/movie/week`);
+    const response = await mTmdbApiClient.get(`/trending/movie/week`, { params: { page } });
     const movies = response.data.results.map(transformMovieData);
     return new Success<Movie[]>(movies);
   } catch (error: any) {
@@ -59,9 +59,9 @@ export const fetchTrendingMovies = async (): Promise<Success<Movie[]> | Error> =
   }
 };
 
-export const fetchTrendingShows = async (): Promise<Success<Movie[]> | Error> => {
+export const fetchTrendingShows = async (page: number = 1): Promise<Success<Movie[]> | Error> => {
   try {
-    const response = await mTmdbApiClient.get(`/trending/tv/week`);
+    const response = await mTmdbApiClient.get(`/trending/tv/week`, { params: { page } });
     const movies = response.data.results.map((data: any) => transformMovieData(data, true));
     return new Success<Movie[]>(movies);
   } catch (error: any) {
@@ -70,9 +70,9 @@ export const fetchTrendingShows = async (): Promise<Success<Movie[]> | Error> =>
   }
 };
 
-export const fetchPopularMovies = async (): Promise<Success<Movie[]> | Error> => {
+export const fetchPopularMovies = async (page: number = 1): Promise<Success<Movie[]> | Error> => {
   try {
-    const response = await mTmdbApiClient.get(`/movie/popular`);
+    const response = await mTmdbApiClient.get(`/movie/popular`, { params: { page } });
     const movies = response.data.results.map(transformMovieData);
     return new Success<Movie[]>(movies);
   } catch (error: any) {

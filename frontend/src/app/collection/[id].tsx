@@ -60,17 +60,27 @@ const CollectionDetailPage = withAuth(() => {
         router.navigate(routes.search);
     }
 
-    const renderMovieItem = ({ item, index }: { item: Movie, index: number }) => (
-        <View style={[styles.movieCard, { marginTop: index === 0 ? 16 : 0 }]}>
-            <MovieCardHorizontal
-                movie={item}
-                onClick={() => {
-                    MovieStore.cacheMovie(item);
-                    router.navigate(routes.movie(item.id, item.isTvShow))
-                }}
-            />
-        </View>
-    );
+    const renderMovieItem = ({ item, index }: { item: Movie, index: number }) => {
+        const isFirstItem = index === 0;
+        const isLastItem = collection?.movies?.length === index + 1;
+        return (
+            <View style={[
+                styles.movieCard,
+                {
+                    marginTop: isFirstItem ? 16 : 0,
+                    marginBottom: isLastItem ? 16 : 8
+                }
+                ]}>
+                <MovieCardHorizontal
+                    movie={item}
+                    onClick={() => {
+                        MovieStore.cacheMovie(item);
+                        router.navigate(routes.movie(item.id, item.isTvShow))
+                    }}
+                />
+            </View>
+        );
+    };
 
     return (
         <PageContainer>
@@ -170,7 +180,7 @@ const styles = StyleSheet.create({
     },
     movieCard: {
         width: '100%',
-        marginBottom: 16, 
+        marginBottom: 8,
         paddingHorizontal: 2,
         alignContent: 'center'
     },
