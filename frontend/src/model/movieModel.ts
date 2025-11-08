@@ -1,7 +1,7 @@
 import { TMDB_IMAGE_BIG, TMDB_IMAGE_SMALL } from '../services/tmdbClient';
 import { Collection } from './collectionModel';
 
-const DEFAULT_MOVIE_POSTER = "https://gdlqv951tx.ufs.sh/f/C0k8wbELmJeDw0TDr2gZ0P1FHQConspldILbBzXf7JKSVE2O";
+export const DEFAULT_MOVIE_POSTER = "https://gdlqv951tx.ufs.sh/f/C0k8wbELmJeDw0TDr2gZ0P1FHQConspldILbBzXf7JKSVE2O";
 
 export class Movie {
     id: number;
