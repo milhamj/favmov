@@ -5,27 +5,41 @@ import { routes } from '../../navigation/routes';
 import PageContainer from '../../components/PageContainer';
 import TopBar from '../../components/TopBar';
 import { useLocalSearchParams } from 'expo-router';
-import { parseIntParam } from '../../utils/util';
+import { parseIntParam, parseStrParam } from '../../utils/util';
 import { People } from '../../model/peopleModel';
 import FullPageLoader from '../../components/FullPageLoader';
 import ExpandableText from '../../components/ExpandableText';
+import Toast from 'react-native-toast-message';
+import { fetchPeopleDetails } from '../../services/peopleService';
+import { Success } from '../../model/apiResponse';
 
 const PeopleDetailPage = () => {
     const params = useLocalSearchParams();
-    const peopleId = parseIntParam(params.id);
-    const [people, setPeople] = useState<People | null>(new People({
-        id: 1588597,
-        name: 'Atsumi Tanezaki',
-        photoPath: '/6tM8GU7QvrdUCvR4kxqVUZivtvO.jpg',
-        birthday: '1990-09-27',
-        placeOfBirth: 'Oita, Japan',
-        knownForDepartment: 'Acting',
-        biography: `Atsumi Tanezaki is a Japanese voice actress affiliated with Across Entertainment. She is known for her roles in various anime series, including Chika Fujiwara in "Kaguya-sama: Love is War," Hinagiku Katsura in "Hayate the Combat Butler," and many others. Tanezaki has gained recognition for her versatile voice acting skills and has become a prominent figure in the anime industry.`,
-        gender: 1,
-        credits: [
-            
-        ]
-    }));
+    const peopleId = decodeURIComponent(parseStrParam(params.id));
+
+    const [people, setPeople] = useState<People | null>(null);
+
+    const fetchData = async () => {
+        const result = await fetchPeopleDetails(peopleId);
+        if (result instanceof Success) {
+            setPeople(result.data);
+        } else {
+            Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: result.message,
+                position: 'bottom'
+            });
+        }
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, [peopleId]);
+
+    const handleCreditPress = (creditId: number, isTvShow?: boolean) => {
+        router.navigate(routes.movie(creditId, isTvShow));
+    }
 
     return (
         <PageContainer>
@@ -73,11 +87,14 @@ const PeopleDetailPage = () => {
                         <View>
                             <Text style={styles.peopleBioTitle}>Credits</Text>
                             {
-                                people.credits && people.credits.length > 0 ? (
-                                    people.credits?.map(credit => (
-                                        <View style={{flex: 1, flexDirection: 'row', alignItems: 'stretch', paddingVertical: 16,}}>
-                                            
-                                        </View>
+                                people.actingCredits && people.actingCredits.length > 0 ? (
+                                    people.actingCredits?.map(credit => (
+                                        <TouchableOpacity 
+                                        style={{marginBottom: 16,}}
+                                        key={`${credit.id}_${credit.character}`}
+                                        onPress={() => handleCreditPress(credit.id, credit.isTvShow)}>
+                                            <Text>{`${credit.releaseDate}: ${credit.title} |  ${credit.character}`}</Text>
+                                        </TouchableOpacity>
                                     ))
                                 ) : (
                                     <Text style={styles.peopleBioValue}>No credits available.</Text>

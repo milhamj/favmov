@@ -10,7 +10,8 @@ export class People {
     placeOfBirth?: string;
     knownForDepartment?: string;
     gender?: number;
-    credits?: PeopleMovieCredit[];
+    actingCredits?: PeopleMovieCredit[];
+    crewCredits?: PeopleMovieCredit[];
 
     constructor(data: Partial<People>) {
         this.id = data.id ?? 0;
@@ -21,7 +22,8 @@ export class People {
         this.placeOfBirth = data.placeOfBirth;
         this.knownForDepartment = data.knownForDepartment;
         this.gender = data.gender;
-        this.credits = data.credits;
+        this.actingCredits = data.actingCredits;
+        this.crewCredits = data.crewCredits;
     }
 
     photoUrl(): string {
@@ -48,6 +50,7 @@ export class PeopleMovieCredit {
     episodeCount?: number;
     rating?: number;
     ratingCount?: number;
+    isTvShow?: boolean;
 
     constructor(data: Partial<PeopleMovieCredit>) {
         this.id = data.id ?? 0;
@@ -58,6 +61,7 @@ export class PeopleMovieCredit {
         this.episodeCount = data.episodeCount;
         this.rating = data.rating;
         this.ratingCount = data.ratingCount;
+        this.isTvShow = data.isTvShow;
     }
 
     posterUrl(): string | undefined {
