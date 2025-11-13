@@ -111,7 +111,7 @@ const PeopleDetailPage = () => {
                                         )
                                     ) : null
                                 ) : (
-                                    <Text style={styles.peopleBioValue}>No acting credits available.</Text>
+                                    <Text style={[styles.peopleBioValue, { marginBottom: 16 }]}>No acting credits available.</Text>
                                 )
                             }
                         </View>
@@ -138,7 +138,7 @@ const PeopleDetailPage = () => {
                                         )
                                     ) : null
                                 ) : (
-                                    <Text style={styles.peopleBioValue}>No crew credits available.</Text>
+                                    <Text style={[styles.peopleBioValue, { marginBottom: 16 }]}>No crew credits available.</Text>
                                 )
                             }
                         </View>
