@@ -13,12 +13,18 @@ import Toast from 'react-native-toast-message';
 import { fetchPeopleDetails } from '../../services/peopleService';
 import { Success } from '../../model/apiResponse';
 import PeopleMovieCreditView from '../../components/people/PeopleMovieCreditView';
+import { COLORS } from '../../styles/colors';
 
 const PeopleDetailPage = () => {
     const params = useLocalSearchParams();
     const peopleId = decodeURIComponent(parseStrParam(params.id));
 
     const [people, setPeople] = useState<People | null>(null);
+    const [isActingHidden, setIsActingHidden] = useState<boolean>(false);
+    const [isCrewHidden, setIsCrewHidden] = useState<boolean>(false);
+
+    const actingCreditExist = people?.actingCredits && people.actingCredits.length > 0;
+    const crewCreditExist = people?.crewCredits && people.crewCredits.length > 0;
 
     const fetchData = async () => {
         const result = await fetchPeopleDetails(peopleId);
@@ -82,14 +88,57 @@ const PeopleDetailPage = () => {
                             />
                         </View>
                         <View>
-                            <Text style={styles.peopleBioTitle}>Credits</Text>
+                            <View style={styles.peopleCreditContainer}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <Text style={styles.peopleCreditTitle}>Acting Credits</Text>
+                                    <Text style={styles.peopleCreditNumber}>
+                                        ({people.actingCredits ? people.actingCredits.length : 0})</Text>
+                                </View>
+                                {
+                                    actingCreditExist ? (
+                                        <TouchableOpacity onPress={() => setIsActingHidden(!isActingHidden)}>
+                                            <Text style={{color:'tomato'}}>{ isActingHidden ? 'Show' : 'Hide' }</Text>
+                                         </TouchableOpacity>
+                                    ) : null
+                                }
+                                
+                            </View>
                             {
-                                people.actingCredits && people.actingCredits.length > 0 ? (
-                                    people.actingCredits?.map(credit => (
-                                        <PeopleMovieCreditView key={`${credit.id}_${credit.character}`} credit={credit}/>
-                                    ))
+                                actingCreditExist ? (
+                                    !isActingHidden ? 
+                                        people.actingCredits?.map(credit => (
+                                            <PeopleMovieCreditView key={`${credit.id}_${credit.character}`} credit={credit}/>
+                                        )
+                                    ) : null
                                 ) : (
-                                    <Text style={styles.peopleBioValue}>No credits available.</Text>
+                                    <Text style={styles.peopleBioValue}>No acting credits available.</Text>
+                                )
+                            }
+                        </View>
+                        <View>
+                            <View style={styles.peopleCreditContainer}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <Text style={styles.peopleCreditTitle}>Crew Credits</Text>
+                                    <Text style={styles.peopleCreditNumber}>
+                                        ({people.crewCredits ? people.crewCredits.length : 0})</Text>
+                                </View>
+                                {
+                                    crewCreditExist ? (
+                                        <TouchableOpacity onPress={() => setIsCrewHidden(!isCrewHidden)}>
+                                            <Text style={{color:'tomato'}}>{ isCrewHidden ? 'Show' : 'Hide' }</Text>
+                                        </TouchableOpacity>
+                                    ) : null
+                                }
+                            </View>
+                            {
+                                crewCreditExist ? (
+                                    !isCrewHidden ? 
+                                        people.crewCredits?.map(credit => (
+                                            <PeopleMovieCreditView key={`${credit.id}_${credit.character}`} credit={credit}/>
+                                        )
+                                    ) : null
+                                ) : (
+                                    <Text style={styles.peopleBioValue}>No crew credits available.</Text>
                                 )
                             }
                         </View>
@@ -127,6 +176,7 @@ const styles = StyleSheet.create({
         marginBottom: 8
     },
     peopleInfoTitle: {
+        minWidth: 115,
         fontWeight: '600',
         fontSize: 16,
     },
@@ -135,8 +185,22 @@ const styles = StyleSheet.create({
     },
     peopleBioTitle: {
          fontSize: 20, 
-         fontWeight: '600', 
-         marginBottom: 8 
+         fontWeight: '600',
+         marginBottom: 8
+    },
+    peopleCreditContainer: { 
+        marginBottom: 8, 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        justifyContent: 'space-between' 
+    },
+    peopleCreditTitle: {
+         fontSize: 20, 
+         fontWeight: '600'
+    },
+    peopleCreditNumber: {
+        marginLeft: 8, 
+        color: COLORS.text_gray
     },
     peopleBioValue: {
         fontSize: 16,

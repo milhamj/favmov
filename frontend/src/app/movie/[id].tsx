@@ -237,12 +237,10 @@ const MovieDetailPage = () => {
                     <Text style={styles.sectionTitle}>Crew</Text>
                     <View style={styles.crewContainer}>
                       {movie.crew?.map((crew, index) => (
-                          <View key={index} style={styles.crewItem}>
-                          <View>
+                          <TouchableOpacity key={index} style={styles.crewItem} onPress={() => handleCastClick(crew.id)}>
                               <Text style={styles.crewName}>{crew.name}</Text>
                               <Text style={styles.crewJob}>{crew.job}</Text>
-                          </View>
-                          </View>
+                          </TouchableOpacity>
                       ))}
                     </View>
                 </View>

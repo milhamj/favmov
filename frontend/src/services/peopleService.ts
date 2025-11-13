@@ -37,6 +37,7 @@ const transformPeopleData = (data: any): People => {
         crewCredits.push(new PeopleMovieCredit({
             id: credit.id,
             title: credit.title,
+            character: credit.job,
             posterPath: credit.poster_path,
             releaseDate: credit.release_date,
             rating: credit.vote_average,
@@ -48,7 +49,7 @@ const transformPeopleData = (data: any): People => {
         crewCredits.push(new PeopleMovieCredit({
             id: credit.id,
             title: credit.name,
-            character: credit.character,
+            character: credit.job,
             posterPath: credit.poster_path,
             releaseDate: credit.first_air_date,
             rating: credit.vote_average,
