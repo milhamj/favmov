@@ -81,7 +81,7 @@ const PeopleDetailPage = () => {
                         <View>
                             <Text style={styles.peopleBioTitle}>Biography</Text>
                             <ExpandableText 
-                                text={people.biography ?? 'No biography available.'}
+                                text={people.biography ? people.biography : 'No biography available.'}
                                 viewStyle={{ marginBottom: 16 }}
                                 textStyle={styles.peopleBioValue}
                                 maxLines={4}
