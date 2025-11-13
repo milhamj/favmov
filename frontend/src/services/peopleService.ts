@@ -76,8 +76,9 @@ const transformPeopleData = (data: any): People => {
 }
 
 const sortByReleaseDate = (a: PeopleMovieCredit, b: PeopleMovieCredit): number => {
-    const dateA = a.releaseDate ? new Date(a.releaseDate) : new Date(0);
-    const dateB = b.releaseDate ? new Date(b.releaseDate) : new Date(0);
+    const MAX_DATE = 8640000000000000;
+    const dateA = a.releaseDate ? new Date(a.releaseDate) : new Date(MAX_DATE);
+    const dateB = b.releaseDate ? new Date(b.releaseDate) : new Date(MAX_DATE);
     return dateB.getTime() - dateA.getTime();
 }
 

@@ -12,6 +12,7 @@ import ExpandableText from '../../components/ExpandableText';
 import Toast from 'react-native-toast-message';
 import { fetchPeopleDetails } from '../../services/peopleService';
 import { Success } from '../../model/apiResponse';
+import PeopleMovieCreditView from '../../components/people/PeopleMovieCreditView';
 
 const PeopleDetailPage = () => {
     const params = useLocalSearchParams();
@@ -36,10 +37,6 @@ const PeopleDetailPage = () => {
     useEffect(() => {
         fetchData();
     }, [peopleId]);
-
-    const handleCreditPress = (creditId: number, isTvShow?: boolean) => {
-        router.navigate(routes.movie(creditId, isTvShow));
-    }
 
     return (
         <PageContainer>
@@ -89,12 +86,7 @@ const PeopleDetailPage = () => {
                             {
                                 people.actingCredits && people.actingCredits.length > 0 ? (
                                     people.actingCredits?.map(credit => (
-                                        <TouchableOpacity 
-                                        style={{marginBottom: 16,}}
-                                        key={`${credit.id}_${credit.character}`}
-                                        onPress={() => handleCreditPress(credit.id, credit.isTvShow)}>
-                                            <Text>{`${credit.releaseDate}: ${credit.title} |  ${credit.character}`}</Text>
-                                        </TouchableOpacity>
+                                        <PeopleMovieCreditView key={`${credit.id}_${credit.character}`} credit={credit}/>
                                     ))
                                 ) : (
                                     <Text style={styles.peopleBioValue}>No credits available.</Text>
