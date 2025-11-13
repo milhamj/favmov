@@ -41,6 +41,7 @@ const MovieCardHorizontal: React.FC<MovieCardHorizontalProps> = ({ movie, onClic
                     <View style={styles.posterNotes}>
                         <ExpandableText
                             text={movie.collectionNotes}
+                            textStyle={styles.posterNotesText}
                             maxLines={2}
                         />
                     </View>
@@ -93,6 +94,12 @@ const styles = StyleSheet.create({
   },
   posterNotes: {
     marginTop: 2,
+  },
+  posterNotesText: {
+    fontSize: 14,
+    textAlign: 'left',
+    fontWeight: '300',
+    color: '#444',
   },
 });
 

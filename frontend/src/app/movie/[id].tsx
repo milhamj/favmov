@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Pressable } from 'react-native';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Icon } from 'react-native-elements';
 import Toast from 'react-native-toast-message';
@@ -148,6 +148,10 @@ const MovieDetailPage = () => {
     );
   };
 
+  const handleCastClick = (id: number) => {
+    router.navigate(routes.people(id.toString()));
+  }
+
   return (
     <PageContainer>
       <TopBar
@@ -215,13 +219,13 @@ const MovieDetailPage = () => {
                 <View> 
                     <Text style={styles.sectionTitle}>Cast</Text>
                     {movie.cast?.map((actor, index) => (
-                        <View key={index} style={styles.castItem}>
-                        <Image source={{ uri: actor.photoUrl }} style={styles.actorPhoto} />
-                        <View>
-                            <Text style={styles.actorName}>{actor.name}</Text>
-                            <Text style={styles.characterName}>{actor.character}</Text>
-                        </View>
-                        </View>
+                        <TouchableOpacity key={index} style={styles.castItem} onPress={() => handleCastClick(actor.id)}>
+                          <Image source={{ uri: actor.photoUrl }} style={styles.actorPhoto} />
+                          <View>
+                              <Text style={styles.actorName}>{actor.name}</Text>
+                              <Text style={styles.characterName}>{actor.character}</Text>
+                          </View>
+                        </TouchableOpacity>
                     ))}
                 </View>
           }
@@ -233,12 +237,10 @@ const MovieDetailPage = () => {
                     <Text style={styles.sectionTitle}>Crew</Text>
                     <View style={styles.crewContainer}>
                       {movie.crew?.map((crew, index) => (
-                          <View key={index} style={styles.crewItem}>
-                          <View>
+                          <TouchableOpacity key={index} style={styles.crewItem} onPress={() => handleCastClick(crew.id)}>
                               <Text style={styles.crewName}>{crew.name}</Text>
                               <Text style={styles.crewJob}>{crew.job}</Text>
-                          </View>
-                          </View>
+                          </TouchableOpacity>
                       ))}
                     </View>
                 </View>

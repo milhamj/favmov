@@ -1,12 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
-import { StyleSheet, Text, View, Platform, TextLayoutEventData, NativeSyntheticEvent } from 'react-native';
+import { StyleSheet, Text, View, Platform, TextLayoutEventData, NativeSyntheticEvent, StyleProp, ViewStyle } from 'react-native';
 
 interface ExpandableTextProps {
   text: string;
+  viewStyle?: object;
+  textStyle?: object;
   maxLines?: number;
 }
 
-const ExpandableText = ({ text, maxLines = 2 }: ExpandableTextProps) => {
+const ExpandableText = ({ text, viewStyle, textStyle, maxLines = 2 }: ExpandableTextProps) => {
   const [isTruncated, setIsTruncated] = useState<boolean>(false);
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const textRef = useRef<Text>(null);
@@ -30,12 +32,12 @@ const ExpandableText = ({ text, maxLines = 2 }: ExpandableTextProps) => {
   const numberOfLines = isExpanded ? undefined : isTruncated ? maxLines - 1 : maxLines;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, viewStyle]}>
       <Text
         ref={textRef}
         numberOfLines={numberOfLines}
         onTextLayout={handleTextLayout}
-        style={styles.text}
+        style={textStyle}
       >
         {text}
       </Text>
@@ -57,12 +59,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'column',
-  },
-  text: {
-    fontSize: 14,
-    textAlign: 'left',
-    fontWeight: '300',
-    color: '#444',
   },
   seeMoreText: {
     color: 'tomato',

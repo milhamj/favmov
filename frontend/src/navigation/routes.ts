@@ -16,4 +16,7 @@ export const routes = {
 
     explore: (sectionType: string) => 
         `/explore?section_type=${encodeURIComponent(sectionType)}`,
+
+    people: (id: string) => 
+        `/people/${encodeURIComponent(id)}`,
 };
