@@ -3,6 +3,7 @@ import { StyleSheet, TouchableOpacity, View, Image, Text } from 'react-native';
 import { Movie } from '../model/movieModel';
 import { COLORS } from '../styles/colors'; 
 import ExpandableText from './ExpandableText';
+import { getRatingColor } from '../utils/util';
 
 interface MovieCardHorizontalProps {
     movie: Movie;
@@ -24,7 +25,7 @@ const MovieCardHorizontal: React.FC<MovieCardHorizontalProps> = ({ movie, onClic
                     style={[
                         styles.posterRating,
                         {
-                            color: movie.rating >= 5.0 ? COLORS.rating_green : COLORS.rating_red,
+                            color: getRatingColor(movie.rating),
                             fontWeight: 'bold',
                         },
                     ]}

@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Dimensions, TouchableOpacity, View, Image, Text } from 'react-native';
 import { Movie } from '../model/movieModel';
 import { COLORS } from '../styles/colors'; 
+import { getRatingColor } from '../utils/util';
 
 interface MovieCardProps {
     movie: Movie;
@@ -19,7 +20,7 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, onClick }) => {
             style={[
               styles.posterRating,
               {
-                color: movie.rating >= 5.0 ? COLORS.rating_green : COLORS.rating_red,
+                color: getRatingColor(movie.rating),
                 fontWeight: 'bold',
               },
             ]}
