@@ -12,7 +12,7 @@ import ImageViewer from '../../components/ImageViewer';
 import { COLORS } from '../../styles/colors'; 
 import { getCheckMovieExistInCollection } from '../../services/collectionService';
 import { useAuth } from '../../hooks/useAuth';
-import { parseBooleanParam, parseIntParam } from '../../utils/util';
+import { getRatingColor, parseBooleanParam, parseIntParam } from '../../utils/util';
 import { router } from '../../navigation/router';
 import { routes } from '../../navigation/routes';
 import { MovieStore } from '../../stores/movieStore';
@@ -183,7 +183,7 @@ const MovieDetailPage = () => {
           {
             movie.rating && 
               <Text style={[styles.rating, {
-                  color: movie.rating > 5.0 ? COLORS.rating_green : COLORS.rating_red,
+                  color: getRatingColor(movie.rating),
                 },
               ]}>
                 {'⭐ '}{movie.rating}{' '}
