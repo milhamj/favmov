@@ -6,6 +6,8 @@ import React from "react";
 import { COLORS } from "../../styles/colors";
 import { getRatingColor } from "../../utils/util";
 import { Icon } from "react-native-elements";
+import { Movie } from "../../model/movieModel";
+import { MovieStore } from "../../stores/movieStore";
 
 interface PeopleMovieCreditProps {
     credit: PeopleMovieCredit;
@@ -14,8 +16,18 @@ interface PeopleMovieCreditProps {
 const PeopleMovieCreditView = ({ credit }: PeopleMovieCreditProps) => {
     const releaseDate = credit.releaseDate ? credit.releaseDate.split("-")[0] : "----";
 
-    const handleCreditPress = (creditId: number, isTvShow?: boolean) => {
-        router.navigate(routes.movie(creditId, isTvShow));
+    const handleCreditPress = () => {
+        const movie = new Movie({
+            id: credit.id,
+            title: credit.title,
+            posterPath: credit.posterPath,
+            releaseDate: credit.releaseDate,
+            rating: credit.rating,
+            ratingCount: credit.ratingCount,
+            isTvShow: credit.isTvShow,
+        });
+        MovieStore.cacheMovie(movie);
+        router.navigate(routes.movie(credit.id, credit.isTvShow));
     }
 
     const rating = credit.rating ? parseFloat(credit.rating.toFixed(2)) : undefined;
@@ -23,7 +35,7 @@ const PeopleMovieCreditView = ({ credit }: PeopleMovieCreditProps) => {
     return <TouchableOpacity 
         style={styles.container}
         key={`${credit.id}_${credit.character}`}
-        onPress={() => handleCreditPress(credit.id, credit.isTvShow)}>
+        onPress={() => handleCreditPress()}>
             <Text style={styles.creditYear}>{releaseDate}</Text>
             <Image source={{ uri: credit.posterUrl() }} style={styles.creditPoster} />
             <View style={styles.creditTitleContainer}>
