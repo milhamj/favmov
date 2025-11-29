@@ -210,8 +210,15 @@ const MovieDetailPage = () => {
           }
 
           {/* Synopsis Section */}
-          <Text style={styles.sectionTitle}>Synopsis</Text>
-          <Text style={styles.synopsis}>{movie.overview}</Text>
+          {
+            movie.overview && (
+              <View>
+                <Text style={styles.sectionTitle}>Synopsis</Text>
+                <Text style={styles.synopsis}>{movie.overview.length > 0 ? movie.overview : "N/A"}</Text> 
+              </View>
+            )
+          }
+          
 
           {/* Cast Section */}
           {
