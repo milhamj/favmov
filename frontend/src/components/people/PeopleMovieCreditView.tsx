@@ -5,6 +5,7 @@ import { PeopleMovieCredit } from "../../model/peopleModel";
 import React from "react";
 import { COLORS } from "../../styles/colors";
 import { getRatingColor } from "../../utils/util";
+import { Icon } from "react-native-elements";
 
 interface PeopleMovieCreditProps {
     credit: PeopleMovieCredit;
@@ -26,7 +27,10 @@ const PeopleMovieCreditView = ({ credit }: PeopleMovieCreditProps) => {
             <Text style={styles.creditYear}>{releaseDate}</Text>
             <Image source={{ uri: credit.posterUrl() }} style={styles.creditPoster} />
             <View style={styles.creditTitleContainer}>
-                <Text numberOfLines={1} ellipsizeMode="tail">{`${credit.title}`}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <Icon name={credit.isTvShow ? "tv" : "movie"} size={12} />
+                    <Text style={{flex: 1}} numberOfLines={1} ellipsizeMode="tail">{`${credit.title}`}</Text>
+                </View>
                 { credit.character && (
                     <Text 
                     numberOfLines={1} 
