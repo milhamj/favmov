@@ -53,6 +53,7 @@ const SearchPage = () => {
         } finally {
           setIsLoading(false);
           setIsLoadingMore(false);
+          setShowFilter(true);
           isFetchingRef.current = false;
         }
       }, [searchQuery, isMovieFilterSelected]
@@ -62,8 +63,10 @@ const SearchPage = () => {
         const debounceFetch = setTimeout(() => {
             if (searchQuery) {
                 page.current = 1; // Reset to first page on new search or filter
-                setMovies([]); // Clear previous results
                 fetchMovies(page.current, true);
+            }
+            if (movies.length > 0) {
+                setMovies([]); // Clear previous results
             }
         }, 300);
 
@@ -121,7 +124,11 @@ const SearchPage = () => {
                 placeholder="Type any Movie title..."
                 placeholderTextColor="#666666"
                 value={searchQuery}
-                onChangeText={setSearchQuery}
+                onChangeText={(newQuery) => {
+                    setSearchQuery(newQuery);
+                    setMovies([]);
+                    setShowFilter(false);
+                }}
                 autoFocus={Platform.OS === 'web'}
             />
             {

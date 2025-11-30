@@ -218,7 +218,6 @@ const MovieDetailPage = () => {
               </View>
             )
           }
-          
 
           {/* Cast Section */}
           {
