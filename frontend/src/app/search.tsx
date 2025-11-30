@@ -11,18 +11,32 @@ import { router } from '../navigation/router';
 import { routes } from '../navigation/routes';
 import { MovieStore } from '../stores/movieStore';
 import FullPageLoader from '../components/FullPageLoader';
+import { People } from '../model/peopleModel';
+import PeopleCardHorizontal from '../components/PeopleCardHorizontal';
+import { searchPeople } from '../services/peopleService';
+
+const CHIP_MOVIE = 'Movie';
+const CHIP_TV_SHOW = 'TV Show';
+const CHIP_PEOPLE = 'People';
+
+const SelectableChips = [CHIP_MOVIE, CHIP_TV_SHOW, CHIP_PEOPLE];
 
 const SearchPage = () => {
     const [searchQuery, setSearchQuery]  = useState('');
     const [movies, setMovies] = useState([] as Movie[]);
+    const [people, setPeople] = useState([] as People[]);
     const [isLoading, setIsLoading] = useState(false);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [totalPages, setTotalPages] = useState(1);
     const [showFilter, setShowFilter] = useState(true);
-    const [isMovieFilterSelected, setIsMovieFilterSelected] = useState(true);
+    const [selectedChip, setSelectedChip] = useState(CHIP_MOVIE);
     const page = useRef(1);
     const inputRef = useRef<TextInput>(null);
     const isFetchingRef = useRef(false);
+
+    const isMovielected = selectedChip === CHIP_MOVIE;
+    const isTvShowSelected = selectedChip === CHIP_TV_SHOW;
+    const isPeopleSelected = selectedChip === CHIP_PEOPLE;
 
     // Auto-focus input
     useEffect(() => {
@@ -34,7 +48,7 @@ const SearchPage = () => {
     }, []);
 
     // Fetch movies when searchQuery, selectedFilter, or page changes
-    const fetchMovies = useCallback(async (newPage: number = 1, reset: boolean = false) => {
+    const fetchSearchResult = useCallback(async (newPage: number = 1, reset: boolean = false) => {
         if (isFetchingRef.current || !searchQuery) return;
     
         isFetchingRef.current = true;
@@ -42,41 +56,54 @@ const SearchPage = () => {
         setIsLoadingMore(newPage > 1);
     
         try {
-          const result = await searchMovie(searchQuery, newPage, !isMovieFilterSelected);
-          if (result instanceof Success) {
-            setMovies((prev) => (newPage === 1 || reset ? result.data.movies : [...prev, ...result.data.movies]));
-            setTotalPages(result.data.totalPages || 1);
-          }
+            if (isMovielected || isTvShowSelected) {
+                const result = await searchMovie(searchQuery, newPage, isTvShowSelected);
+                if (result instanceof Success) {
+                    setMovies((prev) => (newPage === 1 || reset ? result.data.movies : [...prev, ...result.data.movies]));
+                    setTotalPages(result.data.totalPages || 1);
+                }
+            } else if (isPeopleSelected) {
+                const result = await searchPeople(searchQuery, newPage);
+                if (result instanceof Success) {
+                    setPeople((prev) => (newPage === 1 || reset ? result.data.people : [...prev, ...result.data.people]));
+                    setTotalPages(result.data.totalPages || 1);
+                }
+            }
         } catch (error) {
             //TODO milhamj: update error handling and also remove the try-catch
-            console.error('Error fetching movies:', error);
+            console.error('Error fetching search result:', error);
         } finally {
           setIsLoading(false);
           setIsLoadingMore(false);
           setShowFilter(true);
           isFetchingRef.current = false;
         }
-      }, [searchQuery, isMovieFilterSelected]
+      }, [searchQuery, selectedChip]
     );
 
     useEffect(() => {
         const debounceFetch = setTimeout(() => {
             if (searchQuery) {
                 page.current = 1; // Reset to first page on new search or filter
-                fetchMovies(page.current, true);
+                fetchSearchResult(page.current, true);
             }
+
+            // Clear previous result
             if (movies.length > 0) {
-                setMovies([]); // Clear previous results
+                setMovies([]);
+            }
+            if (people.length > 0) {
+                setPeople([]);
             }
         }, 300);
 
         return () => clearTimeout(debounceFetch);
-    }, [searchQuery, isMovieFilterSelected, fetchMovies]);
+    }, [searchQuery, selectedChip, fetchSearchResult]);
 
     const handleOnEndReached = () => {
         if (!isFetchingRef.current && page.current < totalPages && !isLoadingMore) {
             page.current += 1;
-            fetchMovies(page.current);
+            fetchSearchResult(page.current);
         }
     };    
 
@@ -97,6 +124,21 @@ const SearchPage = () => {
         </View>
     );
 
+    const renderPeopleItem = ({ item, index }: { item: People, index: number }) => (
+        <View style={{
+            width: '100%',
+            marginBottom: 8, 
+            alignContent: 'center'
+        }}>
+            <PeopleCardHorizontal 
+                people={item}
+                onClick={() => { 
+                    router.navigate(routes.people(item.id.toString()))
+                }}
+            />
+        </View>
+    );
+
     const renderFooter = () => {
         if (!isLoadingMore) return null;
         return (
@@ -106,8 +148,13 @@ const SearchPage = () => {
         );
     };
 
-    const isEmptyResult = searchQuery.length > 0 && movies.length === 0 && !isLoading;
+    const isEmptyResult = searchQuery.length > 0 && !isLoading && movies.length === 0 && people.length === 0;
     const isEmptyQuery = searchQuery.length === 0;
+    const placeholderText = isPeopleSelected 
+        ? "Type any name..." 
+        : isTvShowSelected 
+        ? "Type any TV Show title..." 
+        : "Type any Movie title..."
 
     return (
         <PageContainer>
@@ -121,29 +168,31 @@ const SearchPage = () => {
             <TextInput 
                 ref={inputRef}
                 style={styles.searchBox}
-                placeholder="Type any Movie title..."
+                placeholder={placeholderText}
                 placeholderTextColor="#666666"
                 value={searchQuery}
                 onChangeText={(newQuery) => {
                     setSearchQuery(newQuery);
                     setMovies([]);
-                    setShowFilter(false);
+                    setShowFilter(newQuery ? false : true);
                 }}
                 autoFocus={Platform.OS === 'web'}
             />
             {
                 showFilter ? (
                     <View style={{flexDirection: 'row', marginBottom: 8, marginHorizontal: 16}}>
-                        <SelectableChip 
-                            text="Movie" 
-                            selected={isMovieFilterSelected}
-                            onSelect={(isSelected) => setIsMovieFilterSelected(isSelected)} 
-                        />
-                        <SelectableChip 
-                            text="TV Show" 
-                            selected={!isMovieFilterSelected} 
-                            onSelect={(isSelected) => setIsMovieFilterSelected(!isSelected)} 
-                        />
+                        {
+                            SelectableChips.map((chip) => (
+                                <SelectableChip 
+                                    text={chip}
+                                    key={chip}
+                                    selected={selectedChip === chip}
+                                    onSelect={(isSelected) => {
+                                        if (isSelected) setSelectedChip(chip)}
+                                    } 
+                                />
+                            ))
+                        }
                     </View>
                 ) : null
             }
@@ -156,23 +205,37 @@ const SearchPage = () => {
                             <Image source={require('../../assets/empty_search.png')} style={styles.emptyImage} />
                             <Text style={styles.emptyText}>
                                 {
-                                    isEmptyQuery ? ('Type any Movie title...') :
+                                    isEmptyQuery ? placeholderText :
                                     isEmptyResult ? ('No results found.') :
                                     null
                                 }
                             </Text>
                         </View>
                     ) : (
-                        <FlatList
-                            data={movies}
-                            renderItem={renderMovieItem}
-                            keyExtractor={(item) => item.id.toString()}
-                            numColumns={2}
-                            columnWrapperStyle={styles.row}
-                            onEndReached={handleOnEndReached}
-                            onEndReachedThreshold={0.3} // Trigger when 30% from bottom
-                            ListFooterComponent={renderFooter}
-                        />
+                        isPeopleSelected ? (
+                            <FlatList
+                                data={people}
+                                key="people"
+                                renderItem={renderPeopleItem}
+                                keyExtractor={(item) => `people_${item.id.toString()}`}
+                                numColumns={1}
+                                onEndReached={handleOnEndReached}
+                                onEndReachedThreshold={0.3} // Trigger when 30% from bottom
+                                ListFooterComponent={renderFooter}
+                            />
+                        ) : (
+                            <FlatList
+                                data={movies}
+                                key="movies"
+                                renderItem={renderMovieItem}
+                                keyExtractor={(item) => `movie_${item.id.toString()}`}
+                                numColumns={2}
+                                columnWrapperStyle={styles.row}
+                                onEndReached={handleOnEndReached}
+                                onEndReachedThreshold={0.3} // Trigger when 30% from bottom
+                                ListFooterComponent={renderFooter}
+                            />
+                        )
                     )
                 }
             </View>

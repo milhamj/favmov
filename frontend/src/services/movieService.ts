@@ -2,7 +2,7 @@ import { Movie, Actor, Crew } from '../model/movieModel';
 import { Success, Error } from '../model/apiResponse';
 import tmdbApiClient from './tmdbClient';
 import backendClient from './backendClient';
-import { SearchResponse } from '../model/searchResponse';
+import { SearchMovieResponse } from '../model/searchResponse';
 
 const mTmdbApiClient = tmdbApiClient();
 
@@ -94,7 +94,7 @@ export const fetchMovieDetails = async (movieId: string, isTvShow?: boolean): Pr
   }
 };
 
-export const searchMovie = async (query: string, page: number, isTvShow?: boolean, includeAdult?: boolean): Promise<Success<SearchResponse> | Error> => {
+export const searchMovie = async (query: string, page: number, isTvShow?: boolean, includeAdult?: boolean): Promise<Success<SearchMovieResponse> | Error> => {
   try {
     const response = await mTmdbApiClient.get(`/search/${isTvShow === true ? 'tv' : 'movie'}`, { params: {
       query,
@@ -103,12 +103,12 @@ export const searchMovie = async (query: string, page: number, isTvShow?: boolea
     }})
 
     const movies = response.data.results.map((data: any) => transformMovieData(data, isTvShow === true));
-    const searchResponse = new SearchResponse(
+    const searchResponse = new SearchMovieResponse(
       movies,
       response.data.total_pages
     )
 
-    return new Success<SearchResponse>(searchResponse);
+    return new Success<SearchMovieResponse>(searchResponse);
   } catch (error: any) {
     console.error(`Error search movie with query: ${query}`, error);
     return new Error(`Failed to search movie with query: ${query}`, error.response?.status);

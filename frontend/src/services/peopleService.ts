@@ -1,6 +1,7 @@
 import { People, PeopleMovieCredit } from '../model/peopleModel';
 import { Success, Error } from '../model/apiResponse';
 import tmdbApiClient from './tmdbClient';
+import { SearchPeopleResponse } from '../model/searchResponse';
 
 const mTmdbApiClient = tmdbApiClient();
 
@@ -84,15 +85,32 @@ const sortByReleaseDate = (a: PeopleMovieCredit, b: PeopleMovieCredit): number =
 }
 
 export const fetchPeopleDetails = async (peopleId: string): Promise<Success<People> | Error> => {
-  try {
-    const params = {
-        append_to_response: 'movie_credits,tv_credits'
+    try {
+        const params = {
+            append_to_response: 'movie_credits,tv_credits'
+        }
+        const response = await mTmdbApiClient.get(`person/${peopleId}`, { params });
+        const people = transformPeopleData(response.data);
+        return new Success<People>(people);
+    } catch (error: any) {
+        console.error('Error fetching people data:', error);
+        return new Error('Failed to fetch people details.', error.response?.status);
     }
-    const response = await mTmdbApiClient.get(`person/${peopleId}`, { params });
-    const movies = transformPeopleData(response.data);
-    return new Success<People>(movies);
-  } catch (error: any) {
-    console.error('Error fetching people data:', error);
-    return new Error('Failed to fetch people details.', error.response?.status);
-  }
 };
+
+
+export const searchPeople = async (query: string, page: number, includeAdult?: boolean): Promise<Success<SearchPeopleResponse> | Error> => {
+    try {
+        const params = {
+            query,
+            page,
+            append_to_response: 'movie_credits,tv_credits'
+        }
+        const response = await mTmdbApiClient.get(`search/person`, { params });
+        const people = response.data.results.map((data: any) => transformPeopleData(data));
+        return new Success<SearchPeopleResponse>(new SearchPeopleResponse(people, response.data.total_pages));
+    } catch (error: any) {
+        console.error('Error searching people:', error);
+        return new Error('Failed to search people.', error.response?.status);
+    }
+  };
