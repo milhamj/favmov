@@ -1,2 +1,3 @@
 onlyBuiltDependencies:
   - react-native-elements
+minimumReleaseAge: 10080 # 7 days
