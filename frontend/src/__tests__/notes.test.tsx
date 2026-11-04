@@ -59,13 +59,16 @@ test.each([true, false])('removal success=%s clears drafts only after confirmati
  fireEvent.changeText(ui.getByPlaceholderText('Write custom notes...'), 'pending');
  await act(async () => { ui.UNSAFE_getByType(Checkbox).props.onValueChange(false); });
  await act(async () => { jest.advanceTimersByTime(1000); });
- expect(update).not.toHaveBeenCalled();
  if (succeeds) {
+  expect(update).not.toHaveBeenCalled();
   expect(ui.queryByPlaceholderText('Write custom notes...')).toBeNull();
   await act(async () => { ui.UNSAFE_getByType(Checkbox).props.onValueChange(true); });
   expect(postAddMovieToCollection).toHaveBeenCalled();
   expect(ui.getByPlaceholderText('Write custom notes...').props.value).toBe('');
- } else expect(ui.getByDisplayValue('pending')).toBeTruthy();
+ } else {
+  expect(ui.getByDisplayValue('pending')).toBeTruthy();
+  expect(update).toHaveBeenCalledWith('c', '1', false, 'pending');
+ }
 });
 test('unmount cancels a debounced callback', () => {
  const cb = jest.fn();
@@ -102,4 +105,20 @@ test('navigation waits for membership removal before draining notes', async () =
  await act(async () => { finish(new Success(true)); await navigation; });
  expect(drained).toBe(true);
  expect(update).not.toHaveBeenCalled();
+});
+
+test('failed slow removal resumes autosave only after membership is known', async () => {
+ const Checkbox = require('expo-checkbox').default;
+ let finish: any;
+ remove.mockImplementationOnce(() => new Promise(resolve => finish = resolve));
+ const ui = render(<Card collection={collection} movie={movie}/>);
+ fireEvent.changeText(ui.getByPlaceholderText('Write custom notes...'), 'retained draft');
+ await act(async () => { ui.UNSAFE_getByType(Checkbox).props.onValueChange(false); });
+ await act(async () => { jest.advanceTimersByTime(5000); });
+ expect(update).not.toHaveBeenCalled();
+ await act(async () => { finish(new ApiError('offline')); });
+ await act(async () => { jest.advanceTimersByTime(1000); });
+ expect(update).toHaveBeenCalledTimes(1);
+ expect(update).toHaveBeenCalledWith('c', '1', false, 'retained draft');
+ expect(ui.getByText('Saved')).toBeTruthy();
 });

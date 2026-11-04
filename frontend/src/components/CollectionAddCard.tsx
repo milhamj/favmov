@@ -77,6 +77,7 @@ const CollectionAddCard = ({ collection, movie, registerSave, disabled = false }
                     : await deleteMovieFromCollection(collection.id, movie.id.toString(), !!movie.isTvShow);
                 if (result instanceof Error) {
                     Toast.show({ type: 'error', text1: 'Error', text2: result.message, position: 'bottom' });
+                    if (!value && draft.current !== saved.current) debouncedUpdateNotes();
                 } else {
                     setIsSaved(value);
                     draft.current = saved.current = '';
