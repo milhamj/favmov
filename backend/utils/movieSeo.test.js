@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { applyMovieSeo, fetchMovie } = require('./movieSeo');
+const { applyMovieSeo, fetchMovie, requestMovie } = require('./movieSeo');
 
 const template = '<title data-rh="true">Default</title>'
   + '<meta data-rh="true" name="description" content="Default"/>'
@@ -103,4 +103,24 @@ test('evicts the oldest entry when full', async (t) => {
   assert.strictEqual(fetchMock.mock.callCount(), calls);
   await fetchMovie('500', false);
   assert.strictEqual(fetchMock.mock.callCount(), calls + 1);
+});
+
+test('batch requests bypass the SEO cache and cooldown without changing page protection', async (t) => {
+  t.mock.method(Date, 'now', () => 60000);
+  const lookup = t.mock.method(global, 'fetch', async (url) => {
+    if (url.endsWith('/movie/601')) return Response.json({}, { status: 500 });
+    return Response.json({ url });
+  });
+  await fetchMovie('600', false);
+  await assert.rejects(fetchMovie('601', false), /TMDB responded with 500/);
+
+  const movie = await requestMovie('600', false);
+  const show = await requestMovie('600', true);
+  await assert.rejects(requestMovie('601', false), /TMDB responded with 500/);
+  await requestMovie('602', false);
+  await assert.rejects(fetchMovie('603', false), /Skipping TMDB/);
+
+  assert.match(movie.url, /\/movie\/600$/);
+  assert.match(show.url, /\/tv\/600$/);
+  assert.strictEqual(lookup.mock.callCount(), 6);
 });

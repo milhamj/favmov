@@ -13,6 +13,7 @@ pnpm run dev
 ```
 
 The first request of each UTC day refreshes the stored movie and TV show data from TMDB in the background. Run it by hand with `pnpm run sync`.
+The sync requests fresh TMDB data without the page-level cache or cooldown. Row failures do not stop later titles, but the manual command exits with a nonzero status after both tables finish if any rows failed.
 
 ### frontend/.env
 ```

@@ -1,6 +1,6 @@
 require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
-const { fetchMovie } = require('./movieSeo');
+const { requestMovie } = require('./movieSeo');
 const { getTableName, MOVIES, TV_SHOWS } = require('./tableNames');
 
 // Returns the latest TMDB values when the stored row differs from them, otherwise null
@@ -24,7 +24,7 @@ const syncTable = async (supabase, tableName, isTvShow) => {
   let failed = 0;
   for (const item of media) {
     try {
-      const changes = getChanges(item, await fetchMovie(item.id, isTvShow), isTvShow);
+      const changes = getChanges(item, await requestMovie(item.id, isTvShow), isTvShow);
       if (!changes) continue;
 
       const { error: updateError } = await supabase
@@ -41,6 +41,7 @@ const syncTable = async (supabase, tableName, isTvShow) => {
   }
 
   console.log(`Media sync ${tableName}: checked ${media.length}, updated ${updated}, failed ${failed}`);
+  return { checked: media.length, updated, failed };
 };
 
 const syncMedia = async () => {
@@ -53,8 +54,10 @@ const syncMedia = async () => {
     auth: { autoRefreshToken: false, persistSession: false }, // otherwise each run leaves a timer in the server
   });
 
-  await syncTable(supabase, moviesTable, false);
-  await syncTable(supabase, tvShowsTable, true);
+  const movies = await syncTable(supabase, moviesTable, false);
+  const tvShows = await syncTable(supabase, tvShowsTable, true);
+  const failed = movies.failed + tvShows.failed;
+  if (failed) throw new Error(`${failed} media rows failed to sync`);
 };
 
 module.exports = { getChanges, syncTable, syncMedia };

@@ -36,7 +36,8 @@ const applyMovieSeo = (html, movie, pagePath) => {
   return result;
 };
 
-const requestMovie = async (key) => {
+const requestMovie = async (id, isTvShow) => {
+  const key = `${isTvShow ? 'tv' : 'movie'}/${id}`;
   const response = await fetch(`https://api.themoviedb.org/3/${key}`, {
     headers: { Authorization: `Bearer ${process.env.FAVMOV_TMDB_API_KEY}` },
     signal: AbortSignal.timeout(2000),
@@ -62,7 +63,7 @@ const fetchMovie = async (id, isTvShow) => {
   if (pendingLookups.has(key)) return pendingLookups.get(key);
   if (Date.now() < retryTmdbAt) throw new Error('Skipping TMDB after a recent failure');
 
-  const lookup = requestMovie(key)
+  const lookup = requestMovie(id, isTvShow)
     .then((movie) => {
       cacheMovie(key, movie);
       return movie;
@@ -76,4 +77,4 @@ const fetchMovie = async (id, isTvShow) => {
   return lookup;
 };
 
-module.exports = { applyMovieSeo, fetchMovie };
+module.exports = { applyMovieSeo, fetchMovie, requestMovie };
