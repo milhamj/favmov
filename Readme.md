@@ -5,11 +5,15 @@ FAVMOV_PORT=3080
 FAVMOV_NODE_ENV=development || production
 FAVMOV_SUPABASE_URL=
 FAVMOV_SUPABASE_ANON_KEY=
-FAVMOV_TMDB_API_KEY= # plain TMDB read token, enables per-movie SEO tags
+FAVMOV_TMDB_API_KEY= # plain TMDB read token, enables per-movie SEO tags and the media sync
+FAVMOV_SUPABASE_S_KEY= # Supabase service key, enables the media sync. Keep it out of the frontend
 ```
 ```
 pnpm run dev
 ```
+
+The first request of each UTC day refreshes the stored movie and TV show data from TMDB in the background. Run it by hand with `pnpm run sync`.
+The sync requests fresh TMDB data without the page-level cache or cooldown. Row failures do not stop later titles, but the manual command exits with a nonzero status after both tables finish if any rows failed.
 
 ### frontend/.env
 ```

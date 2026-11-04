@@ -6,6 +6,7 @@ const morgan = require('morgan');
 const path = require('path');
 const { errorResponse } = require('./utils/responses');
 const routes = require('./routes');
+const { dailyMediaSync } = require('./middleware/dailyMediaSync');
 const createPageRoutes = require('./routes/pageRoutes');
 
 const app = express();
@@ -20,6 +21,7 @@ app.use(helmet({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
+app.use(dailyMediaSync);
 
 // API Routes first
 app.use('/api', routes);
