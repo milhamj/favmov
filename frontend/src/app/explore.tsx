@@ -20,6 +20,7 @@ const ExplorePage = () => {
     const params = useLocalSearchParams();
     const sectionType = decodeURIComponent(parseStrParam(params.section_type));
 
+    const [title, setTitle] = useState(''); // query params are unknown when prerendering
     const [movies, setMovies] = useState([] as Movie[]);
     const [isLoading, setIsLoading] = useState(false);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -53,6 +54,7 @@ const ExplorePage = () => {
     };
 
     useEffect(() => {
+        setTitle(sectionType);
         fetchExploreData();
     },[sectionType])
 
@@ -95,7 +97,7 @@ const ExplorePage = () => {
     return (
         <PageContainer>
             <TopBar
-                title={sectionType}
+                title={title}
                 backButton={{
                     isShow: true,
                     onClick: () => router.goBackSafely()

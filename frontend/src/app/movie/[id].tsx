@@ -8,6 +8,7 @@ import { Movie } from '../../model/movieModel';
 import { fetchMovieDetails } from '../../services/movieService';
 import { Success, Error } from '../../model/apiResponse';
 import TopBar from '../../components/TopBar';
+import { SeoHead } from '../../components/SeoHead';
 import ImageViewer from '../../components/ImageViewer';
 import { COLORS } from '../../styles/colors'; 
 import { getCheckMovieExistInCollection } from '../../services/collectionService';
@@ -154,6 +155,8 @@ const MovieDetailPage = () => {
 
   return (
     <PageContainer>
+      {/* Without this the root SeoHead replaces the server's movie tags once the page hydrates */}
+      { movie.title ? <SeoHead title={`${movie.title} | FavMov`} description={movie.overview || undefined} image={movie.smallPosterUrl()} /> : null }
       <TopBar
         title= { movie.title }
         backButton={{
@@ -196,7 +199,7 @@ const MovieDetailPage = () => {
             {movie.runtime ? `${movie.runtime} minutes • ` : ''}
             {movie.releaseDate}
             {movie.director() ? ` • Directed by ${movie.director()?.name}` : ''}
-            {movie.isTvShow ? ` • TV Show` : ''}
+            {movie.title && movie.isTvShow ? ` • TV Show` : ''}
           </Text>
 
           {/* Genre Section */}
