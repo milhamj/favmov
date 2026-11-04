@@ -42,3 +42,16 @@ test.each(['search', 'explore'])('%s retries the failed page without gaps', asyn
  const pages = service.mock.calls.map(call => call[screen === 'search' ? 1 : 0]);
  expect(pages).toEqual([1, 2, 2]);
 });
+
+test('clearing a query invalidates pending results immediately', async () => {
+ let finish: any;
+ (searchMovie as jest.Mock).mockImplementation(() => new Promise(r => finish = r));
+ const ui = render(<Search/>);
+ const input = ui.getByPlaceholderText('Type any Movie title...');
+ fireEvent.changeText(input, 'Alien');
+ await act(async () => { jest.advanceTimersByTime(300); });
+ fireEvent.changeText(input, '');
+ await act(async () => { finish(new Success(data('Alien'))); });
+ expect(ui.queryByText('Alien')).toBeNull();
+ expect(ui.getByText('Type any Movie title...')).toBeTruthy();
+});
