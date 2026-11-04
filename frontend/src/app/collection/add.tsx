@@ -32,6 +32,8 @@ const AddToCollectionPage = withAuth(() => {
     const [attempt, setAttempt] = useState(0);
     const [draining, setDraining] = useState(false);
     const [creating, setCreating] = useState(false);
+    const [refreshError, setRefreshError] = useState('');
+    const [refreshingCollections, setRefreshingCollections] = useState(false);
     const saves = useRef(new Map<string, () => Promise<boolean>>());
     const leaving = useRef(false);
     const navigation = useNavigation();
@@ -82,11 +84,13 @@ const AddToCollectionPage = withAuth(() => {
         return () => { current = false; };
     }, [movieId, isTvShow, attempt]);
     const refreshCollections = async () => {
+        setRefreshingCollections(true);
         const result = await getUserCollections();
         if (result instanceof Success) {
             setCollectionCards(previous => result.data.map(c => previous.find(p => p.id === c.id) || new CollectionCard(c.id, c.name, false)));
-            CollectionStateStore.setLastUpdated(Date.now());
-        } else Toast.show({ type: 'error', text1: 'Unable to refresh collections', text2: result.message });
+            setRefreshError('');
+        } else setRefreshError(result.message);
+        setRefreshingCollections(false);
     };
     const handleCreateCollection = () => setCreating(true);
 
@@ -107,7 +111,7 @@ const AddToCollectionPage = withAuth(() => {
                             </View>
                         ) : error ? (
                             <View><Text>{error}</Text><TouchableOpacity accessibilityRole="button" onPress={() => setAttempt(n => n + 1)}><Text>Retry</Text></TouchableOpacity></View>
-                        ) : collectionCards.length === 0 ? (
+                        ) : refreshError && collectionCards.length === 0 ? null : collectionCards.length === 0 ? (
                             <View style={styles.emptyState}>
                                 <Image 
                                     source={require('../../../assets/empty_search.png')} 
@@ -131,10 +135,17 @@ const AddToCollectionPage = withAuth(() => {
                             </View>
                         )
                     }
+                    {refreshError && <View>
+                        <Text>Unable to refresh collections: {refreshError}</Text>
+                        <TouchableOpacity accessibilityRole="button" disabled={draining || refreshingCollections} onPress={() => void refreshCollections()}><Text>Retry</Text></TouchableOpacity>
+                    </View>}
                 </ScrollView>
                 <CreateCollectionSheet visible={creating} onClose={(success) => {
                     setCreating(false);
-                    if (success) void refreshCollections();
+                    if (success) {
+                        CollectionStateStore.setLastUpdated(Date.now());
+                        void refreshCollections();
+                    }
                 }}/>
                 <Toast />
             </PageContainer> 

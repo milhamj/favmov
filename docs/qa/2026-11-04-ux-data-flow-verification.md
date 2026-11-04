@@ -8,7 +8,7 @@ the owner's request. No production service/schema was modified.
 
 ## Automated checks
 
-- Frontend: `pnpm test --runInBand` (46 tests across 10 suites).
+- Frontend: `pnpm test --runInBand` (48 tests across 10 suites).
 - Backend: `pnpm test` (36 tests, including poster validation).
 - Types: `pnpm exec tsc --noEmit` in frontend.
 - Web bundle: `pnpm exec expo export -p web` with placeholder localhost Supabase
@@ -88,3 +88,23 @@ note save and verifies the editor remains during saving, stays open on failure,
 and reaches Home on success or successful retry. Both cases failed against the
 previous handler. Mock-based tests now exercise the guard callback explicitly
 rather than implying that a router call proves the screen was removed.
+
+
+## Ponytail sub-agent review
+
+A fresh sub-agent reviewed the full PR and connected callers at head e296bb8,
+assuming normal multi-user use with slow or failed requests. It reproduced two
+must-fix findings. Both were validated again with permanent failing regressions:
+
+1. Failed removal canceled a dirty note's autosave without resuming it. Failed
+   removal now reschedules saving only when the retained draft differs from the
+   saved text. A deferred-delete test proves no write runs during deletion, then
+   the draft saves after deletion fails. Successful deletion still cancels saves.
+2. Successful creation followed by a failed collection-list refresh offered no
+   Retry and did not invalidate other screens. Creation now invalidates the store
+   immediately, and list failure shows an inline Retry without another creation
+   request or loss of the selected title. Existing cards remain mounted.
+
+The full frontend suite (48 tests) and TypeScript passed after both fixes. The
+review did not cover physical native gestures, live services, or database behavior;
+the existing Supabase exclusions and cross-tab/app-termination limits still apply.

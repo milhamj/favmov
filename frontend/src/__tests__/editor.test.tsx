@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, fireEvent, act } from '@testing-library/react-native';
 import Editor from '../app/collection/add';
+import { CollectionStateStore } from '../stores/collectionStateStore';
 import { Movie } from '../model/movieModel';
 import { Success, Error as ApiError } from '../model/apiResponse';
 import { fetchMovieDetails } from '../services/movieService';
@@ -112,4 +113,25 @@ test('native removal stays prevented during a pending save and after failure', a
  await act(async () => { finish(new ApiError('offline')); });
  expect(ui.getByText('Retry')).toBeTruthy();
  expect(mockPreventRemove.prevent).toBe(true);
+});
+
+test('failed list refresh after creation can retry without another POST or losing the title', async () => {
+ (getUserCollections as jest.Mock).mockResolvedValueOnce(new Success([])).mockResolvedValueOnce(new ApiError('offline')).mockResolvedValueOnce(new Success([{ id: 'new', name: 'New collection' }]));
+ (getCheckMovieExistInCollection as jest.Mock).mockResolvedValue(new Success([]));
+ (createCollection as jest.Mock).mockResolvedValue(new Success({ id: 'new' }));
+ const invalidated = jest.spyOn(CollectionStateStore, 'setLastUpdated');
+ const ui = render(<Editor/>);
+ await act(async () => {});
+ fireEvent.press(ui.getByText('Create Collection'));
+ fireEvent.changeText(ui.getByPlaceholderText('Type collection name here...'), 'New collection');
+ await act(async () => { fireEvent.press(ui.getByText('Save')); });
+ expect(ui.getByText('Retry')).toBeTruthy();
+ expect(invalidated).toHaveBeenCalled();
+ expect(ui.getByText('Add Arrival to Collection')).toBeTruthy();
+ await act(async () => { fireEvent.press(ui.getByText('Retry')); });
+ expect(getUserCollections).toHaveBeenCalledTimes(3);
+ expect(createCollection).toHaveBeenCalledTimes(1);
+ expect(ui.getByText('New collection')).toBeTruthy();
+ expect(ui.queryByText('Retry')).toBeNull();
+ invalidated.mockRestore();
 });
