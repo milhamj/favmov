@@ -1,15 +1,16 @@
 # UX/data-flow fixes — verification
 
-Implemented audit findings 1, 3–11 in the existing components/services, with no
-new runtime dependency. Finding 4 covers application validation and request
-normalization; actual null storage requires unverified Supabase nullability.
-Finding 2 (atomic deletion) and database migrations were explicitly skipped at
-the owner's request. No production service/schema was modified.
+Implemented all 11 audit findings in application code and migration scripts. The
+owner's schema supplied on 2026-11-05 confirmed non-cascading collection foreign
+keys and NOT NULL poster paths. These previously excluded database changes are
+now implemented and tested in disposable PostgreSQL; they have **not** been
+applied to live Supabase. Database rollout remains required before application
+deployment. Historical exclusion notes below describe earlier review stages.
 
 ## Automated checks
 
 - Frontend: `pnpm test --runInBand` (60 tests across 10 suites).
-- Backend: `pnpm test` (36 tests, including poster validation).
+- Backend: `pnpm test` (42 tests, including poster validation and deletion contracts).
 - Types: `pnpm exec tsc --noEmit` in frontend.
 - Web bundle: `pnpm exec expo export -p web` with placeholder localhost Supabase
   and backend settings and dummy TMDB token. Does not establish live API behavior.
@@ -188,3 +189,30 @@ threw on an already-decoded percent sign. A new failing editor regression now
 covers `movie_id: '%'`; the shared parser tolerates malformed encoding so strict
 numeric validation can show Invalid title URL without a service request. The
 reviewer found no other concrete issue in the new pending-state or auth flows.
+
+
+## Database follow-up — 2026-11-05
+
+The owner-supplied schema confirms the exact collection FK names/types and poster
+nullability. Added transactional cascade and nullable-artwork migrations plus
+explicit rollback SQL. The controller now performs one parent delete after the
+existing ownership lookup, with the same response envelope and user filters.
+
+Observed RED→GREEN: four controller cases failed because the old implementation
+issued child deletes; all 42 backend tests now pass. The real SQL test initially
+failed because the cascade was absent. After both migrations it passed for dev
+and prod: movie/TV entries cascade, an injected parent AFTER DELETE failure
+preserves the parent and both notes, other collections/users remain intact, RLS
+prevents another user's deletion, and null poster inserts succeed.
+
+Both rollback scripts and reapplication passed. An orphan fixture deliberately
+blocked the cascade migration; assertions confirmed both old constraints and the
+orphan data survived unchanged. The fixture was cleaned, migrations reapplied,
+and the main SQL test passed again. No user data or live services were accessed.
+
+Deployment instructions are in `backend/db/README.md`. Apply schema changes before
+the dependent API/frontend. Custom live triggers were not supplied or inspected;
+the local fixture reproduces relevant constraints and SELECT/DELETE RLS only.
+Poster rollback was also tested with an existing null poster: it failed while
+preserving that row and all four nullable column definitions. Live Supabase
+behavior remains unverified.

@@ -19,3 +19,37 @@ for (const poster of [42, {}, []]) {
   assert.equal(validationResult(req).isEmpty(), false);
  });
 }
+
+const { deleteCollection } = require('./collectionController');
+for (const environment of ['development', 'production']) {
+ for (const outcome of ['success', 'delete failure', 'missing']) {
+  test(`collection deletion uses one owned parent write: ${environment}, ${outcome}`, async t => {
+   const previous = process.env.FAVMOV_NODE_ENV;
+   process.env.FAVMOV_NODE_ENV = environment;
+   t.after(() => { if (previous === undefined) delete process.env.FAVMOV_NODE_ENV; else process.env.FAVMOV_NODE_ENV = previous; });
+   t.mock.method(console, 'error', () => {});
+   const writes = [];
+   const prefix = environment === 'development' ? 'dev' : 'prod';
+   const response = await new Promise((resolve, reject) => {
+    const req = { params: { collection_id: 'collection' }, user: { id: 'owner' }, supabase: {
+     from(table) {
+      let write;
+      const query = {
+       select() { return query; },
+       eq(column, value) { if (write) write.filters.push([column, value]); return query; },
+       single: async () => ({ data: outcome === 'missing' ? null : { id: 'collection' }, error: null }),
+       delete() { write = { table, filters: [] }; writes.push(write); return query; },
+       then(done, fail) { return Promise.resolve({ error: table === `${prefix}_collections` && outcome === 'delete failure' ? { message: 'injected parent failure' } : null }).then(done, fail); }
+      };
+      return query;
+     }
+    } };
+    const res = { status(code) { this.code = code; return this; }, json(body) { resolve({ code: this.code, body }); } };
+    deleteCollection(req, res, reject);
+   });
+   assert.equal(response.code, outcome === 'success' ? 200 : outcome === 'missing' ? 404 : 500);
+   assert.deepEqual(writes, outcome === 'missing' ? [] : [{ table: `${prefix}_collections`, filters: [['id', 'collection'], ['user_id', 'owner']] }]);
+   if (outcome === 'success') assert.deepEqual(response.body.data, { is_success: true });
+  });
+ }
+}

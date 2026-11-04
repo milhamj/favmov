@@ -80,15 +80,13 @@ changes; a failed save leaves the editor open with Retry and a page-level Leave 
 terminating the app can still lose unsaved drafts, and simultaneous editing in
 multiple tabs is not coordinated.
 
-Supabase work was excluded from this implementation. Collection deletion still
-uses the existing two-write flow and can lose entries if parent deletion fails.
-Atomic deletion requires inspecting both schemas, verifying or migrating cascading
-foreign keys, and passing a disposable-database rollback test before changing the
-controller. No database migration or production deployment was performed.
+The supplied Supabase schema confirmed non-cascading collection foreign keys and
+NOT NULL poster columns. Migrations now enable atomic collection deletion and
+nullable artwork in both environments. **Apply both database migrations before
+deploying the API/frontend.** No live database migration or deployment has been
+performed. See `backend/db/README.md` for deployment order, lock/orphan checks,
+rollback limits, and disposable PostgreSQL test commands.
 
-Missing poster paths are normalized to null by the frontend and API. Live column
-nullability has not been verified: check the affected movie/TV tables and deploy
-any required nullability migration before the backend, then deploy the frontend.
 See `docs/qa/2026-11-04-ux-data-flow-verification.md` for verification evidence and
 remaining platform checks.
 

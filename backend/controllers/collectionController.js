@@ -596,25 +596,7 @@ exports.deleteCollection = asyncHandler(async (req, res) => {
     return errorResponse(res, 'Collection not found or access denied', 404, collectionError?.message);
   }
 
-  const { tableName: moviesCollectionsTable, error: moviesCollectionsTableError } = getTableName(MOVIES_COLLECTIONS);
-  if (moviesCollectionsTableError) {
-    console.error('Environment error:', moviesCollectionsTableError);
-    return errorResponse(res, moviesCollectionsTableError, 500);
-  }
-
-  // First delete all movies in the collection
-  const { error: moviesDeleteError } = await req.supabase
-    .from(moviesCollectionsTable)
-    .delete()
-    .eq('collection_id', collection_id)
-    .eq('user_id', userId);
-
-  if (moviesDeleteError) {
-    console.error('Error deleting collection movies:', moviesDeleteError);
-    return errorResponse(res, 'Failed to delete collection movies', 500);
-  }
-
-  // Then delete the collection
+  // The collection foreign key cascades entries in the same database statement.
   const { error } = await req.supabase
     .from(collectionsTable)
     .delete()
