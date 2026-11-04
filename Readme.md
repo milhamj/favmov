@@ -58,3 +58,36 @@ pnpm install
 ## BE
 - [x] BE: add movies to favorites (default collection)
 - [x] BE: create collection and add movies to it
+
+## UX/data-flow regression checks
+
+Install dependencies in each app, then run:
+
+```sh
+(cd frontend && pnpm install && pnpm test --runInBand && pnpm exec tsc --noEmit)
+(cd backend && pnpm install && pnpm test)
+(cd frontend && pnpm exec expo export -p web)
+```
+
+The frontend tests use Expo SDK 52's Jest preset and mocked network/native
+boundaries. Route tests live in `frontend/src/__tests__`, outside Expo's route
+directory. The web export requires the existing `FAVMOV_*` environment settings;
+use nonproduction values for local verification. Run Expo export directly rather
+than the deployment script, which clears backend public files.
+
+Notes save in order within an editor instance. Back waits for saves and membership
+changes; a failed save leaves the editor open with Retry. Closing the browser or
+terminating the app can still lose unsaved drafts, and simultaneous editing in
+multiple tabs is not coordinated.
+
+Supabase work was excluded from this implementation. Collection deletion still
+uses the existing two-write flow and can lose entries if parent deletion fails.
+Atomic deletion requires inspecting both schemas, verifying or migrating cascading
+foreign keys, and passing a disposable-database rollback test before changing the
+controller. No database migration or production deployment was performed.
+
+Missing poster paths are normalized to null by the frontend and API. Live column
+nullability has not been verified: check the affected movie/TV tables and deploy
+any required nullability migration before the backend, then deploy the frontend.
+See `docs/qa/2026-11-04-ux-data-flow-verification.md` for verification evidence and
+remaining platform checks.
