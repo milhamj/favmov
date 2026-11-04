@@ -1,6 +1,7 @@
+import RetryButton from '../components/RetryButton';
 import { useEffect, useRef, useState } from "react";
 import { Movie } from "../model/movieModel";
-import { ActivityIndicator, View, StyleSheet, FlatList, Image, Text, TouchableOpacity } from "react-native";
+import { ActivityIndicator, View, StyleSheet, FlatList, Image, Text } from "react-native";
 import { useLocalSearchParams } from 'expo-router';
 import { router } from '../navigation/router';
 import { routes } from '../navigation/routes';
@@ -50,7 +51,7 @@ const ExplorePage = () => {
                 page.current = newPage;
                 ended.current = result.data.length === 0;
                 setMovies((prev) => (newPage === 1 ? result.data : [...prev, ...result.data]));
-            } else setFailedPage(newPage);
+            } else if (result !== null) setFailedPage(newPage);
         } catch (error) {
             //TODO milhamj: update error handling and also remove the try-catch
             if (requestGeneration === generation.current) setFailedPage(newPage);
@@ -100,7 +101,7 @@ const ExplorePage = () => {
     );
 
     const renderFooter = () => {
-        if (failedPage !== null) return <TouchableOpacity accessibilityRole="button" onPress={() => void fetchExploreData(failedPage)}><Text>Retry</Text></TouchableOpacity>;
+        if (failedPage !== null) return <RetryButton onPress={() => void fetchExploreData(failedPage)}/>;
         if (!isLoadingMore) return null;
         return (
         <View style={styles.footerLoader}>

@@ -1,3 +1,4 @@
+import RetryButton from '../../components/RetryButton';
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { router } from '../../navigation/router';
@@ -9,7 +10,6 @@ import { parseIntParam, parseStrParam } from '../../utils/util';
 import { People } from '../../model/peopleModel';
 import FullPageLoader from '../../components/FullPageLoader';
 import ExpandableText from '../../components/ExpandableText';
-import Toast from 'react-native-toast-message';
 import { fetchPeopleDetails } from '../../services/peopleService';
 import { Success } from '../../model/apiResponse';
 import PeopleMovieCreditView from '../../components/people/PeopleMovieCreditView';
@@ -147,7 +147,7 @@ const PeopleDetailPage = () => {
                         </View>
                     </ScrollView>
                 ) : state.status === 'error' ? (
-                    <View><Text>{state.error}</Text><TouchableOpacity accessibilityRole="button" onPress={() => setAttempt(n => n + 1)}><Text>Retry</Text></TouchableOpacity></View>
+                    <View><Text>{state.error}</Text><RetryButton onPress={() => setAttempt(n => n + 1)}/></View>
                 ) : (
                     <FullPageLoader/>
                 )

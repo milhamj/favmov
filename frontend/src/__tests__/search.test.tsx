@@ -9,12 +9,13 @@ import { Movie } from '../model/movieModel';
 jest.mock('../services/movieService', () => ({ searchMovie: jest.fn(), fetchTrendingMovies: jest.fn() }));
 jest.mock('../services/peopleService', () => ({ searchPeople: jest.fn() }));
 jest.mock('../navigation/router', () => ({ router: { navigate: jest.fn(), goBackSafely: jest.fn() } }));
-jest.mock('expo-router', () => ({ useLocalSearchParams: () => ({ section_type: 'Trending Movies' }) }));
+let mockSection = 'Trending Movies';
+jest.mock('expo-router', () => ({ useLocalSearchParams: () => ({ section_type: mockSection }) }));
 jest.mock('../components/MovieCard', () => ({ __esModule: true, default: ({ movie }: any) => { const { Text } = require('react-native'); return <Text>{movie.title}</Text>; } }));
 jest.mock('../components/PeopleCardHorizontal', () => 'PeopleCard');
 jest.mock('../components/HomeSection', () => ({ SectionType: { TrendingMovies: 'Trending Movies', TrendingShows: 'Trending TV Shows', PopularMovies: 'Popular Movies' } }));
 const data = (title: string) => ({ movies: [new Movie({ id: 1, title })], totalPages: 3 });
-beforeEach(() => { jest.useFakeTimers(); jest.clearAllMocks(); });
+beforeEach(() => { jest.useFakeTimers(); jest.clearAllMocks(); mockSection = 'Trending Movies'; });
 afterEach(() => jest.useRealTimers());
 test('a newer query starts while the previous request runs and ignores its late response', async () => {
  let old: any;
@@ -54,4 +55,13 @@ test('clearing a query invalidates pending results immediately', async () => {
  await act(async () => { finish(new Success(data('Alien'))); });
  expect(ui.queryByText('Alien')).toBeNull();
  expect(ui.getByText('Type any Movie title...')).toBeTruthy();
+});
+
+test('unsupported Explore sections show an empty state without a futile Retry', async () => {
+ mockSection = 'Your Favorites';
+ const ui = render(<Explore/>);
+ await act(async () => {});
+ expect(ui.getByText('No results found.')).toBeTruthy();
+ expect(ui.queryByText('Retry')).toBeNull();
+ expect(fetchTrendingMovies).not.toHaveBeenCalled();
 });

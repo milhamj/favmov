@@ -76,7 +76,7 @@ use nonproduction values for local verification. Run Expo export directly rather
 than the deployment script, which clears backend public files.
 
 Notes save in order within an editor instance. Native-stack removal prevention guards Back and swipe dismissal. Back waits for saves and membership
-changes; a failed save leaves the editor open with Retry. Closing the browser or
+changes; a failed save leaves the editor open with Retry and a page-level Leave without saving action. Closing the browser or
 terminating the app can still lose unsaved drafts, and simultaneous editing in
 multiple tabs is not coordinated.
 
@@ -91,3 +91,8 @@ nullability has not been verified: check the affected movie/TV tables and deploy
 any required nullability migration before the backend, then deploy the frontend.
 See `docs/qa/2026-11-04-ux-data-flow-verification.md` for verification evidence and
 remaining platform checks.
+
+Web navigation limit: browser Back can update the address while a failed note save
+keeps the editor visible. Use its Retry/Leave without saving controls; reloading
+at that point loses the unsaved draft. In-app Back uses the same save guard without
+that browser-history mismatch.

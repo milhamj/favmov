@@ -37,16 +37,17 @@ test('failed saves expose Retry without automatic retry loops', async () => {
  await act(async () => { fireEvent.press(ui.getByText('Retry')); });
  expect(update).toHaveBeenCalledTimes(2);
 });
-test('debounce cancels, flushes once and uses latest callback', () => {
+test('debounce coalesces calls, uses the latest callback and cancels pending work', () => {
  const first = jest.fn(), second = jest.fn();
  const hook = renderHook(({ cb }) => useDebouncedCallback(cb, 1000), { initialProps: { cb: first } });
- act(() => hook.result.current('a'));
+ act(() => { hook.result.current(); jest.advanceTimersByTime(500); hook.result.current(); });
  hook.rerender({ cb: second });
- act(() => hook.result.current.flush());
- expect(second).toHaveBeenCalledWith('a');
- act(() => jest.advanceTimersByTime(1000));
+ act(() => jest.advanceTimersByTime(500));
+ expect(second).not.toHaveBeenCalled();
+ act(() => jest.advanceTimersByTime(500));
+ expect(first).not.toHaveBeenCalled();
  expect(second).toHaveBeenCalledTimes(1);
- act(() => { hook.result.current('b'); hook.result.current.cancel(); jest.advanceTimersByTime(1000); });
+ act(() => { hook.result.current(); hook.result.current.cancel(); jest.advanceTimersByTime(1000); });
  expect(second).toHaveBeenCalledTimes(1);
 });
 

@@ -1,5 +1,6 @@
+import RetryButton from './RetryButton';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Text, StyleSheet, View, ActivityIndicator, TextInput, TouchableOpacity } from 'react-native';
+import { Text, StyleSheet, View, ActivityIndicator, TextInput } from 'react-native';
 import Checkbox from 'expo-checkbox';
 import { CollectionCard } from '../model/collectionModel';
 import { deleteMovieFromCollection, postAddMovieToCollection, updateNotes } from '../services/collectionService';
@@ -129,7 +130,7 @@ const CollectionAddCard = ({ collection, movie, registerSave, disabled = false }
                     ) : null
             }
             {isSaved && <Text>{saving ? 'Saving' : saveError ? 'Unable to save notes' : draft.current === saved.current ? 'Saved' : 'Unsaved'}</Text>}
-            {saveError && <TouchableOpacity accessibilityRole="button" onPress={() => void drain()}><Text>Retry</Text></TouchableOpacity>}
+            {saveError && <RetryButton onPress={() => void drain()}/>}
             <View style={styles.separator}/>
         </View>
     )

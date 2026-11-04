@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from 'react';
 import { Text, StyleSheet, View, ActivityIndicator, FlatList, Pressable } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native'; // Add this import
 import { fetchTrendingMovies, fetchPopularMovies, fetchFavoriteMovies, fetchTrendingShows } from '../services/movieService';
 import { Result, Success } from '../model/apiResponse';
 import MovieCard from '../components/MovieCard';
@@ -102,9 +101,7 @@ const HomeSection: React.FC<{
               <View style={styles.header}><Text style={styles.headerTitle}>{section}</Text></View>
             ) : <Pressable style={styles.header} onPress={handleHeaderPress}>
               <Text style={styles.headerTitle}>{section}</Text>
-              { section !== SectionType.YourFavorites &&
-                <Text style={styles.headerAction}>View All</Text>
-              }
+              <Text style={styles.headerAction}>View All</Text>
             </Pressable>}
             <FlatList
               data={movieState.data}

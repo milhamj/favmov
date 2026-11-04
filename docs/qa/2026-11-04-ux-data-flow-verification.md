@@ -8,7 +8,7 @@ the owner's request. No production service/schema was modified.
 
 ## Automated checks
 
-- Frontend: `pnpm test --runInBand` (48 tests across 10 suites).
+- Frontend: `pnpm test --runInBand` (52 tests across 10 suites).
 - Backend: `pnpm test` (36 tests, including poster validation).
 - Types: `pnpm exec tsc --noEmit` in frontend.
 - Web bundle: `pnpm exec expo export -p web` with placeholder localhost Supabase
@@ -108,3 +108,45 @@ must-fix findings. Both were validated again with permanent failing regressions:
 The full frontend suite (48 tests) and TypeScript passed after both fixes. The
 review did not cover physical native gestures, live services, or database behavior;
 the existing Supabase exclusions and cross-tab/app-termination limits still apply.
+
+
+## Completeness and cleanup review (comment 6643294579)
+
+Validated and fixed the navigation trap for permanent note-save failures. Failed
+leave attempts now show a persistent page-level message and an explicit Leave
+without saving action. That action disables prevention before replaying the stored
+navigation action. A real-container regression verifies the failed route stays
+mounted until discard, then reaches Home without another save request.
+
+Restored membership-first collection ordering (stable within each group), long-title
+ellipsis, and a neutral loading heading. Unsupported Explore sections show the
+empty state without an impossible Retry. Permanent regressions cover each case.
+All six Retry controls now use a shared styled button with at least a 44-point
+touch target and disabled-state support.
+
+Removed unused imports, the redundant Favorites check inside its discovery-only
+branch, and the debounce hook's unused argument/flush API. Navigation save draining
+still calls the card's save operation directly. Removed unused Navigation 6 stack
+and tab dependencies and pinned the community CLI to the pre-PR 18.0.0 version.
+Poster normalization remains at both request and server trust boundaries to keep
+the agreed null-on-wire contract; the committed plan remains as historical context
+and is superseded by this QA record where cleanup changed its proposed interfaces.
+
+The frontend suite passed 52 tests after these changes. One cold full-suite run
+hit the previous 5-second navigation test timeout; rerunning with the bounded
+15-second test timeout passed. No timing assertions were weakened or sleeps added.
+
+
+Chromium verification with mocked authenticated services passed: enter the editor
+from a movie, edit a note, return a permanent 404 for saving, use browser Back,
+verify the draft stays visible, then explicitly discard and reach the movie. No
+uncaught page errors occurred. The check also confirmed an Expo web-history
+limitation: browser Back updates the URL before its reset action is blocked, so
+while the failed editor stays mounted the URL can show the previous page. Explicit
+discard completes that navigation; this change does not manipulate the router's
+internal browser-history bookkeeping to hide the mismatch. Prefer in-app Back
+when preserving a failed draft, and do not reload while edits are unsaved.
+
+The final web export passed with placeholder nonproduction configuration. Physical
+native gestures and live services remain unverified. Backend code did not change
+in this follow-up; the previous 36-test backend pass was not rerun.

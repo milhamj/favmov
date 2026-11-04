@@ -60,3 +60,21 @@ test.each([false, true])('custom Back leaves only after saving, initial save fai
  }
  expect(navigation.getCurrentRoute()!.name).toBe('home');
 });
+
+test('a permanently failed save offers an explicit way to leave without saving', async () => {
+ const navigation = createNavigationContainerRef<any>();
+ (updateNotes as jest.Mock).mockResolvedValue(new ApiError('Title not found in collection', 404));
+ const ui = render(<NavigationContainer ref={navigation} initialState={{ index: 1, routes: [{ name: 'home' }, { name: 'editor' }] }}><Stack.Navigator><Stack.Screen name="home" component={Home}/><Stack.Screen name="editor" component={Editor}/></Stack.Navigator></NavigationContainer>);
+ await act(async () => {});
+ const editorKey = navigation.getCurrentRoute()!.key;
+ fireEvent.changeText(ui.getByPlaceholderText('Write custom notes...'), 'unsaved draft');
+ await act(async () => { navigation.goBack(); });
+ expect(navigation.getCurrentRoute()!.name).toBe('editor');
+ expect(mockPrevented[editorKey]?.preventRemove).toBe(true);
+ expect(ui.getByText('Your latest edits could not be saved.')).toBeTruthy();
+ const attempts = (updateNotes as jest.Mock).mock.calls.length;
+ await act(async () => { fireEvent.press(ui.getByText('Leave without saving')); });
+ expect(navigation.getCurrentRoute()!.name).toBe('home');
+ expect(updateNotes).toHaveBeenCalledTimes(attempts);
+ expect(mockPrevented[editorKey]).toBeUndefined();
+});

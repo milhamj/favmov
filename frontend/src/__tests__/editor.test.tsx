@@ -135,3 +135,20 @@ test('failed list refresh after creation can retry without another POST or losin
  expect(ui.queryByText('Retry')).toBeNull();
  invalidated.mockRestore();
 });
+
+test('collections containing the title appear first while other order is preserved', async () => {
+ (getUserCollections as jest.Mock).mockResolvedValue(new Success([{ id: 'a', name: 'Alpha' }, { id: 'b', name: 'Beta' }, { id: 'g', name: 'Gamma' }]));
+ (getCheckMovieExistInCollection as jest.Mock).mockResolvedValue(new Success([{ id: 'g' }]));
+ const ui = render(<Editor/>);
+ await act(async () => {});
+ const Card = require('../components/CollectionAddCard').default;
+ expect(ui.UNSAFE_getAllByType(Card).map(card => card.props.collection.name)).toEqual(['Gamma', 'Alpha', 'Beta']);
+});
+test('loading uses a neutral heading and long titles include an ellipsis', async () => {
+ let finish: any;
+ (fetchMovieDetails as jest.Mock).mockImplementationOnce(() => new Promise(r => finish = r));
+ const ui = render(<Editor/>);
+ expect(ui.getByText('Add to Collection')).toBeTruthy();
+ await act(async () => { finish(new Success(new Movie({ id: 7, title: 'A very long movie title indeed' }))); });
+ expect(ui.getByText('Add A very long movie ti... to Collection')).toBeTruthy();
+});

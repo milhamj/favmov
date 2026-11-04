@@ -1,5 +1,6 @@
+import RetryButton from '../components/RetryButton';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Platform, TextInput, FlatList, Image, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Platform, TextInput, FlatList, Image, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import PageContainer  from '../components/PageContainer';
 import { Movie } from '../model/movieModel';
 import { searchMovie } from '../services/movieService';
@@ -145,7 +146,7 @@ const SearchPage = () => {
     );
 
     const renderFooter = () => {
-        if (failedPage !== null) return <TouchableOpacity accessibilityRole="button" onPress={() => void fetchSearchResult(failedPage)}><Text>Retry</Text></TouchableOpacity>;
+        if (failedPage !== null) return <RetryButton onPress={() => void fetchSearchResult(failedPage)}/>;
         if (!isLoadingMore) return null;
         return (
         <View style={styles.footerLoader}>
