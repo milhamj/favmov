@@ -13,36 +13,39 @@ import Toast from 'react-native-toast-message';
 import { fetchPeopleDetails } from '../../services/peopleService';
 import { Success } from '../../model/apiResponse';
 import PeopleMovieCreditView from '../../components/people/PeopleMovieCreditView';
+import { Loadable } from '../../model/uiState';
 import { COLORS } from '../../styles/colors';
 
 const PeopleDetailPage = () => {
     const params = useLocalSearchParams();
     const peopleId = decodeURIComponent(parseStrParam(params.id));
 
-    const [people, setPeople] = useState<People | null>(null);
+    const [state, setState] = useState<Loadable<People>>({ status: 'loading' });
+    const [attempt, setAttempt] = useState(0);
+    const people = state.status === 'success' ? state.data : null;
     const [isActingHidden, setIsActingHidden] = useState<boolean>(false);
     const [isCrewHidden, setIsCrewHidden] = useState<boolean>(false);
 
     const actingCreditExist = people?.actingCredits && people.actingCredits.length > 0;
     const crewCreditExist = people?.crewCredits && people.crewCredits.length > 0;
 
-    const fetchData = async () => {
-        const result = await fetchPeopleDetails(peopleId);
-        if (result instanceof Success) {
-            setPeople(result.data);
-        } else {
-            Toast.show({
-                type: 'error',
-                text1: 'Error',
-                text2: result.message,
-                position: 'bottom'
-            });
-        }
-    };
-
     useEffect(() => {
-        fetchData();
-    }, [peopleId]);
+        let current = true;
+        setState({ status: 'loading' });
+        const load = async () => {
+            try {
+                const result = await fetchPeopleDetails(peopleId);
+                if (!current) return;
+                setState(result instanceof Success
+                    ? { status: 'success', data: result.data }
+                    : { status: 'error', error: result.errorCode === 404 ? 'Person not found' : result.message });
+            } catch {
+                if (current) setState({ status: 'error', error: 'Unable to load person' });
+            }
+        };
+        void load();
+        return () => { current = false; };
+    }, [peopleId, attempt]);
 
     return (
         <PageContainer>
@@ -143,6 +146,8 @@ const PeopleDetailPage = () => {
                             }
                         </View>
                     </ScrollView>
+                ) : state.status === 'error' ? (
+                    <View><Text>{state.error}</Text><TouchableOpacity accessibilityRole="button" onPress={() => setAttempt(n => n + 1)}><Text>Retry</Text></TouchableOpacity></View>
                 ) : (
                     <FullPageLoader/>
                 )
