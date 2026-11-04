@@ -1,7 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { router } from "../navigation/router";
 import { routes, routeWithParams } from "../navigation/routes";
+import { useIsFocused } from "@react-navigation/native";
 import FullPageLoader from "./FullPageLoader";
 
 import { usePathname, useLocalSearchParams } from 'expo-router';
@@ -10,14 +11,16 @@ const withAuth = (Component: React.ComponentType) => {
     return (props: any) => {
         const pathname = usePathname();
         const params = useLocalSearchParams();
-        const destination = routeWithParams(pathname, params);
+        const focused = useIsFocused();
+        const destination = useRef('');
+        destination.current = routeWithParams(pathname, params);
         const { isAuthenticated, loading } = useAuth();
 
         useEffect(() => {
-            if (!loading && !isAuthenticated) {
-                router.replace(routes.loginWithReturnTo(destination));
+            if (focused && !loading && !isAuthenticated) {
+                router.replace(routes.loginWithReturnTo(destination.current));
             }
-        }, [isAuthenticated, loading, destination]);
+        }, [isAuthenticated, loading, focused]);
 
         if (loading) return <FullPageLoader />;
         if (!isAuthenticated) return null;

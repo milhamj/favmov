@@ -1,7 +1,12 @@
 import { COLORS } from "../styles/colors";
 
 export const parseStrParam = (param: string | string[]): string => {
-  return Array.isArray(param) ? decodeURIComponent(param[0]) : decodeURIComponent(param);
+  const value = Array.isArray(param) ? param[0] : param;
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
 }
 
 export const parseIntParam = (param: string | string[]): number => {

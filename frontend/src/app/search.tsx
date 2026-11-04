@@ -51,7 +51,7 @@ const SearchPage = () => {
     }, []);
 
     // Fetch movies when searchQuery, selectedFilter, or page changes
-    const fetchSearchResult = useCallback(async (newPage: number = 1, reset: boolean = false) => {
+    const fetchSearchResult = useCallback(async (newPage: number = 1) => {
         if (isFetchingRef.current || !searchQuery) return;
     
         const requestGeneration = generation.current;
@@ -66,7 +66,7 @@ const SearchPage = () => {
                 if (requestGeneration !== generation.current) return;
                 if (result instanceof Success) {
                     page.current = newPage;
-                    setMovies((prev) => (newPage === 1 || reset ? result.data.movies : [...prev, ...result.data.movies]));
+                    setMovies((prev) => (newPage === 1 ? result.data.movies : [...prev, ...result.data.movies]));
                     setTotalPages(result.data.movies.length === 0 ? newPage : result.data.totalPages || 1);
                 } else setFailedPage(newPage);
             } else if (isPeopleSelected) {
@@ -74,7 +74,7 @@ const SearchPage = () => {
                 if (requestGeneration !== generation.current) return;
                 if (result instanceof Success) {
                     page.current = newPage;
-                    setPeople((prev) => (newPage === 1 || reset ? result.data.people : [...prev, ...result.data.people]));
+                    setPeople((prev) => (newPage === 1 ? result.data.people : [...prev, ...result.data.people]));
                     setTotalPages(result.data.people.length === 0 ? newPage : result.data.totalPages || 1);
                 } else setFailedPage(newPage);
             }
@@ -91,19 +91,19 @@ const SearchPage = () => {
       }, [searchQuery, selectedChip]
     );
 
-    const invalidate = () => {
+    const invalidate = (query: string) => {
         generation.current += 1;
         isFetchingRef.current = false;
         page.current = 0;
         setFailedPage(null);
         setMovies([]);
         setPeople([]);
-        setIsLoading(false);
+        setIsLoading(Boolean(query));
         setIsLoadingMore(false);
     };
     useEffect(() => {
         const debounceFetch = setTimeout(() => {
-            if (searchQuery) void fetchSearchResult(1, true);
+            if (searchQuery) void fetchSearchResult(1);
         }, 300);
         return () => { clearTimeout(debounceFetch); generation.current += 1; };
     }, [searchQuery, selectedChip, fetchSearchResult]);
@@ -179,9 +179,8 @@ const SearchPage = () => {
                 placeholderTextColor="#666666"
                 value={searchQuery}
                 onChangeText={(newQuery) => {
-                    invalidate();
+                    invalidate(newQuery);
                     setSearchQuery(newQuery);
-                    setMovies([]);
                     setShowFilter(newQuery ? false : true);
                 }}
                 autoFocus={Platform.OS === 'web'}
@@ -196,7 +195,7 @@ const SearchPage = () => {
                                     key={chip}
                                     selected={selectedChip === chip}
                                     onSelect={(isSelected) => {
-                                        if (isSelected) { invalidate(); setSelectedChip(chip); }}
+                                        if (isSelected) { invalidate(searchQuery); setSelectedChip(chip); }}
                                     } 
                                 />
                             ))

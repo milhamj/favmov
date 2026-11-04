@@ -13,7 +13,7 @@ import withAuth from '../../components/withAuth';
 import { router } from '../../navigation/router';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { usePreventRemove, type NavigationAction } from '@react-navigation/native';
-import { parseBooleanParam } from '../../utils/util';
+import { parseBooleanParam, parseStrParam } from '../../utils/util';
 import CreateCollectionSheet from '../../components/CreateCollectionSheet';
 import { fetchMovieDetails } from '../../services/movieService';
 import { CollectionStateStore } from '../../stores/collectionStateStore';
@@ -21,8 +21,8 @@ import { MovieStore } from '../../stores/movieStore';
 
 const AddToCollectionPage = withAuth(() => {
     const params = useLocalSearchParams();
-    const rawId = Array.isArray(params.movie_id) ? params.movie_id[0] : params.movie_id;
-    const movieId = rawId && /^\d+$/.test(rawId) ? Number(rawId) : NaN;
+    const rawId = parseStrParam(params.movie_id);
+    const movieId = /^\d+$/.test(rawId) ? Number(rawId) : NaN;
     const isTvShow = parseBooleanParam(params.is_tv_show);
     
     const [movie, setMovie] = useState<Movie | null>(null);
@@ -35,6 +35,16 @@ const AddToCollectionPage = withAuth(() => {
     const [creating, setCreating] = useState(false);
     const [refreshError, setRefreshError] = useState('');
     const [refreshingCollections, setRefreshingCollections] = useState(false);
+    const [pendingCards, setPendingCards] = useState<Set<string>>(new Set());
+    const updatePending = useCallback((id: string, pending: boolean) => {
+        setPendingCards(previous => {
+            if (previous.has(id) === pending) return previous;
+            const next = new Set(previous);
+            if (pending) next.add(id);
+            else next.delete(id);
+            return next;
+        });
+    }, []);
     const saves = useRef(new Map<string, () => Promise<boolean>>());
     const leaving = useRef(false);
     const pendingAction = useRef<NavigationAction | null>(null);
@@ -59,7 +69,13 @@ const AddToCollectionPage = withAuth(() => {
             } else setLeaveFailed(true);
         } finally { leaving.current = false; setDraining(false); }
     }, [navigation]);
-    usePreventRemove(!discard, ({ data }) => { void leave(data.action); });
+    usePreventRemove(!discard && pendingCards.size > 0, ({ data }) => { void leave(data.action); });
+    useEffect(() => {
+        if (pendingCards.size === 0 && !leaving.current) {
+            setLeaveFailed(false);
+            pendingAction.current = null;
+        }
+    }, [pendingCards]);
     useEffect(() => {
         if (discard && pendingAction.current) {
             const action = pendingAction.current;
@@ -78,7 +94,7 @@ const AddToCollectionPage = withAuth(() => {
                 if (!Number.isSafeInteger(movieId) || movieId <= 0) throw new globalThis.Error('Invalid title URL');
                 const cached = MovieStore.getCachedMovieAndDelete(String(movieId), isTvShow);
                 const [details, membership, collections] = await Promise.all([
-                    cached ? Promise.resolve(new Success(cached)) : fetchMovieDetails(String(movieId), isTvShow),
+                    cached?.title.trim() ? Promise.resolve(new Success(cached)) : fetchMovieDetails(String(movieId), isTvShow),
                     getCheckMovieExistInCollection(String(movieId), isTvShow), getUserCollections()
                 ]);
                 if (!current) return;
@@ -148,7 +164,7 @@ const AddToCollectionPage = withAuth(() => {
 
                         ) : (
                             <View style={styles.listContent}>
-                                {collectionCards.map(item => <CollectionAddCard key={`${movieId}-${isTvShow}-${item.id}`} collection={item} movie={movie!} registerSave={registerSave} disabled={draining || discard}/>)}
+                                {collectionCards.map(item => <CollectionAddCard key={`${movieId}-${isTvShow}-${item.id}`} collection={item} movie={movie!} registerSave={registerSave} onPendingChange={updatePending} disabled={draining || discard}/>)}
                             </View>
                         )
                     }

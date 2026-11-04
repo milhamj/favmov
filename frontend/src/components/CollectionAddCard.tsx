@@ -14,10 +14,11 @@ interface CollectionAddCardProps {
     disabled?: boolean;
     collection: CollectionCard;
     movie: Movie;
+    onPendingChange?: (id: string, pending: boolean) => void;
     registerSave?: (id: string, save: (() => Promise<boolean>) | null) => void;
 }
 
-const CollectionAddCard = ({ collection, movie, registerSave, disabled = false }: CollectionAddCardProps) => {
+const CollectionAddCard = ({ collection, movie, registerSave, onPendingChange, disabled = false }: CollectionAddCardProps) => {
     const [isLoading, setIsLoading] = useState(false);
     const [isSaved, setIsSaved] = useState(collection.isInCollection);
     const [notes, setNotes] = useState(movie.notesInCollection(collection.id) || '');
@@ -26,8 +27,9 @@ const CollectionAddCard = ({ collection, movie, registerSave, disabled = false }
     const draft = useRef(notes);
     const saved = useRef(notes);
     const active = useRef<Promise<boolean> | null>(null);
-    const membershipBusy = useRef(false);
-    const membershipRequest = useRef<Promise<void> | null>(null);
+    const membershipRequest = useRef<Promise<boolean> | null>(null);
+    const membershipTarget = useRef<boolean | null>(null);
+    const [membershipFailed, setMembershipFailed] = useState(false);
 
     const save = useCallback((): Promise<boolean> => {
         if (active.current) return active.current;
@@ -58,7 +60,8 @@ const CollectionAddCard = ({ collection, movie, registerSave, disabled = false }
     const debouncedUpdateNotes = useDebouncedCallback(() => { void save(); }, 1000);
     const drain = useCallback(async () => {
         debouncedUpdateNotes.cancel();
-        await membershipRequest.current;
+        if (membershipRequest.current && !(await membershipRequest.current)) return false;
+        if (membershipTarget.current !== null) return false;
         return save();
     }, [debouncedUpdateNotes, save]);
     useEffect(() => {
@@ -66,37 +69,45 @@ const CollectionAddCard = ({ collection, movie, registerSave, disabled = false }
         return () => registerSave?.(collection.id, null);
     }, [registerSave, collection.id, drain]);
 
+    useEffect(() => {
+        onPendingChange?.(collection.id, notes !== saved.current || saving || isLoading || membershipFailed);
+    }, [collection.id, onPendingChange, notes, saving, isLoading, membershipFailed]);
+    useEffect(() => () => onPendingChange?.(collection.id, false), [collection.id, onPendingChange]);
+
     const handleAddToCollection = (value: boolean) => {
-        if (disabled || active.current || membershipBusy.current) return;
+        if (disabled || active.current || membershipRequest.current) return;
+        membershipTarget.current = value;
+        debouncedUpdateNotes.cancel();
+        setIsLoading(true);
+        setMembershipFailed(false);
         const changeMembership = async () => {
-            membershipBusy.current = true;
-            debouncedUpdateNotes.cancel();
-            setIsLoading(true);
             try {
                 const result = value
                     ? await postAddMovieToCollection(collection.id, movie, !!movie.isTvShow)
                     : await deleteMovieFromCollection(collection.id, movie.id.toString(), !!movie.isTvShow);
-                if (result instanceof Error) {
-                    Toast.show({ type: 'error', text1: 'Error', text2: result.message, position: 'bottom' });
-                    if (!value && draft.current !== saved.current) debouncedUpdateNotes();
-                } else {
-                    setIsSaved(value);
-                    draft.current = saved.current = '';
-                    setNotes('');
-                    setSaveError(false);
-                    CollectionStateStore.setLastUpdated(Date.now());
-                }
+                if (result instanceof Error) throw result;
+                membershipTarget.current = null;
+                setIsSaved(value);
+                draft.current = saved.current = '';
+                setNotes('');
+                setSaveError(false);
+                CollectionStateStore.setLastUpdated(Date.now());
+                return true;
+            } catch (failure: any) {
+                setMembershipFailed(true);
+                Toast.show({ type: 'error', text1: 'Error', text2: failure.message || 'Unable to update collection', position: 'bottom' });
+                if (!value && draft.current !== saved.current) debouncedUpdateNotes();
+                return false;
             } finally {
-                membershipBusy.current = false;
                 membershipRequest.current = null;
                 setIsLoading(false);
             }
         };
-        membershipRequest.current = changeMembership();
+        membershipRequest.current = Promise.resolve().then(changeMembership);
         return membershipRequest.current;
     };
     const handleNotesUpdate = (value: string) => {
-        if (disabled || membershipBusy.current) return;
+        if (disabled || membershipRequest.current) return;
         draft.current = value;
         setNotes(value);
         setSaveError(false);
@@ -130,7 +141,8 @@ const CollectionAddCard = ({ collection, movie, registerSave, disabled = false }
                     ) : null
             }
             {isSaved && <Text>{saving ? 'Saving' : saveError ? 'Unable to save notes' : draft.current === saved.current ? 'Saved' : 'Unsaved'}</Text>}
-            {saveError && <RetryButton onPress={() => void drain()}/>}
+            {membershipFailed && <Text>Unable to update collection</Text>}
+            {membershipFailed ? <RetryButton disabled={disabled} onPress={() => void handleAddToCollection(membershipTarget.current!)}/> : saveError && <RetryButton onPress={() => void drain()}/>}
             <View style={styles.separator}/>
         </View>
     )

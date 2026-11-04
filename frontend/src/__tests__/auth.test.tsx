@@ -5,13 +5,16 @@ import Login from '../app/login';
 import { router } from '../navigation/router';
 import { verifyOtp } from '../services/authService';
 import { Success, Error as ApiError } from '../model/apiResponse';
+let mockFocused = true;
+let mockPathname = '/collection/add';
+jest.mock('@react-navigation/native', () => ({ useIsFocused: () => mockFocused }));
 let mockParams: any = { movie_id: '7', is_tv_show: 'true' };
 let mockAuth = { isAuthenticated: false, loading: false };
-jest.mock('expo-router', () => ({ usePathname: () => '/collection/add', useLocalSearchParams: () => mockParams }));
+jest.mock('expo-router', () => ({ usePathname: () => mockPathname, useLocalSearchParams: () => mockParams }));
 jest.mock('../hooks/useAuth', () => ({ useAuth: () => mockAuth }));
 jest.mock('../navigation/router', () => ({ router: { replace: jest.fn(), dismissTo: jest.fn(), goBackSafely: jest.fn() } }));
 jest.mock('../services/authService', () => ({ signInWithOtp: jest.fn(() => Promise.resolve(new (require('../model/apiResponse').Success)(true))), verifyOtp: jest.fn() }));
-beforeEach(() => { jest.clearAllMocks(); jest.useFakeTimers(); mockAuth = { isAuthenticated: false, loading: false }; });
+beforeEach(() => { jest.clearAllMocks(); mockFocused = true; mockPathname = '/collection/add'; jest.useFakeTimers(); mockAuth = { isAuthenticated: false, loading: false }; });
 afterEach(() => jest.useRealTimers());
 test('auth wrapper preserves editor query and waits for auth loading', () => {
  mockParams = { movie_id: '7', is_tv_show: 'true' };
@@ -34,4 +37,17 @@ test.each([true, false])('OTP success=%s returns to the requested route only on 
  await act(async () => { jest.advanceTimersByTime(2000); });
  if (succeeds) expect(router.dismissTo).toHaveBeenCalledWith(mockParams.return_to);
  else expect(router.dismissTo).not.toHaveBeenCalled();
+});
+
+test('an unfocused protected screen cannot overwrite the focused login destination', () => {
+ mockParams = { movie_id: '7', is_tv_show: 'true' };
+ const Protected = withAuth(() => null);
+ const ui = render(<Protected/>);
+ expect(router.replace).toHaveBeenCalledTimes(1);
+ mockFocused = false;
+ mockPathname = '/login';
+ mockParams = {};
+ ui.rerender(<Protected/>);
+ expect(router.replace).toHaveBeenCalledTimes(1);
+ expect(router.replace).toHaveBeenLastCalledWith('/login?return_to=' + encodeURIComponent('/collection/add?movie_id=7&is_tv_show=true'));
 });

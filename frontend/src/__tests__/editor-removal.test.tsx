@@ -3,14 +3,14 @@ import { render, act, fireEvent } from '@testing-library/react-native';
 import { NavigationContainer, createNavigationContainerRef, createNavigatorFactory, useNavigationBuilder, StackRouter, usePreventRemoveContext } from '@react-navigation/native';
 import Editor from '../app/collection/add';
 import { router } from '../navigation/router';
-import { updateNotes } from '../services/collectionService';
+import { updateNotes, postAddMovieToCollection, deleteMovieFromCollection } from '../services/collectionService';
 import { Success, Error as ApiError } from '../model/apiResponse';
 let mockPrevented: Record<string, { preventRemove: boolean }> = {};
 jest.mock('expo-router', () => ({ useLocalSearchParams: () => ({ movie_id: '7' }), useNavigation: () => require('@react-navigation/native').useNavigation() }));
 jest.mock('../components/withAuth', () => ({ __esModule: true, default: (component: any) => component }));
 jest.mock('../navigation/router', () => ({ router: { goBackSafely: jest.fn() } }));
 jest.mock('../services/movieService', () => ({ fetchMovieDetails: jest.fn(() => Promise.resolve(new (require('../model/apiResponse').Success)(new (require('../model/movieModel').Movie)({ id: 7, title: 'Title' })))) }));
-jest.mock('../services/collectionService', () => ({ getUserCollections: jest.fn(() => Promise.resolve(new (require('../model/apiResponse').Success)([{ id: 'c', name: 'Watch' }]))), getCheckMovieExistInCollection: jest.fn(() => Promise.resolve(new (require('../model/apiResponse').Success)([{ id: 'c' }]))), updateNotes: jest.fn() }));
+jest.mock('../services/collectionService', () => ({ getUserCollections: jest.fn(() => Promise.resolve(new (require('../model/apiResponse').Success)([{ id: 'c', name: 'Watch' }]))), getCheckMovieExistInCollection: jest.fn(() => Promise.resolve(new (require('../model/apiResponse').Success)([{ id: 'c' }]))), updateNotes: jest.fn(), postAddMovieToCollection: jest.fn(), deleteMovieFromCollection: jest.fn() }));
 function Observer() { mockPrevented = usePreventRemoveContext().preventedRoutes; return null; }
 function Navigator(props: any) {
  const { state, descriptors, NavigationContent } = useNavigationBuilder(StackRouter, props);
@@ -25,7 +25,7 @@ test('real prevention context keeps editor mounted during save/failure and permi
  const ui = render(<NavigationContainer ref={navigation} initialState={{ index: 1, routes: [{ name: 'home' }, { name: 'editor' }] }}><Stack.Navigator><Stack.Screen name="home" component={Home}/><Stack.Screen name="editor" component={Editor}/></Stack.Navigator></NavigationContainer>);
  await act(async () => {});
  const editorKey = navigation.getCurrentRoute()!.key;
- expect(mockPrevented[editorKey]?.preventRemove).toBe(true);
+ expect(mockPrevented[editorKey]?.preventRemove ?? false).toBe(false);
  fireEvent.changeText(ui.getByPlaceholderText('Write custom notes...'), 'native draft');
  await act(async () => { navigation.goBack(); });
  expect(navigation.getCurrentRoute()!.name).toBe('editor');
@@ -77,4 +77,47 @@ test('a permanently failed save offers an explicit way to leave without saving',
  expect(navigation.getCurrentRoute()!.name).toBe('home');
  expect(updateNotes).toHaveBeenCalledTimes(attempts);
  expect(mockPrevented[editorKey]).toBeUndefined();
+});
+
+test('a clean editor does not prevent Back or start a save', async () => {
+ const navigation = createNavigationContainerRef<any>();
+ const ui = render(<NavigationContainer ref={navigation} initialState={{ index: 1, routes: [{ name: 'home' }, { name: 'editor' }] }}><Stack.Navigator><Stack.Screen name="home" component={Home}/><Stack.Screen name="editor" component={Editor}/></Stack.Navigator></NavigationContainer>);
+ await act(async () => {});
+ const key = navigation.getCurrentRoute()!.key;
+ expect(mockPrevented[key]?.preventRemove ?? false).toBe(false);
+ await act(async () => { navigation.goBack(); });
+ expect(navigation.getCurrentRoute()!.name).toBe('home');
+});
+test('successful card Retry clears the failed-leave banner and prevention', async () => {
+ const navigation = createNavigationContainerRef<any>();
+ (updateNotes as jest.Mock).mockResolvedValueOnce(new ApiError('offline')).mockResolvedValue(new Success(true));
+ const ui = render(<NavigationContainer ref={navigation} initialState={{ index: 1, routes: [{ name: 'home' }, { name: 'editor' }] }}><Stack.Navigator><Stack.Screen name="home" component={Home}/><Stack.Screen name="editor" component={Editor}/></Stack.Navigator></NavigationContainer>);
+ await act(async () => {});
+ fireEvent.changeText(ui.getByPlaceholderText('Write custom notes...'), 'draft');
+ await act(async () => { navigation.goBack(); });
+ expect(ui.getByText('Your latest edits could not be saved.')).toBeTruthy();
+ await act(async () => { fireEvent.press(ui.getByText('Retry')); });
+ expect(ui.queryByText('Your latest edits could not be saved.')).toBeNull();
+ expect(mockPrevented[navigation.getCurrentRoute()!.key]?.preventRemove ?? false).toBe(false);
+ await act(async () => { navigation.goBack(); });
+ expect(navigation.getCurrentRoute()!.name).toBe('home');
+});
+test.each([false, true])('failed pending membership change blocks Back until retry succeeds, adding=%s', async adding => {
+ const Checkbox = require('expo-checkbox').default;
+ const navigation = createNavigationContainerRef<any>();
+ let finish: any;
+ if (adding) require('../services/collectionService').getCheckMovieExistInCollection.mockResolvedValueOnce(new Success([]));
+ const change = (adding ? postAddMovieToCollection : deleteMovieFromCollection) as jest.Mock;
+ change.mockImplementationOnce(() => new Promise(r => finish = r)).mockResolvedValue(new Success(true));
+ const ui = render(<NavigationContainer ref={navigation} initialState={{ index: 1, routes: [{ name: 'home' }, { name: 'editor' }] }}><Stack.Navigator><Stack.Screen name="home" component={Home}/><Stack.Screen name="editor" component={Editor}/></Stack.Navigator></NavigationContainer>);
+ await act(async () => {});
+ await act(async () => { ui.UNSAFE_getByType(Checkbox).props.onValueChange(adding); });
+ await act(async () => { navigation.goBack(); });
+ await act(async () => { finish(new ApiError('offline')); });
+ expect(navigation.getCurrentRoute()!.name).toBe('editor');
+ expect(ui.getByText('Your latest edits could not be saved.')).toBeTruthy();
+ await act(async () => { fireEvent.press(ui.getByText('Retry')); });
+ expect(ui.queryByText('Your latest edits could not be saved.')).toBeNull();
+ await act(async () => { navigation.goBack(); });
+ expect(navigation.getCurrentRoute()!.name).toBe('home');
 });

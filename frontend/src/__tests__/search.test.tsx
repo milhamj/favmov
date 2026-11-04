@@ -65,3 +65,16 @@ test('unsupported Explore sections show an empty state without a futile Retry', 
  expect(ui.queryByText('Retry')).toBeNull();
  expect(fetchTrendingMovies).not.toHaveBeenCalled();
 });
+
+test('a chip change shows pending loading instead of an empty-result flash', async () => {
+ (searchMovie as jest.Mock).mockResolvedValue(new Success(data('Batman')));
+ const ui = render(<Search/>);
+ fireEvent.changeText(ui.getByPlaceholderText('Type any Movie title...'), 'batman');
+ await act(async () => { jest.advanceTimersByTime(300); });
+ fireEvent.press(ui.getByText('TV Show'));
+ expect(ui.queryByText('No results found.')).toBeNull();
+ const Loader = require('../components/FullPageLoader').default;
+ expect(ui.UNSAFE_getByType(Loader)).toBeTruthy();
+ await act(async () => { jest.advanceTimersByTime(300); });
+ expect(searchMovie).toHaveBeenLastCalledWith('batman', 1, true);
+});

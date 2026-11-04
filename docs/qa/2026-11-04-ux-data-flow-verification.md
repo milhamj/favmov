@@ -8,7 +8,7 @@ the owner's request. No production service/schema was modified.
 
 ## Automated checks
 
-- Frontend: `pnpm test --runInBand` (52 tests across 10 suites).
+- Frontend: `pnpm test --runInBand` (60 tests across 10 suites).
 - Backend: `pnpm test` (36 tests, including poster validation).
 - Types: `pnpm exec tsc --noEmit` in frontend.
 - Web bundle: `pnpm exec expo export -p web` with placeholder localhost Supabase
@@ -150,3 +150,41 @@ when preserving a failed draft, and do not reload while edits are unsaved.
 The final web export passed with placeholder nonproduction configuration. Physical
 native gestures and live services remain unverified. Backend code did not change
 in this follow-up; the previous 36-test backend pass was not rerun.
+
+
+## Ten-finding follow-up
+
+Validated findings 1–6 and simplified 8–10. Permanent regressions first failed for
+hidden-screen auth redirects, failed membership navigation, clean editor prevention,
+stale failure banners, incomplete movie caches, and the search debounce flash.
+
+- Only the focused protected screen redirects to Login. Destination updates do
+  not themselves re-fire the redirect effect, preserving the focused route/query.
+- Membership promises return success/failure. Failed adds/removes retain their
+  intended operation and offer Retry; a pending failed membership change prevents
+  leaving until retry succeeds or the user explicitly discards it.
+- Cards report dirty/saving/membership work to the editor. Clean, loading, and
+  error pages do not enable removal prevention. When all card work is confirmed,
+  the page clears its obsolete leave-failure banner and stored blocked action.
+- Placeholder cached movies without a title fall back to detail fetching. The
+  existing string-param helper parses the ID before strict numeric validation.
+- Nonempty search/filter changes show loading throughout debounce. Removed the
+  dead reset argument and duplicate result clearing.
+- Removed the duplicate membership-busy ref and the hidden-header menu option.
+
+Finding 7 remains explicitly excluded: no live schema was available and the owner
+previously requested skipping Supabase-dependent items. Poster nullability must be
+verified before rollout; a successful validation mock does not establish storage
+compatibility. No database migration or backend change was made in this follow-up.
+
+The frontend suite passed 60 tests and TypeScript passed. Physical native gestures
+and live services remain untested. Previously documented browser URL behavior can
+still occur when dirty work actually blocks browser Back; clean exits now bypass
+the guard entirely.
+
+
+An independent review of this follow-up found that the reused string-param helper
+threw on an already-decoded percent sign. A new failing editor regression now
+covers `movie_id: '%'`; the shared parser tolerates malformed encoding so strict
+numeric validation can show Invalid title URL without a service request. The
+reviewer found no other concrete issue in the new pending-state or auth flows.

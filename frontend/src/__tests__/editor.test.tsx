@@ -2,6 +2,7 @@ import React from 'react';
 import { render, fireEvent, act } from '@testing-library/react-native';
 import Editor from '../app/collection/add';
 import { CollectionStateStore } from '../stores/collectionStateStore';
+import { MovieStore } from '../stores/movieStore';
 import { Movie } from '../model/movieModel';
 import { Success, Error as ApiError } from '../model/apiResponse';
 import { fetchMovieDetails } from '../services/movieService';
@@ -58,8 +59,8 @@ test('removal guard freezes all note fields until every card has finished saving
  expect(mockDispatch).toHaveBeenCalledTimes(1);
 });
 
-test('invalid URL is actionable and never requests movie zero', async () => {
- mockParams.movie_id = 'oops';
+test.each(['oops', '%'])('invalid URL %s is actionable and never requests movie zero', async value => {
+ mockParams.movie_id = value;
  const ui = render(<Editor/>);
  await act(async () => {});
  expect(ui.getByText('Invalid title URL')).toBeTruthy();
@@ -151,4 +152,12 @@ test('loading uses a neutral heading and long titles include an ellipsis', async
  expect(ui.getByText('Add to Collection')).toBeTruthy();
  await act(async () => { finish(new Success(new Movie({ id: 7, title: 'A very long movie title indeed' }))); });
  expect(ui.getByText('Add A very long movie ti... to Collection')).toBeTruthy();
+});
+
+test('an incomplete cached movie fetches details rather than accepting an empty title', async () => {
+ MovieStore.cacheMovie(new Movie({ id: 7, isTvShow: true, collections: [] }));
+ const ui = render(<Editor/>);
+ await act(async () => {});
+ expect(fetchMovieDetails).toHaveBeenCalledWith('7', true);
+ expect(ui.getByText('Add Arrival to Collection')).toBeTruthy();
 });
