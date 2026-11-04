@@ -1,0 +1,37 @@
+import React from 'react';
+import { render, act, fireEvent } from '@testing-library/react-native';
+import withAuth from '../components/withAuth';
+import Login from '../app/login';
+import { router } from '../navigation/router';
+import { verifyOtp } from '../services/authService';
+import { Success, Error as ApiError } from '../model/apiResponse';
+let mockParams: any = { movie_id: '7', is_tv_show: 'true' };
+let mockAuth = { isAuthenticated: false, loading: false };
+jest.mock('expo-router', () => ({ usePathname: () => '/collection/add', useLocalSearchParams: () => mockParams }));
+jest.mock('../hooks/useAuth', () => ({ useAuth: () => mockAuth }));
+jest.mock('../navigation/router', () => ({ router: { replace: jest.fn(), goBackSafely: jest.fn() } }));
+jest.mock('../services/authService', () => ({ signInWithOtp: jest.fn(() => Promise.resolve(new (require('../model/apiResponse').Success)(true))), verifyOtp: jest.fn() }));
+beforeEach(() => { jest.clearAllMocks(); jest.useFakeTimers(); mockAuth = { isAuthenticated: false, loading: false }; });
+afterEach(() => jest.useRealTimers());
+test('auth wrapper preserves editor query and waits for auth loading', () => {
+ mockParams = { movie_id: '7', is_tv_show: 'true' };
+ mockAuth.loading = true;
+ const Protected = withAuth(() => null);
+ const ui = render(<Protected/>);
+ expect(router.replace).not.toHaveBeenCalled();
+ mockAuth.loading = false;
+ ui.rerender(<Protected/>);
+ expect(router.replace).toHaveBeenCalledWith('/login?return_to=' + encodeURIComponent('/collection/add?movie_id=7&is_tv_show=true'));
+});
+test.each([true, false])('OTP success=%s returns to the requested route only on success', async succeeds => {
+ mockParams = { return_to: '/collection/add?movie_id=7&is_tv_show=true' };
+ (verifyOtp as jest.Mock).mockResolvedValue(succeeds ? new Success(true) : new ApiError('invalid'));
+ const ui = render(<Login/>);
+ fireEvent.changeText(ui.getByPlaceholderText('Email'), 'person@example.test');
+ await act(async () => { fireEvent.press(ui.getByText('Send OTP')); });
+ fireEvent.changeText(ui.getByPlaceholderText('Input your OTP here...'), '123456');
+ await act(async () => { fireEvent.press(ui.getByText('LOGIN')); });
+ await act(async () => { jest.advanceTimersByTime(2000); });
+ if (succeeds) expect(router.replace).toHaveBeenCalledWith(mockParams.return_to);
+ else expect(router.replace).not.toHaveBeenCalled();
+});

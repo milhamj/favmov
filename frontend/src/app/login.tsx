@@ -16,9 +16,13 @@ import Toast from 'react-native-toast-message';
 import { Success } from '../model/apiResponse';
 import { router } from '../navigation/router';
 
+import { useLocalSearchParams } from 'expo-router';
+import { safeReturnTo } from '../navigation/routes';
+
 const TIMER_SECONDS = 300
 
 const LoginPage = () => {
+    const { return_to } = useLocalSearchParams();
     const [email, setEmail] = useState('');
     const [otp, setOtp] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -138,7 +142,8 @@ const LoginPage = () => {
                 });
                 setTimeout(() => {
                     setIsLoading(false);
-                    router.goBackSafely();
+                    if (return_to !== undefined) router.replace(safeReturnTo(return_to));
+                    else router.goBackSafely();
                 }, 2000);
             } else {
                 Toast.show({
