@@ -8,6 +8,7 @@ import { Movie } from '../../model/movieModel';
 import { fetchMovieDetails } from '../../services/movieService';
 import { Success, Error } from '../../model/apiResponse';
 import TopBar from '../../components/TopBar';
+import { SeoHead, URL_DEFAULT } from '../../components/SeoHead';
 import ImageViewer from '../../components/ImageViewer';
 import { COLORS } from '../../styles/colors'; 
 import { getCheckMovieExistInCollection } from '../../services/collectionService';
@@ -23,6 +24,7 @@ const MovieDetailPage = () => {
   const isTvShow = parseBooleanParam(params.is_tv_show);
 
   const { isAuthenticated } = useAuth();
+  const [isFocused, setIsFocused] = useState(true);
 
   const [movie, setMovie] = useState(() => {
     const cached = MovieStore.getCachedMovieAndDelete(movieId.toString(), isTvShow);
@@ -86,6 +88,13 @@ const MovieDetailPage = () => {
   
     return () => { isMounted = false };
   }, [isAuthenticated]);
+
+  useFocusEffect(
+    useCallback(() => {
+      setIsFocused(true);
+      return () => setIsFocused(false);
+    }, [])
+  );
 
   // Focus effect - only refresh collection status when returning from another page
   useFocusEffect(
@@ -154,6 +163,15 @@ const MovieDetailPage = () => {
 
   return (
     <PageContainer>
+      {/* Focus check: this screen stays mounted under pushed ones, which shouldn't keep its tags */}
+      { movie.title && isFocused ? (
+        <SeoHead
+          title={`${movie.title} | FavMov`}
+          description={movie.overview || undefined}
+          image={movie.smallPosterUrl()}
+          url={URL_DEFAULT + routes.movie(movie.id, movie.isTvShow)}
+        />
+      ) : null }
       <TopBar
         title= { movie.title }
         backButton={{
@@ -196,7 +214,7 @@ const MovieDetailPage = () => {
             {movie.runtime ? `${movie.runtime} minutes • ` : ''}
             {movie.releaseDate}
             {movie.director() ? ` • Directed by ${movie.director()?.name}` : ''}
-            {movie.isTvShow ? ` • TV Show` : ''}
+            {movie.title && movie.isTvShow ? ` • TV Show` : ''}
           </Text>
 
           {/* Genre Section */}

@@ -5,6 +5,7 @@ FAVMOV_PORT=3080
 FAVMOV_NODE_ENV=development || production
 FAVMOV_SUPABASE_URL=
 FAVMOV_SUPABASE_ANON_KEY=
+FAVMOV_TMDB_API_KEY= # plain TMDB read token, enables per-movie SEO tags
 ```
 ```
 pnpm run dev
@@ -46,7 +47,7 @@ pnpm install
 - [x] FE: Bug - Main screen tab navigation using activeTab
 - [x] FE: Collection detail page - Change UI so that the notes are shown
 - [ ] FE: Trending & Popular list page with pagination
-- [ ] FE: SEO for each movie detail (need SSR)
+- [x] FE: SEO for each movie detail (need SSR)
 - [ ] FE: All pages - Handle error states
 - [ ] FE: AddToCollection - Change to BottomSheet with transparent background
 

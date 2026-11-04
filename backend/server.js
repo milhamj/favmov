@@ -6,6 +6,7 @@ const morgan = require('morgan');
 const path = require('path');
 const { errorResponse } = require('./utils/responses');
 const routes = require('./routes');
+const createPageRoutes = require('./routes/pageRoutes');
 
 const app = express();
 const port = process.env.FAVMOV_PORT || 3000;
@@ -31,12 +32,8 @@ app.use('/api', (req, res) => {
 });
 
 // Static files after API routes
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Catch-all route for SPA - must be last
-app.use((req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+const publicDir = path.join(__dirname, 'public');
+app.use(createPageRoutes(publicDir));
 
 // Error handler
 app.use((err, req, res, next) => {
