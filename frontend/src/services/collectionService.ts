@@ -133,7 +133,7 @@ export const postAddMovieToCollection = async (
       movie_id: !isTvShow ? movie.id : undefined,
       tv_show_id: isTvShow ? movie.id : undefined,
       title: movie.title,
-      poster_path: movie.posterPath,
+      poster_path: movie.posterPath?.trim() || null,
       rating: movie.rating ? movie.rating : null,
       rating_count: movie.ratingCount ? movie.ratingCount : null,
       release_date: movie.releaseDate ? movie.releaseDate : null,

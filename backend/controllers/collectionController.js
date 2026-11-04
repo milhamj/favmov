@@ -19,7 +19,9 @@ exports.validateCollection = [
 exports.validateMovieToCollection = [
   body('is_tv_show').isBoolean().withMessage('is_tv_show is requires and must be boolean.'),
   body('title').trim().notEmpty().withMessage('title is required.'),
-  body('poster_path').trim().notEmpty().withMessage('poster path is required.')
+  body('poster_path')
+    .custom(value => value == null || typeof value === 'string').withMessage('poster path must be a string.')
+    .customSanitizer(value => typeof value === 'string' ? value.trim() || null : value == null ? null : value)
 ];
 
 exports.validateMovieCollectionNotes = [
