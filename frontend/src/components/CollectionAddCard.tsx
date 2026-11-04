@@ -4,18 +4,19 @@ import Checkbox from 'expo-checkbox';
 import { CollectionCard } from '../model/collectionModel';
 import { deleteMovieFromCollection, postAddMovieToCollection, updateNotes } from '../services/collectionService';
 import { Movie } from '../model/movieModel';
-import { Error, Success } from '../model/apiResponse';
+import { Error } from '../model/apiResponse';
 import Toast from 'react-native-toast-message';
 import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
 import { CollectionStateStore } from '../stores/collectionStateStore';
 
 interface CollectionAddCardProps {
+    disabled?: boolean;
     collection: CollectionCard;
     movie: Movie;
     registerSave?: (id: string, save: (() => Promise<boolean>) | null) => void;
 }
 
-const CollectionAddCard = ({ collection, movie, registerSave }: CollectionAddCardProps) => {
+const CollectionAddCard = ({ collection, movie, registerSave, disabled = false }: CollectionAddCardProps) => {
     const [isLoading, setIsLoading] = useState(false);
     const [isSaved, setIsSaved] = useState(collection.isInCollection);
     const [notes, setNotes] = useState(movie.notesInCollection(collection.id) || '');
@@ -25,6 +26,7 @@ const CollectionAddCard = ({ collection, movie, registerSave }: CollectionAddCar
     const saved = useRef(notes);
     const active = useRef<Promise<boolean> | null>(null);
     const membershipBusy = useRef(false);
+    const membershipRequest = useRef<Promise<void> | null>(null);
 
     const save = useCallback((): Promise<boolean> => {
         if (active.current) return active.current;
@@ -53,8 +55,9 @@ const CollectionAddCard = ({ collection, movie, registerSave }: CollectionAddCar
         return active.current;
     }, [collection.id, movie.id, movie.isTvShow]);
     const debouncedUpdateNotes = useDebouncedCallback(() => { void save(); }, 1000);
-    const drain = useCallback(() => {
+    const drain = useCallback(async () => {
         debouncedUpdateNotes.cancel();
+        await membershipRequest.current;
         return save();
     }, [debouncedUpdateNotes, save]);
     useEffect(() => {
@@ -62,30 +65,36 @@ const CollectionAddCard = ({ collection, movie, registerSave }: CollectionAddCar
         return () => registerSave?.(collection.id, null);
     }, [registerSave, collection.id, drain]);
 
-    const handleAddToCollection = async (value: boolean) => {
-        if (active.current || membershipBusy.current) return;
-        membershipBusy.current = true;
-        debouncedUpdateNotes.cancel();
-        setIsLoading(true);
-        try {
-            const result = value
-                ? await postAddMovieToCollection(collection.id, movie, !!movie.isTvShow)
-                : await deleteMovieFromCollection(collection.id, movie.id.toString(), !!movie.isTvShow);
-            if (result instanceof Error) {
-                Toast.show({ type: 'error', text1: 'Error', text2: result.message, position: 'bottom' });
-            } else {
-                setIsSaved(value);
-                draft.current = saved.current = '';
-                setNotes('');
-                setSaveError(false);
-                CollectionStateStore.setLastUpdated(Date.now());
+    const handleAddToCollection = (value: boolean) => {
+        if (disabled || active.current || membershipBusy.current) return;
+        const changeMembership = async () => {
+            membershipBusy.current = true;
+            debouncedUpdateNotes.cancel();
+            setIsLoading(true);
+            try {
+                const result = value
+                    ? await postAddMovieToCollection(collection.id, movie, !!movie.isTvShow)
+                    : await deleteMovieFromCollection(collection.id, movie.id.toString(), !!movie.isTvShow);
+                if (result instanceof Error) {
+                    Toast.show({ type: 'error', text1: 'Error', text2: result.message, position: 'bottom' });
+                } else {
+                    setIsSaved(value);
+                    draft.current = saved.current = '';
+                    setNotes('');
+                    setSaveError(false);
+                    CollectionStateStore.setLastUpdated(Date.now());
+                }
+            } finally {
+                membershipBusy.current = false;
+                membershipRequest.current = null;
+                setIsLoading(false);
             }
-        } finally {
-            membershipBusy.current = false;
-            setIsLoading(false);
-        }
+        };
+        membershipRequest.current = changeMembership();
+        return membershipRequest.current;
     };
     const handleNotesUpdate = (value: string) => {
+        if (disabled || membershipBusy.current) return;
         draft.current = value;
         setNotes(value);
         setSaveError(false);
@@ -101,7 +110,7 @@ const CollectionAddCard = ({ collection, movie, registerSave }: CollectionAddCar
                         isLoading || saving ? (
                             <ActivityIndicator style={styles.checkbox} color="tomato"/>
                         ) : (
-                            <Checkbox style={styles.checkbox} value={isSaved} onValueChange={handleAddToCollection} color='tomato'/>
+                            <Checkbox disabled={disabled} style={styles.checkbox} value={isSaved} onValueChange={handleAddToCollection} color='tomato'/>
                         )
                     }
                 </View>
@@ -109,6 +118,7 @@ const CollectionAddCard = ({ collection, movie, registerSave }: CollectionAddCar
             {   
                     isSaved ? (
                         <TextInput
+                            editable={!disabled && !isLoading}
                             style={styles.notesInput}
                             placeholder="Write custom notes..."
                             placeholderTextColor="#898989"

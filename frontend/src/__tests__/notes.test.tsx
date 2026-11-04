@@ -49,3 +49,57 @@ test('debounce cancels, flushes once and uses latest callback', () => {
  act(() => { hook.result.current('b'); hook.result.current.cancel(); jest.advanceTimersByTime(1000); });
  expect(second).toHaveBeenCalledTimes(1);
 });
+
+test.each([true, false])('removal success=%s clears drafts only after confirmation', async succeeds => {
+ const Checkbox = require('expo-checkbox').default;
+ const { postAddMovieToCollection } = require('../services/collectionService');
+ const notedMovie = new Movie({ id: 1, collections: [{ id: 'c', moviesCollectionNotes: 'old' } as any] });
+ remove.mockResolvedValue(succeeds ? new Success(true) : new ApiError('offline'));
+ const ui = render(<Card collection={collection} movie={notedMovie}/>);
+ fireEvent.changeText(ui.getByPlaceholderText('Write custom notes...'), 'pending');
+ await act(async () => { ui.UNSAFE_getByType(Checkbox).props.onValueChange(false); });
+ await act(async () => { jest.advanceTimersByTime(1000); });
+ expect(update).not.toHaveBeenCalled();
+ if (succeeds) {
+  expect(ui.queryByPlaceholderText('Write custom notes...')).toBeNull();
+  await act(async () => { ui.UNSAFE_getByType(Checkbox).props.onValueChange(true); });
+  expect(postAddMovieToCollection).toHaveBeenCalled();
+  expect(ui.getByPlaceholderText('Write custom notes...').props.value).toBe('');
+ } else expect(ui.getByDisplayValue('pending')).toBeTruthy();
+});
+test('unmount cancels a debounced callback', () => {
+ const cb = jest.fn();
+ const hook = renderHook(() => useDebouncedCallback(cb, 100));
+ act(() => hook.result.current());
+ hook.unmount();
+ act(() => jest.advanceTimersByTime(100));
+ expect(cb).not.toHaveBeenCalled();
+});
+test('a pending removal prevents typing from scheduling another note write', async () => {
+ const Checkbox = require('expo-checkbox').default;
+ let finish: any;
+ remove.mockImplementation(() => new Promise(resolve => finish = resolve));
+ const ui = render(<Card collection={collection} movie={movie}/>);
+ await act(async () => { ui.UNSAFE_getByType(Checkbox).props.onValueChange(false); });
+ expect(ui.getByPlaceholderText('Write custom notes...').props.editable).toBe(false);
+ fireEvent.changeText(ui.getByPlaceholderText('Write custom notes...'), 'during deletion');
+ await act(async () => { jest.advanceTimersByTime(1000); });
+ expect(update).not.toHaveBeenCalled();
+ await act(async () => { finish(new Success(true)); });
+});
+test('navigation waits for membership removal before draining notes', async () => {
+ const Checkbox = require('expo-checkbox').default;
+ let finish: any, drain: any;
+ remove.mockImplementation(() => new Promise(resolve => finish = resolve));
+ const ui = render(<Card collection={collection} movie={movie} registerSave={(_id, save) => { if (save) drain = save; }}/>);
+ fireEvent.changeText(ui.getByPlaceholderText('Write custom notes...'), 'pending');
+ await act(async () => { ui.UNSAFE_getByType(Checkbox).props.onValueChange(false); });
+ let drained = false;
+ let navigation: any;
+ await act(async () => { navigation = drain().then(() => { drained = true; }); });
+ expect(drained).toBe(false);
+ expect(update).not.toHaveBeenCalled();
+ await act(async () => { finish(new Success(true)); await navigation; });
+ expect(drained).toBe(true);
+ expect(update).not.toHaveBeenCalled();
+});

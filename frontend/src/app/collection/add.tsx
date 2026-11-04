@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { StyleSheet, ActivityIndicator, Image, TouchableOpacity, View, Text, FlatList, ScrollView } from 'react-native';
+import { StyleSheet, ActivityIndicator, Image, TouchableOpacity, View, Text, ScrollView } from 'react-native';
 import { Movie } from '../../model/movieModel';
 import { getUserCollections, getCheckMovieExistInCollection } from '../../services/collectionService';
 import { CollectionCard } from '../../model/collectionModel';
@@ -10,9 +10,8 @@ import PageContainer from '../../components/PageContainer';
 import TopBar from '../../components/TopBar';
 import withAuth from '../../components/withAuth';
 import { router } from '../../navigation/router';
-import { routes } from '../../navigation/routes';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
-import { parseBooleanParam, parseIntParam } from '../../utils/util';
+import { parseBooleanParam } from '../../utils/util';
 import CreateCollectionSheet from '../../components/CreateCollectionSheet';
 import { fetchMovieDetails } from '../../services/movieService';
 import { CollectionStateStore } from '../../stores/collectionStateStore';
@@ -30,6 +29,7 @@ const AddToCollectionPage = withAuth(() => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const [attempt, setAttempt] = useState(0);
+    const [draining, setDraining] = useState(false);
     const [creating, setCreating] = useState(false);
     const saves = useRef(new Map<string, () => Promise<boolean>>());
     const leaving = useRef(false);
@@ -42,13 +42,14 @@ const AddToCollectionPage = withAuth(() => {
     const leave = useCallback(async (next: () => void) => {
         if (leaving.current) return;
         leaving.current = true;
+        setDraining(true);
         try {
             const results = await Promise.all([...saves.current.values()].map(save => save()));
             if (results.every(Boolean)) {
                 allowLeave.current = true;
                 next();
             }
-        } finally { leaving.current = false; }
+        } finally { leaving.current = false; setDraining(false); }
     }, []);
     useEffect(() => navigation.addListener('beforeRemove', (event: any) => {
         if (allowLeave.current) return;
@@ -92,12 +93,6 @@ const AddToCollectionPage = withAuth(() => {
     };
     const handleCreateCollection = () => setCreating(true);
 
-    const renderCollection = ({ item }: { item: CollectionCard }) => {
-        return (
-            <CollectionAddCard collection={item} movie={movie!} registerSave={registerSave}/>
-        )
-    }
-
     return (
             <PageContainer>
                 <TopBar
@@ -126,6 +121,7 @@ const AddToCollectionPage = withAuth(() => {
                                 </Text>
                                 <TouchableOpacity 
                                     style={styles.createButton}
+                                    disabled={draining}
                                     onPress={handleCreateCollection}
                                 >
                                     <Text style={styles.createButtonText}>Create Collection</Text>
@@ -133,12 +129,9 @@ const AddToCollectionPage = withAuth(() => {
                             </View>
 
                         ) : (
-                            <FlatList
-                                data={collectionCards}
-                                renderItem={renderCollection}
-                                keyExtractor={(item) => item.id}
-                                contentContainerStyle={styles.listContent}
-                            />
+                            <View style={styles.listContent}>
+                                {collectionCards.map(item => <CollectionAddCard key={`${movieId}-${isTvShow}-${item.id}`} collection={item} movie={movie!} registerSave={registerSave} disabled={draining}/>)}
+                            </View>
                         )
                     }
                 </ScrollView>
