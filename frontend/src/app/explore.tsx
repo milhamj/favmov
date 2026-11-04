@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Movie } from "../model/movieModel";
-import { ActivityIndicator, View, StyleSheet, FlatList, Image, Text } from "react-native";
+import { ActivityIndicator, View, StyleSheet, FlatList, Image, Text, TouchableOpacity } from "react-native";
 import { useLocalSearchParams } from 'expo-router';
 import { router } from '../navigation/router';
 import { routes } from '../navigation/routes';
@@ -24,13 +24,18 @@ const ExplorePage = () => {
     const [movies, setMovies] = useState([] as Movie[]);
     const [isLoading, setIsLoading] = useState(true); // the prerender should show a loader, not "No results"
     const [isLoadingMore, setIsLoadingMore] = useState(false);
-    const page = useRef(1);
+    const page = useRef(0);
+    const generation = useRef(0);
+    const ended = useRef(false);
+    const [failedPage, setFailedPage] = useState<number | null>(null);
     const isFetchingRef = useRef(false);
 
     const fetchExploreData = async (newPage: number = 1) => {
         if (isFetchingRef.current || !sectionType) return;
     
+        const requestGeneration = generation.current;
         isFetchingRef.current = true;
+        setFailedPage(null);
         setIsLoading(newPage === 1);
         setIsLoadingMore(newPage > 1);
     
@@ -40,13 +45,17 @@ const ExplorePage = () => {
                 sectionType === SectionType.TrendingShows ? await fetchTrendingShows(newPage) :
                 sectionType === SectionType.PopularMovies ? await fetchPopularMovies(newPage) :
                 null
+            if (requestGeneration !== generation.current) return;
             if (result instanceof Success) {
+                page.current = newPage;
+                ended.current = result.data.length === 0;
                 setMovies((prev) => (newPage === 1 ? result.data : [...prev, ...result.data]));
-            }
+            } else setFailedPage(newPage);
         } catch (error) {
             //TODO milhamj: update error handling and also remove the try-catch
-            console.error('Error fetching movies:', error);
+            if (requestGeneration === generation.current) setFailedPage(newPage);
         } finally {
+          if (requestGeneration !== generation.current) return;
           setIsLoading(false);
           setIsLoadingMore(false);
           isFetchingRef.current = false;
@@ -54,15 +63,21 @@ const ExplorePage = () => {
     };
 
     useEffect(() => {
+        generation.current += 1;
+        page.current = 0;
+        ended.current = false;
+        isFetchingRef.current = false;
+        setFailedPage(null);
+        setMovies([]);
         setTitle(sectionType);
         if (!sectionType) setIsLoading(false);
-        fetchExploreData();
+        void fetchExploreData();
+        return () => { generation.current += 1; };
     },[sectionType])
 
     const handleOnEndReached = () => {
-        if (!isFetchingRef.current && page.current < MAX_PAGE && !isLoadingMore) {
-            page.current += 1;
-            fetchExploreData(page.current);
+        if (failedPage === null && !ended.current && page.current > 0 && !isFetchingRef.current && page.current < MAX_PAGE) {
+            void fetchExploreData(page.current + 1);
         }
     };    
 
@@ -85,6 +100,7 @@ const ExplorePage = () => {
     );
 
     const renderFooter = () => {
+        if (failedPage !== null) return <TouchableOpacity accessibilityRole="button" onPress={() => void fetchExploreData(failedPage)}><Text>Retry</Text></TouchableOpacity>;
         if (!isLoadingMore) return null;
         return (
         <View style={styles.footerLoader}>
@@ -108,6 +124,8 @@ const ExplorePage = () => {
                 {
                     isLoading ? (
                         <FullPageLoader />
+                    ) : failedPage === 1 ? (
+                        <View><Text>Unable to load results</Text>{renderFooter()}</View>
                     ) : isEmptyResult ? (
                         <View style={styles.emptyState}>
                             <Image source={require('../../assets/empty_search.png')} style={styles.emptyImage} />

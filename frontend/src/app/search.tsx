@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Platform, TextInput, FlatList, Image, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Platform, TextInput, FlatList, Image, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import PageContainer  from '../components/PageContainer';
 import { Movie } from '../model/movieModel';
 import { searchMovie } from '../services/movieService';
@@ -30,7 +30,9 @@ const SearchPage = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [showFilter, setShowFilter] = useState(true);
     const [selectedChip, setSelectedChip] = useState(CHIP_MOVIE);
-    const page = useRef(1);
+    const page = useRef(0);
+    const generation = useRef(0);
+    const [failedPage, setFailedPage] = useState<number | null>(null);
     const inputRef = useRef<TextInput>(null);
     const isFetchingRef = useRef(false);
 
@@ -51,28 +53,35 @@ const SearchPage = () => {
     const fetchSearchResult = useCallback(async (newPage: number = 1, reset: boolean = false) => {
         if (isFetchingRef.current || !searchQuery) return;
     
+        const requestGeneration = generation.current;
         isFetchingRef.current = true;
+        setFailedPage(null);
         setIsLoading(newPage === 1);
         setIsLoadingMore(newPage > 1);
     
         try {
             if (isMovielected || isTvShowSelected) {
                 const result = await searchMovie(searchQuery, newPage, isTvShowSelected);
+                if (requestGeneration !== generation.current) return;
                 if (result instanceof Success) {
+                    page.current = newPage;
                     setMovies((prev) => (newPage === 1 || reset ? result.data.movies : [...prev, ...result.data.movies]));
-                    setTotalPages(result.data.totalPages || 1);
-                }
+                    setTotalPages(result.data.movies.length === 0 ? newPage : result.data.totalPages || 1);
+                } else setFailedPage(newPage);
             } else if (isPeopleSelected) {
                 const result = await searchPeople(searchQuery, newPage);
+                if (requestGeneration !== generation.current) return;
                 if (result instanceof Success) {
+                    page.current = newPage;
                     setPeople((prev) => (newPage === 1 || reset ? result.data.people : [...prev, ...result.data.people]));
-                    setTotalPages(result.data.totalPages || 1);
-                }
+                    setTotalPages(result.data.people.length === 0 ? newPage : result.data.totalPages || 1);
+                } else setFailedPage(newPage);
             }
         } catch (error) {
             //TODO milhamj: update error handling and also remove the try-catch
-            console.error('Error fetching search result:', error);
+            if (requestGeneration === generation.current) setFailedPage(newPage);
         } finally {
+          if (requestGeneration !== generation.current) return;
           setIsLoading(false);
           setIsLoadingMore(false);
           setShowFilter(true);
@@ -81,31 +90,27 @@ const SearchPage = () => {
       }, [searchQuery, selectedChip]
     );
 
+    const invalidate = () => {
+        generation.current += 1;
+        isFetchingRef.current = false;
+        page.current = 0;
+        setFailedPage(null);
+        setMovies([]);
+        setPeople([]);
+        setIsLoading(false);
+        setIsLoadingMore(false);
+    };
     useEffect(() => {
         const debounceFetch = setTimeout(() => {
-            if (searchQuery) {
-                page.current = 1; // Reset to first page on new search or filter
-                fetchSearchResult(page.current, true);
-            }
-
-            // Clear previous result
-            if (movies.length > 0) {
-                setMovies([]);
-            }
-            if (people.length > 0) {
-                setPeople([]);
-            }
+            if (searchQuery) void fetchSearchResult(1, true);
         }, 300);
-
-        return () => clearTimeout(debounceFetch);
+        return () => { clearTimeout(debounceFetch); generation.current += 1; };
     }, [searchQuery, selectedChip, fetchSearchResult]);
-
     const handleOnEndReached = () => {
-        if (!isFetchingRef.current && page.current < totalPages && !isLoadingMore) {
-            page.current += 1;
-            fetchSearchResult(page.current);
+        if (failedPage === null && page.current > 0 && !isFetchingRef.current && page.current < totalPages) {
+            void fetchSearchResult(page.current + 1);
         }
-    };    
+    };
 
     const renderMovieItem = ({ item, index }: { item: Movie, index: number }) => (
         <View style={{
@@ -140,6 +145,7 @@ const SearchPage = () => {
     );
 
     const renderFooter = () => {
+        if (failedPage !== null) return <TouchableOpacity accessibilityRole="button" onPress={() => void fetchSearchResult(failedPage)}><Text>Retry</Text></TouchableOpacity>;
         if (!isLoadingMore) return null;
         return (
         <View style={styles.footerLoader}>
@@ -148,7 +154,7 @@ const SearchPage = () => {
         );
     };
 
-    const isEmptyResult = searchQuery.length > 0 && !isLoading && movies.length === 0 && people.length === 0;
+    const isEmptyResult = searchQuery.length > 0 && failedPage === null && !isLoading && movies.length === 0 && people.length === 0;
     const isEmptyQuery = searchQuery.length === 0;
     const placeholderText = isPeopleSelected 
         ? "Type any name..." 
@@ -172,6 +178,7 @@ const SearchPage = () => {
                 placeholderTextColor="#666666"
                 value={searchQuery}
                 onChangeText={(newQuery) => {
+                    invalidate();
                     setSearchQuery(newQuery);
                     setMovies([]);
                     setShowFilter(newQuery ? false : true);
@@ -188,7 +195,7 @@ const SearchPage = () => {
                                     key={chip}
                                     selected={selectedChip === chip}
                                     onSelect={(isSelected) => {
-                                        if (isSelected) setSelectedChip(chip)}
+                                        if (isSelected) { invalidate(); setSelectedChip(chip); }}
                                     } 
                                 />
                             ))
@@ -200,6 +207,8 @@ const SearchPage = () => {
                 {
                     isLoading ? (
                         <FullPageLoader />
+                    ) : failedPage === 1 ? (
+                        <View><Text>Unable to load results</Text>{renderFooter()}</View>
                     ) : isEmptyQuery || isEmptyResult ? (
                         <View style={styles.emptyState}>
                             <Image source={require('../../assets/empty_search.png')} style={styles.emptyImage} />
