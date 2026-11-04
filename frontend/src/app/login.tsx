@@ -62,8 +62,6 @@ const LoginPage = () => {
     }
 
     const handleSendOtp = () => {
-        console.log('Login with:', { email });
-
         setIsWaitingForOtp(false);
         setIsLoading(true);
         setTimer(TIMER_SECONDS);
@@ -127,8 +125,6 @@ const LoginPage = () => {
     };
 
     const handleVerifyOtp = () => {
-        console.log('Verifying OTP:', { email, otp });
-
         setIsLoading(true);
 
         const doVerifyOtp = async () => {
