@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { applyMovieSeo } = require('./movieSeo');
+const { applyMovieSeo, fetchMovie } = require('./movieSeo');
 
 const template = '<title data-rh="true">Default</title>'
   + '<meta data-rh="true" name="description" content="Default"/>'
@@ -30,4 +30,53 @@ test('escapes TMDB text so it cannot break out of the head', () => {
   const html = applyMovieSeo(template, { title: '</title><script>x</script>', overview: '"><script>$&' }, '/movie/3');
   assert.doesNotMatch(html, /<script/);
   assert.match(html, /name="description" content="&#34;&#62;&#60;script&#62;\$&#38;"/);
+});
+
+// The cache lives for the whole process, so each test uses its own ids
+const mockTmdb = (t) => t.mock.method(global, 'fetch', async (url) => Response.json({ url }));
+
+test('reuses a cached movie instead of calling TMDB again', async (t) => {
+  const fetchMock = mockTmdb(t);
+  const first = await fetchMovie('100', false);
+  const second = await fetchMovie('100', false);
+  assert.deepStrictEqual(second, first);
+  assert.strictEqual(fetchMock.mock.callCount(), 1);
+});
+
+test('caches a movie and a TV show with the same id separately', async (t) => {
+  const fetchMock = mockTmdb(t);
+  const movie = await fetchMovie('200', false);
+  const show = await fetchMovie('200', true);
+  assert.match(movie.url, /\/movie\/200$/);
+  assert.match(show.url, /\/tv\/200$/);
+  assert.strictEqual(fetchMock.mock.callCount(), 2);
+});
+
+test('calls TMDB again once an entry expires', async (t) => {
+  const fetchMock = mockTmdb(t);
+  const now = Date.now();
+  await fetchMovie('300', false);
+  t.mock.method(Date, 'now', () => now + 60 * 60 * 1000 + 1000);
+  await fetchMovie('300', false);
+  assert.strictEqual(fetchMock.mock.callCount(), 2);
+});
+
+test('does not cache failures', async (t) => {
+  t.mock.method(global, 'fetch', async () => new Response('{}', { status: 500 }));
+  await assert.rejects(fetchMovie('400', false), /TMDB responded with 500/);
+  t.mock.restoreAll();
+  const fetchMock = mockTmdb(t);
+  await fetchMovie('400', false);
+  assert.strictEqual(fetchMock.mock.callCount(), 1);
+});
+
+test('evicts the oldest entry when full', async (t) => {
+  const fetchMock = mockTmdb(t);
+  await fetchMovie('500', false);
+  for (let id = 1000; id < 2000; id++) await fetchMovie(String(id), false);
+  const calls = fetchMock.mock.callCount();
+  await fetchMovie('1999', false);
+  assert.strictEqual(fetchMock.mock.callCount(), calls);
+  await fetchMovie('500', false);
+  assert.strictEqual(fetchMock.mock.callCount(), calls + 1);
 });
