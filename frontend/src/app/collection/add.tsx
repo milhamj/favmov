@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { StyleSheet, ActivityIndicator, Image, TouchableOpacity, View, Text, FlatList, ScrollView } from 'react-native';
 import { Movie } from '../../model/movieModel';
-import { getUserCollections } from '../../services/collectionService';
+import { getUserCollections, getCheckMovieExistInCollection } from '../../services/collectionService';
 import { CollectionCard } from '../../model/collectionModel';
 import Toast from 'react-native-toast-message';
 import CollectionAddCard from '../../components/CollectionAddCard';
@@ -11,95 +11,100 @@ import TopBar from '../../components/TopBar';
 import withAuth from '../../components/withAuth';
 import { router } from '../../navigation/router';
 import { routes } from '../../navigation/routes';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { parseBooleanParam, parseIntParam } from '../../utils/util';
+import CreateCollectionSheet from '../../components/CreateCollectionSheet';
+import { fetchMovieDetails } from '../../services/movieService';
+import { CollectionStateStore } from '../../stores/collectionStateStore';
 import { MovieStore } from '../../stores/movieStore';
 
 const AddToCollectionPage = withAuth(() => {
     const params = useLocalSearchParams();
-    const movieId = parseIntParam(params.movie_id);
+    const rawId = Array.isArray(params.movie_id) ? params.movie_id[0] : params.movie_id;
+    const movieId = rawId && /^\d+$/.test(rawId) ? Number(rawId) : NaN;
     const isTvShow = parseBooleanParam(params.is_tv_show);
     
-    const [movie] = useState(() => {
-        const cached = MovieStore.getCachedMovieAndDelete(movieId.toString(), isTvShow);
-        return cached || new Movie({});
-    });
-
-    const shortTitle = movie.title.length > 20 ? movie.title.substring(0,20) + "..." : movie.title;
-
+    const [movie, setMovie] = useState<Movie | null>(null);
+    const shortTitle = movie?.title ? movie.title.substring(0, 20) : 'title';
     const [collectionCards, setCollectionCards] = useState<CollectionCard[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [shouldRender, setShouldRender] = useState(false);
+    const [error, setError] = useState('');
+    const [attempt, setAttempt] = useState(0);
+    const [creating, setCreating] = useState(false);
+    const saves = useRef(new Map<string, () => Promise<boolean>>());
+    const leaving = useRef(false);
+    const allowLeave = useRef(false);
+    const navigation = useNavigation();
+    const registerSave = useCallback((id: string, save: (() => Promise<boolean>) | null) => {
+        if (save) saves.current.set(id, save);
+        else saves.current.delete(id);
+    }, []);
+    const leave = useCallback(async (next: () => void) => {
+        if (leaving.current) return;
+        leaving.current = true;
+        try {
+            const results = await Promise.all([...saves.current.values()].map(save => save()));
+            if (results.every(Boolean)) {
+                allowLeave.current = true;
+                next();
+            }
+        } finally { leaving.current = false; }
+    }, []);
+    useEffect(() => navigation.addListener('beforeRemove', (event: any) => {
+        if (allowLeave.current) return;
+        event.preventDefault();
+        void leave(() => navigation.dispatch(event.data.action));
+    }), [navigation, leave]);
 
     useEffect(() => {
-        if (!movie.collections) {
-            Toast.show({
-                type: 'error',
-                text1: 'Error',
-                text2: 'Movie collections are needed',
-                position: 'bottom'
-            });
-            router.goBackSafely();
-        } else {
-            setShouldRender(true);
-        }
-    }, []);
-
-    const handleCreateCollection = () => {
-        router.navigate(routes.home)
-    }
-
-    const fetchCollections = async () => {
+        let current = true;
+        setMovie(null);
         setIsLoading(true);
+        setError('');
+        const load = async () => {
+            try {
+                if (!Number.isSafeInteger(movieId) || movieId <= 0) throw new globalThis.Error('Invalid title URL');
+                const cached = MovieStore.getCachedMovieAndDelete(String(movieId), isTvShow);
+                const [details, membership, collections] = await Promise.all([
+                    cached ? Promise.resolve(new Success(cached)) : fetchMovieDetails(String(movieId), isTvShow),
+                    getCheckMovieExistInCollection(String(movieId), isTvShow), getUserCollections()
+                ]);
+                if (!current) return;
+                if (!(details instanceof Success)) throw details;
+                if (!(membership instanceof Success)) throw membership;
+                if (!(collections instanceof Success)) throw collections;
+                const restored = new Movie({ ...details.data, isTvShow, collections: membership.data });
+                setMovie(restored);
+                setCollectionCards(collections.data.map(c => new CollectionCard(c.id, c.name, membership.data.some(m => m.id === c.id))));
+            } catch (failure: any) {
+                if (current) setError(failure.message || 'Unable to load title');
+            } finally { if (current) setIsLoading(false); }
+        };
+        void load();
+        return () => { current = false; };
+    }, [movieId, isTvShow, attempt]);
+    const refreshCollections = async () => {
         const result = await getUserCollections();
         if (result instanceof Success) {
-            const collectionCardsResult = [] as CollectionCard[];
-            result.data.forEach((collection) => {
-                const isInCollection = movie.collections?.find((movieCollection) => { 
-                    return movieCollection.id === collection.id
-                }) !== undefined;
-                collectionCardsResult.push(new CollectionCard(collection.id, collection.name, isInCollection));
-            })
-            // Sort so that the collections the movie is already in appear first
-            collectionCardsResult.sort((a, b) => {
-                if (a.isInCollection && !b.isInCollection) {
-                    return -1;
-                } else if (!a.isInCollection && b.isInCollection) {
-                    return 1;
-                } else {
-                    return 0;
-                }
-            })
-            setCollectionCards(collectionCardsResult);
-        } else {
-            Toast.show({
-                type: 'error',
-                text1: 'Error',
-                text2: result.message,
-                position: 'bottom'
-            });
-        }
-        setIsLoading(false);
+            setCollectionCards(previous => result.data.map(c => previous.find(p => p.id === c.id) || new CollectionCard(c.id, c.name, false)));
+            CollectionStateStore.setLastUpdated(Date.now());
+        } else Toast.show({ type: 'error', text1: 'Unable to refresh collections', text2: result.message });
     };
-      
-    useEffect(() => {
-        fetchCollections();
-    }, []);
+    const handleCreateCollection = () => setCreating(true);
 
     const renderCollection = ({ item }: { item: CollectionCard }) => {
         return (
-            <CollectionAddCard collection={item} movie={movie}/>
+            <CollectionAddCard collection={item} movie={movie!} registerSave={registerSave}/>
         )
     }
 
     return (
-        shouldRender ? 
             <PageContainer>
                 <TopBar
                     title= { `Add ${shortTitle} to Collection` }
                     backButton={{
                       isShow: true,
-                      onClick: () => router.goBackSafely()
+                      onClick: () => { void leave(() => router.goBackSafely()); }
                     }}
                 />
                 <ScrollView style={styles.content}>
@@ -108,6 +113,8 @@ const AddToCollectionPage = withAuth(() => {
                             <View style={styles.loadingContainer}>
                                 <ActivityIndicator style={styles.loadingItem} size="large" color="tomato" />
                             </View>
+                        ) : error ? (
+                            <View><Text>{error}</Text><TouchableOpacity accessibilityRole="button" onPress={() => setAttempt(n => n + 1)}><Text>Retry</Text></TouchableOpacity></View>
                         ) : collectionCards.length === 0 ? (
                             <View style={styles.emptyState}>
                                 <Image 
@@ -135,9 +142,12 @@ const AddToCollectionPage = withAuth(() => {
                         )
                     }
                 </ScrollView>
+                <CreateCollectionSheet visible={creating} onClose={(success) => {
+                    setCreating(false);
+                    if (success) void refreshCollections();
+                }}/>
                 <Toast />
             </PageContainer> 
-        : null
     )
 })
 

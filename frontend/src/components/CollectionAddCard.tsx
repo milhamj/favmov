@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Text, StyleSheet, View, ActivityIndicator, TextInput } from 'react-native';
+import { Text, StyleSheet, View, ActivityIndicator, TextInput, TouchableOpacity } from 'react-native';
 import Checkbox from 'expo-checkbox';
 import { CollectionCard } from '../model/collectionModel';
 import { deleteMovieFromCollection, postAddMovieToCollection, updateNotes } from '../services/collectionService';
@@ -12,74 +12,85 @@ import { CollectionStateStore } from '../stores/collectionStateStore';
 interface CollectionAddCardProps {
     collection: CollectionCard;
     movie: Movie;
+    registerSave?: (id: string, save: (() => Promise<boolean>) | null) => void;
 }
 
-const CollectionAddCard = ({ collection, movie }: CollectionAddCardProps) => {
+const CollectionAddCard = ({ collection, movie, registerSave }: CollectionAddCardProps) => {
     const [isLoading, setIsLoading] = useState(false);
     const [isSaved, setIsSaved] = useState(collection.isInCollection);
-    const [notes, setNotes]  = useState(movie.notesInCollection(collection.id) || '');
+    const [notes, setNotes] = useState(movie.notesInCollection(collection.id) || '');
+    const [saveError, setSaveError] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const draft = useRef(notes);
+    const saved = useRef(notes);
+    const active = useRef<Promise<boolean> | null>(null);
+    const membershipBusy = useRef(false);
+
+    const save = useCallback((): Promise<boolean> => {
+        if (active.current) return active.current;
+        const run = async () => {
+            setSaving(true);
+            setSaveError(false);
+            try {
+                while (draft.current !== saved.current) {
+                    const value = draft.current;
+                    const result = await updateNotes(collection.id, movie.id.toString(), !!movie.isTvShow, value);
+                    if (result instanceof Error) throw result;
+                    saved.current = value;
+                    CollectionStateStore.setLastUpdated(Date.now());
+                }
+                return true;
+            } catch {
+                setSaveError(true);
+                return false;
+            } finally {
+                active.current = null;
+                setSaving(false);
+            }
+        };
+        // Start in a microtask so even a clean draft clears the assigned promise.
+        active.current = Promise.resolve().then(run);
+        return active.current;
+    }, [collection.id, movie.id, movie.isTvShow]);
+    const debouncedUpdateNotes = useDebouncedCallback(() => { void save(); }, 1000);
+    const drain = useCallback(() => {
+        debouncedUpdateNotes.cancel();
+        return save();
+    }, [debouncedUpdateNotes, save]);
+    useEffect(() => {
+        registerSave?.(collection.id, drain);
+        return () => registerSave?.(collection.id, null);
+    }, [registerSave, collection.id, drain]);
 
     const handleAddToCollection = async (value: boolean) => {
+        if (active.current || membershipBusy.current) return;
+        membershipBusy.current = true;
+        debouncedUpdateNotes.cancel();
         setIsLoading(true);
-        if (value) {
-            const response = await postAddMovieToCollection(collection.id, movie, movie.isTvShow || false);
-            if (response instanceof Error) {
-                Toast.show({
-                    type: 'error',
-                    text1: 'Error',
-                    text2: response.message,
-                    position: 'bottom'
-                  });
+        try {
+            const result = value
+                ? await postAddMovieToCollection(collection.id, movie, !!movie.isTvShow)
+                : await deleteMovieFromCollection(collection.id, movie.id.toString(), !!movie.isTvShow);
+            if (result instanceof Error) {
+                Toast.show({ type: 'error', text1: 'Error', text2: result.message, position: 'bottom' });
             } else {
-                setIsSaved(!isSaved);
+                setIsSaved(value);
+                draft.current = saved.current = '';
+                setNotes('');
+                setSaveError(false);
                 CollectionStateStore.setLastUpdated(Date.now());
             }
-            setIsLoading(false);
-        } else {
-            const response = await deleteMovieFromCollection(collection.id, movie.id.toString(), movie.isTvShow || false);
-            if (response instanceof Error) {
-                Toast.show({
-                    type: 'error',
-                    text1: 'Error',
-                    text2: response.message,
-                    position: 'bottom'
-                  });
-            } else {
-                setIsSaved(!isSaved);
-                CollectionStateStore.setLastUpdated(Date.now());
-            }
+        } finally {
+            membershipBusy.current = false;
             setIsLoading(false);
         }
-    }
-
-    const handleNotesUpdate = async (newNotes: string) => {
-        setNotes(newNotes);
-        debouncedUpdateNotes(newNotes);
-    }
-
-    const debouncedUpdateNotes = useDebouncedCallback(async (newNotes: string) => {
-        setIsLoading(true);
-
-        newNotes = newNotes.trim();
-        const result = await updateNotes(
-            collection.id, 
-            movie.id.toString(), 
-            movie.isTvShow || false, newNotes
-        );
-
-        if (result instanceof Error) {
-            Toast.show({
-                type: 'error',
-                text1: 'Error',
-                text2: result.message,
-                position: 'bottom',
-            });
-        } else {
-            CollectionStateStore.setLastUpdated(Date.now());
-        }
-
-        setIsLoading(false);
-    }, 1000);
+    };
+    const handleNotesUpdate = (value: string) => {
+        draft.current = value;
+        setNotes(value);
+        setSaveError(false);
+        debouncedUpdateNotes();
+    };
 
     return (
         <View>
@@ -87,7 +98,7 @@ const CollectionAddCard = ({ collection, movie }: CollectionAddCardProps) => {
                 <Text style={styles.collectionName}>{collection.name}</Text>
                 <View style={styles.checkboxContainer}>
                     {
-                        isLoading ? (
+                        isLoading || saving ? (
                             <ActivityIndicator style={styles.checkbox} color="tomato"/>
                         ) : (
                             <Checkbox style={styles.checkbox} value={isSaved} onValueChange={handleAddToCollection} color='tomato'/>
@@ -106,6 +117,8 @@ const CollectionAddCard = ({ collection, movie }: CollectionAddCardProps) => {
                         />
                     ) : null
             }
+            {isSaved && <Text>{saving ? 'Saving' : saveError ? 'Unable to save notes' : draft.current === saved.current ? 'Saved' : 'Unsaved'}</Text>}
+            {saveError && <TouchableOpacity accessibilityRole="button" onPress={() => void drain()}><Text>Retry</Text></TouchableOpacity>}
             <View style={styles.separator}/>
         </View>
     )

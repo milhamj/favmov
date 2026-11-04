@@ -1,0 +1,40 @@
+import React from 'react';
+import { render, fireEvent, act } from '@testing-library/react-native';
+import Editor from '../app/collection/add';
+import { Movie } from '../model/movieModel';
+import { Success, Error as ApiError } from '../model/apiResponse';
+import { fetchMovieDetails } from '../services/movieService';
+import { getUserCollections, getCheckMovieExistInCollection, updateNotes } from '../services/collectionService';
+import { router } from '../navigation/router';
+let mockParams = { movie_id: '7', is_tv_show: 'true' };
+jest.mock('expo-router', () => ({ useLocalSearchParams: () => mockParams, useNavigation: () => ({ addListener: () => () => {}, dispatch: jest.fn() }) }));
+jest.mock('../components/withAuth', () => ({ __esModule: true, default: (component: any) => component }));
+jest.mock('../navigation/router', () => ({ router: { goBackSafely: jest.fn() } }));
+jest.mock('../services/movieService', () => ({ fetchMovieDetails: jest.fn() }));
+jest.mock('../services/collectionService', () => ({ getUserCollections: jest.fn(), getCheckMovieExistInCollection: jest.fn(), updateNotes: jest.fn() }));
+beforeEach(() => {
+ jest.clearAllMocks();
+ (fetchMovieDetails as jest.Mock).mockResolvedValue(new Success(new Movie({ id: 7, title: 'Arrival', isTvShow: true })));
+ (getUserCollections as jest.Mock).mockResolvedValue(new Success([{ id: 'c', name: 'Watch' }]));
+ (getCheckMovieExistInCollection as jest.Mock).mockResolvedValue(new Success([{ id: 'c', moviesCollectionNotes: 'saved' }]));
+});
+test('restores TV title and membership from URL without cache', async () => {
+ const ui = render(<Editor/>);
+ await act(async () => {});
+ expect(fetchMovieDetails).toHaveBeenCalledWith('7', true);
+ expect(getCheckMovieExistInCollection).toHaveBeenCalledWith('7', true);
+ expect(ui.getByDisplayValue('saved')).toBeTruthy();
+});
+test('Back waits for the newest draft and stays open on failure', async () => {
+ const ui = render(<Editor/>);
+ await act(async () => {});
+ (updateNotes as jest.Mock).mockResolvedValue(new ApiError('offline'));
+ fireEvent.changeText(ui.getByPlaceholderText('Write custom notes...'), 'latest');
+ await act(async () => { fireEvent.press(ui.getByText('arrow-back')); });
+ expect(updateNotes).toHaveBeenCalledWith('c', '7', true, 'latest');
+ expect(router.goBackSafely).not.toHaveBeenCalled();
+ expect(ui.getByText('Retry')).toBeTruthy();
+ (updateNotes as jest.Mock).mockResolvedValue(new Success(true));
+ await act(async () => { fireEvent.press(ui.getByText('arrow-back')); });
+ expect(router.goBackSafely).toHaveBeenCalledTimes(1);
+});
