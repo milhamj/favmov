@@ -1,9 +1,13 @@
 const SITE_URL = 'https://favmov.milhamj.com';
 const TMDB_IMAGE_URL = 'https://image.tmdb.org/t/p/w500';
 const CACHE_TTL_MS = 60 * 60 * 1000;
+const NOT_FOUND_TTL_MS = 5 * 60 * 1000;
+const FAILURE_BACKOFF_MS = 30 * 1000;
 const CACHE_MAX_ENTRIES = 1000; // crawlers can walk many ids, so memory has to stay bounded
 
 const movieCache = new Map();
+const pendingLookups = new Map();
+let retryTmdbAt = 0;
 
 const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
@@ -32,24 +36,44 @@ const applyMovieSeo = (html, movie, pagePath) => {
   return result;
 };
 
-// Only successes are stored, so a TMDB outage isn't remembered after it ends
-const fetchMovie = async (id, isTvShow) => {
-  const key = `${isTvShow ? 'tv' : 'movie'}/${id}`;
-  const cached = movieCache.get(key);
-  if (cached && Date.now() < cached.expiresAt) return cached.movie;
-
+const requestMovie = async (key) => {
   const response = await fetch(`https://api.themoviedb.org/3/${key}`, {
     headers: { Authorization: `Bearer ${process.env.FAVMOV_TMDB_API_KEY}` },
     signal: AbortSignal.timeout(2000),
   });
+  if (response.status === 404) return null;
   if (!response.ok) throw new Error(`TMDB responded with ${response.status}`);
-  const movie = await response.json();
+  return response.json();
+};
 
+const cacheMovie = (key, movie) => {
   movieCache.delete(key);
   // A Map iterates in insertion order, so the first key is the oldest entry
   if (movieCache.size >= CACHE_MAX_ENTRIES) movieCache.delete(movieCache.keys().next().value);
-  movieCache.set(key, { movie, expiresAt: Date.now() + CACHE_TTL_MS });
-  return movie;
+  movieCache.set(key, { movie, expiresAt: Date.now() + (movie ? CACHE_TTL_MS : NOT_FOUND_TTL_MS) });
+};
+
+// Resolves to null when TMDB has no such title. Other failures reject, and pause all
+// lookups briefly so an outage doesn't add the timeout to every page view.
+const fetchMovie = async (id, isTvShow) => {
+  const key = `${isTvShow ? 'tv' : 'movie'}/${id}`;
+  const cached = movieCache.get(key);
+  if (cached && Date.now() < cached.expiresAt) return cached.movie;
+  if (pendingLookups.has(key)) return pendingLookups.get(key);
+  if (Date.now() < retryTmdbAt) throw new Error('Skipping TMDB after a recent failure');
+
+  const lookup = requestMovie(key)
+    .then((movie) => {
+      cacheMovie(key, movie);
+      return movie;
+    })
+    .catch((error) => {
+      retryTmdbAt = Date.now() + FAILURE_BACKOFF_MS;
+      throw error;
+    })
+    .finally(() => pendingLookups.delete(key));
+  pendingLookups.set(key, lookup);
+  return lookup;
 };
 
 module.exports = { applyMovieSeo, fetchMovie };

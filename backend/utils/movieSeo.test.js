@@ -61,12 +61,36 @@ test('calls TMDB again once an entry expires', async (t) => {
   assert.strictEqual(fetchMock.mock.callCount(), 2);
 });
 
-test('does not cache failures', async (t) => {
-  t.mock.method(global, 'fetch', async () => new Response('{}', { status: 500 }));
-  await assert.rejects(fetchMovie('400', false), /TMDB responded with 500/);
-  t.mock.restoreAll();
+test('remembers a 404 for a short time', async (t) => {
+  const fetchMock = t.mock.method(global, 'fetch', async () => new Response('{}', { status: 404 }));
+  const now = Date.now();
+  assert.strictEqual(await fetchMovie('410', false), null);
+  assert.strictEqual(await fetchMovie('410', false), null);
+  assert.strictEqual(fetchMock.mock.callCount(), 1);
+  t.mock.method(Date, 'now', () => now + 5 * 60 * 1000 + 1000);
+  await fetchMovie('410', false);
+  assert.strictEqual(fetchMock.mock.callCount(), 2);
+});
+
+test('shares one TMDB call between simultaneous requests', async (t) => {
   const fetchMock = mockTmdb(t);
-  await fetchMovie('400', false);
+  const movies = await Promise.all([fetchMovie('420', false), fetchMovie('420', false), fetchMovie('420', false)]);
+  assert.deepStrictEqual(movies[1], movies[0]);
+  assert.strictEqual(fetchMock.mock.callCount(), 1);
+});
+
+test('pauses all lookups after a failure, then recovers', async (t) => {
+  // Clock starts at 0 so the pause is over for the tests that run after this one
+  const clock = t.mock.method(Date, 'now', () => 0);
+  const failing = t.mock.method(global, 'fetch', async () => new Response('{}', { status: 500 }));
+  await assert.rejects(fetchMovie('430', false), /TMDB responded with 500/);
+  await assert.rejects(fetchMovie('431', false), /Skipping TMDB/);
+  assert.strictEqual(failing.mock.callCount(), 1);
+
+  failing.mock.restore();
+  const fetchMock = mockTmdb(t);
+  clock.mock.mockImplementation(() => 31 * 1000);
+  await fetchMovie('430', false);
   assert.strictEqual(fetchMock.mock.callCount(), 1);
 });
 

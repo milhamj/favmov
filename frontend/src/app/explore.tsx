@@ -22,7 +22,7 @@ const ExplorePage = () => {
 
     const [title, setTitle] = useState(''); // query params are unknown when prerendering
     const [movies, setMovies] = useState([] as Movie[]);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(true); // the prerender should show a loader, not "No results"
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const page = useRef(1);
     const isFetchingRef = useRef(false);
@@ -55,6 +55,7 @@ const ExplorePage = () => {
 
     useEffect(() => {
         setTitle(sectionType);
+        if (!sectionType) setIsLoading(false);
         fetchExploreData();
     },[sectionType])
 

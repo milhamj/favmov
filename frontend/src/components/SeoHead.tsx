@@ -3,7 +3,7 @@ import { Helmet } from 'react-native-helmet-async'
 const TITLE_DEFAULT = "FavMov: Your Movie Companion"
 const DESCRIPTION_DEFAULT = "Never forget a movie again! FavMov helps you track your favorite movies and TV shows with ease."
 const IMAGE_DEFAULT = "https://gdlqv951tx.ufs.sh/f/C0k8wbELmJeDtDKSEN5lFsRoy5udbUiPOBJn3qNS1IYepDvC"
-const URL_DEFAULT = "https://favmov.milhamj.com"
+export const URL_DEFAULT = "https://favmov.milhamj.com"
 
 interface SeoHeadProps {
   title?: string
