@@ -8,7 +8,7 @@ the owner's request. No production service/schema was modified.
 
 ## Automated checks
 
-- Frontend: `pnpm test --runInBand` (44 tests across 10 suites).
+- Frontend: `pnpm test --runInBand` (46 tests across 10 suites).
 - Backend: `pnpm test` (36 tests, including poster validation).
 - Types: `pnpm exec tsc --noEmit` in frontend.
 - Web bundle: `pnpm exec expo export -p web` with placeholder localhost Supabase
@@ -74,3 +74,17 @@ Declared `babel-preset-expo` as a direct development dependency so tests do not
 rely on a transitively hoisted preset. The full frontend suite and TypeScript
 passed after these changes. Native gestures still require a device check; these
 regressions establish prevention-context/state behavior, not physical gestures.
+
+
+## Custom Back follow-up
+
+Validated comment 6632963563: the custom Back button called the save operation
+before navigation, which caused the removal guard to re-enter an already active
+operation and drop the blocked action. The button now calls Back directly; the
+supported removal guard owns saving and replaying navigation exactly once.
+
+A real-container regression presses the actual custom Back button with a deferred
+note save and verifies the editor remains during saving, stays open on failure,
+and reaches Home on success or successful retry. Both cases failed against the
+previous handler. Mock-based tests now exercise the guard callback explicitly
+rather than implying that a router call proves the screen was removed.

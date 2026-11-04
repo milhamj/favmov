@@ -96,7 +96,7 @@ const AddToCollectionPage = withAuth(() => {
                     title= { `Add ${shortTitle} to Collection` }
                     backButton={{
                       isShow: true,
-                      onClick: () => { void leave(() => router.goBackSafely()); }
+                      onClick: () => router.goBackSafely()
                     }}
                 />
                 <ScrollView style={styles.content}>

@@ -5,11 +5,11 @@ import { Movie } from '../model/movieModel';
 import { Success, Error as ApiError } from '../model/apiResponse';
 import { fetchMovieDetails } from '../services/movieService';
 import { getUserCollections, getCheckMovieExistInCollection, updateNotes, createCollection } from '../services/collectionService';
-import { router } from '../navigation/router';
 let mockPreventRemove: any;
+const mockDispatch = jest.fn();
 jest.mock('@react-navigation/native', () => ({ usePreventRemove: (prevent: boolean, callback: any) => { mockPreventRemove = { prevent, callback }; } }));
 let mockParams = { movie_id: '7', is_tv_show: 'true' };
-jest.mock('expo-router', () => ({ useLocalSearchParams: () => mockParams, useNavigation: () => ({ addListener: () => () => {}, dispatch: jest.fn() }) }));
+jest.mock('expo-router', () => ({ useLocalSearchParams: () => mockParams, useNavigation: () => ({ addListener: () => () => {}, dispatch: mockDispatch }) }));
 jest.mock('../components/withAuth', () => ({ __esModule: true, default: (component: any) => component }));
 jest.mock('../navigation/router', () => ({ router: { goBackSafely: jest.fn() } }));
 jest.mock('../services/movieService', () => ({ fetchMovieDetails: jest.fn() }));
@@ -28,21 +28,21 @@ test('restores TV title and membership from URL without cache', async () => {
  expect(getCheckMovieExistInCollection).toHaveBeenCalledWith('7', true);
  expect(ui.getByDisplayValue('saved')).toBeTruthy();
 });
-test('Back waits for the newest draft and stays open on failure', async () => {
+test('removal guard waits for the newest draft and stays open on failure', async () => {
  const ui = render(<Editor/>);
  await act(async () => {});
  (updateNotes as jest.Mock).mockResolvedValue(new ApiError('offline'));
  fireEvent.changeText(ui.getByPlaceholderText('Write custom notes...'), 'latest');
- await act(async () => { fireEvent.press(ui.getByText('arrow-back')); });
+ await act(async () => { mockPreventRemove.callback({ data: { action: { type: 'GO_BACK' } } }); });
  expect(updateNotes).toHaveBeenCalledWith('c', '7', true, 'latest');
- expect(router.goBackSafely).not.toHaveBeenCalled();
+ expect(mockDispatch).not.toHaveBeenCalled();
  expect(ui.getByText('Retry')).toBeTruthy();
  (updateNotes as jest.Mock).mockResolvedValue(new Success(true));
- await act(async () => { fireEvent.press(ui.getByText('arrow-back')); });
- expect(router.goBackSafely).toHaveBeenCalledTimes(1);
+ await act(async () => { mockPreventRemove.callback({ data: { action: { type: 'GO_BACK' } } }); });
+ expect(mockDispatch).toHaveBeenCalledTimes(1);
 });
 
-test('Back freezes all note fields until every card has finished saving', async () => {
+test('removal guard freezes all note fields until every card has finished saving', async () => {
  (getUserCollections as jest.Mock).mockResolvedValue(new Success([{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }]));
  (getCheckMovieExistInCollection as jest.Mock).mockResolvedValue(new Success([{ id: 'a' }, { id: 'b' }]));
  let finish: any;
@@ -50,11 +50,11 @@ test('Back freezes all note fields until every card has finished saving', async 
  const ui = render(<Editor/>);
  await act(async () => {});
  fireEvent.changeText(ui.getAllByPlaceholderText('Write custom notes...')[1], 'pending B');
- await act(async () => { fireEvent.press(ui.getByText('arrow-back')); });
+ await act(async () => { mockPreventRemove.callback({ data: { action: { type: 'GO_BACK' } } }); });
  expect(ui.getAllByPlaceholderText('Write custom notes...')[0].props.editable).toBe(false);
- expect(router.goBackSafely).not.toHaveBeenCalled();
+ expect(mockDispatch).not.toHaveBeenCalled();
  await act(async () => { finish(new Success(true)); });
- expect(router.goBackSafely).toHaveBeenCalledTimes(1);
+ expect(mockDispatch).toHaveBeenCalledTimes(1);
 });
 
 test('invalid URL is actionable and never requests movie zero', async () => {
