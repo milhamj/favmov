@@ -11,6 +11,7 @@ import TopBar from '../../components/TopBar';
 import withAuth from '../../components/withAuth';
 import { router } from '../../navigation/router';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
+import { usePreventRemove } from '@react-navigation/native';
 import { parseBooleanParam } from '../../utils/util';
 import CreateCollectionSheet from '../../components/CreateCollectionSheet';
 import { fetchMovieDetails } from '../../services/movieService';
@@ -33,7 +34,6 @@ const AddToCollectionPage = withAuth(() => {
     const [creating, setCreating] = useState(false);
     const saves = useRef(new Map<string, () => Promise<boolean>>());
     const leaving = useRef(false);
-    const allowLeave = useRef(false);
     const navigation = useNavigation();
     const registerSave = useCallback((id: string, save: (() => Promise<boolean>) | null) => {
         if (save) saves.current.set(id, save);
@@ -46,16 +46,13 @@ const AddToCollectionPage = withAuth(() => {
         try {
             const results = await Promise.all([...saves.current.values()].map(save => save()));
             if (results.every(Boolean)) {
-                allowLeave.current = true;
                 next();
             }
         } finally { leaving.current = false; setDraining(false); }
     }, []);
-    useEffect(() => navigation.addListener('beforeRemove', (event: any) => {
-        if (allowLeave.current) return;
-        event.preventDefault();
-        void leave(() => navigation.dispatch(event.data.action));
-    }), [navigation, leave]);
+    usePreventRemove(true, ({ data }) => {
+        void leave(() => navigation.dispatch(data.action));
+    });
 
     useEffect(() => {
         let current = true;

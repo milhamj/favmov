@@ -75,7 +75,7 @@ directory. The web export requires the existing `FAVMOV_*` environment settings;
 use nonproduction values for local verification. Run Expo export directly rather
 than the deployment script, which clears backend public files.
 
-Notes save in order within an editor instance. Back waits for saves and membership
+Notes save in order within an editor instance. Native-stack removal prevention guards Back and swipe dismissal. Back waits for saves and membership
 changes; a failed save leaves the editor open with Retry. Closing the browser or
 terminating the app can still lose unsaved drafts, and simultaneous editing in
 multiple tabs is not coordinated.

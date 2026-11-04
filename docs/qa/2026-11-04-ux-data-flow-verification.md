@@ -8,7 +8,7 @@ the owner's request. No production service/schema was modified.
 
 ## Automated checks
 
-- Frontend: `pnpm test --runInBand` (39 tests across 8 suites).
+- Frontend: `pnpm test --runInBand` (44 tests across 10 suites).
 - Backend: `pnpm test` (36 tests, including poster validation).
 - Types: `pnpm exec tsc --noEmit` in frontend.
 - Web bundle: `pnpm exec expo export -p web` with placeholder localhost Supabase
@@ -50,3 +50,27 @@ exhaustive; unit tests are not a substitute for those platform/live checks.
   typing available and coalesce pending text.
 - Per-instance note ordering does not resolve cross-tab conflicts or preserve
   drafts after browser/app termination.
+
+
+## PR feedback follow-up
+
+Validated both findings in review comment 6632676052 against the installed
+navigation code and failing regressions:
+
+- Native-stack reads the removal-prevention context to set `preventNativeDismiss`;
+  a raw `beforeRemove` listener does not populate that context. The editor now uses
+  `usePreventRemove` and replays the blocked action only after saves succeed. The
+  stack disables the unsupported back-button history menu. The direct Navigation
+  dependency is aligned to Expo Router's installed 7.1.18 so the hook shares the
+  navigator's context. Tests use the real navigation container/prevention context
+  to verify pending/failed saves retain the editor and successful retry pops it.
+- Login now uses Expo Router's `dismissTo`, which pops to an existing destination
+  or replaces the current route when absent. Real StackRouter regressions cover
+  movie and TV destinations, Back reaching Home, and a direct protected editor
+  destination absent from history. Both movie-history cases fail with the old
+  replacement behavior.
+
+Declared `babel-preset-expo` as a direct development dependency so tests do not
+rely on a transitively hoisted preset. The full frontend suite and TypeScript
+passed after these changes. Native gestures still require a device check; these
+regressions establish prevention-context/state behavior, not physical gestures.

@@ -15,6 +15,7 @@ const RootLayout = () => {
       <Stack
         screenOptions={{
           headerShown: false,
+          headerBackButtonMenuEnabled: false,
         }}
       >
         <Stack.Screen name="(tabs)" />

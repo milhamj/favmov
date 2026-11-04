@@ -142,7 +142,7 @@ const LoginPage = () => {
                 });
                 setTimeout(() => {
                     setIsLoading(false);
-                    if (return_to !== undefined) router.replace(safeReturnTo(return_to));
+                    if (return_to !== undefined) router.dismissTo(safeReturnTo(return_to));
                     else router.goBackSafely();
                 }, 2000);
             } else {

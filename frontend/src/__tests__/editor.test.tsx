@@ -6,6 +6,8 @@ import { Success, Error as ApiError } from '../model/apiResponse';
 import { fetchMovieDetails } from '../services/movieService';
 import { getUserCollections, getCheckMovieExistInCollection, updateNotes, createCollection } from '../services/collectionService';
 import { router } from '../navigation/router';
+let mockPreventRemove: any;
+jest.mock('@react-navigation/native', () => ({ usePreventRemove: (prevent: boolean, callback: any) => { mockPreventRemove = { prevent, callback }; } }));
 let mockParams = { movie_id: '7', is_tv_show: 'true' };
 jest.mock('expo-router', () => ({ useLocalSearchParams: () => mockParams, useNavigation: () => ({ addListener: () => () => {}, dispatch: jest.fn() }) }));
 jest.mock('../components/withAuth', () => ({ __esModule: true, default: (component: any) => component }));
@@ -96,4 +98,18 @@ test('creates a first collection in the existing sheet and retains the title', a
  expect(createCollection).toHaveBeenCalledWith('New collection');
  expect(ui.getByText('New collection')).toBeTruthy();
  expect(ui.getByText('Add Arrival to Collection')).toBeTruthy();
+});
+
+test('native removal stays prevented during a pending save and after failure', async () => {
+ let finish: any;
+ (updateNotes as jest.Mock).mockImplementationOnce(() => new Promise(r => finish = r));
+ const ui = render(<Editor/>);
+ await act(async () => {});
+ fireEvent.changeText(ui.getByPlaceholderText('Write custom notes...'), 'native draft');
+ expect(mockPreventRemove.prevent).toBe(true);
+ await act(async () => { mockPreventRemove.callback({ data: { action: { type: 'GO_BACK' } } }); });
+ expect(ui.getByPlaceholderText('Write custom notes...').props.editable).toBe(false);
+ await act(async () => { finish(new ApiError('offline')); });
+ expect(ui.getByText('Retry')).toBeTruthy();
+ expect(mockPreventRemove.prevent).toBe(true);
 });

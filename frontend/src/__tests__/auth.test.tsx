@@ -9,7 +9,7 @@ let mockParams: any = { movie_id: '7', is_tv_show: 'true' };
 let mockAuth = { isAuthenticated: false, loading: false };
 jest.mock('expo-router', () => ({ usePathname: () => '/collection/add', useLocalSearchParams: () => mockParams }));
 jest.mock('../hooks/useAuth', () => ({ useAuth: () => mockAuth }));
-jest.mock('../navigation/router', () => ({ router: { replace: jest.fn(), goBackSafely: jest.fn() } }));
+jest.mock('../navigation/router', () => ({ router: { replace: jest.fn(), dismissTo: jest.fn(), goBackSafely: jest.fn() } }));
 jest.mock('../services/authService', () => ({ signInWithOtp: jest.fn(() => Promise.resolve(new (require('../model/apiResponse').Success)(true))), verifyOtp: jest.fn() }));
 beforeEach(() => { jest.clearAllMocks(); jest.useFakeTimers(); mockAuth = { isAuthenticated: false, loading: false }; });
 afterEach(() => jest.useRealTimers());
@@ -32,6 +32,6 @@ test.each([true, false])('OTP success=%s returns to the requested route only on 
  fireEvent.changeText(ui.getByPlaceholderText('Input your OTP here...'), '123456');
  await act(async () => { fireEvent.press(ui.getByText('LOGIN')); });
  await act(async () => { jest.advanceTimersByTime(2000); });
- if (succeeds) expect(router.replace).toHaveBeenCalledWith(mockParams.return_to);
- else expect(router.replace).not.toHaveBeenCalled();
+ if (succeeds) expect(router.dismissTo).toHaveBeenCalledWith(mockParams.return_to);
+ else expect(router.dismissTo).not.toHaveBeenCalled();
 });
