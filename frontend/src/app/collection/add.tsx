@@ -125,7 +125,7 @@ const AddToCollectionPage = withAuth(() => {
         setRefreshingCollections(true);
         const result = await getUserCollections();
         if (result instanceof Success) {
-            setCollectionCards(previous => result.data.map(c => previous.find(p => p.id === c.id) || new CollectionCard(c.id, c.name, false)));
+            setCollectionCards(result.data.map(c => new CollectionCard(c.id, c.name, false)));
             setRefreshError('');
         } else setRefreshError(result.message);
         setRefreshingCollections(false);

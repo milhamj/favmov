@@ -315,3 +315,13 @@ test('unmounting during a removal neither saves nor stores the draft', async () 
  expect(update).not.toHaveBeenCalled();
  expect(unsavedNotes.size).toBe(0);
 });
+
+test('editing after a failed removal removes the Retry that would delete the entry', async () => {
+ const Checkbox = require('expo-checkbox').default;
+ remove.mockResolvedValueOnce(new ApiError('offline'));
+ const ui = render(<Card collection={collection} movie={movie}/>);
+ await act(async () => { ui.UNSAFE_getByType(Checkbox).props.onValueChange(false); });
+ expect(ui.getByText('Retry')).toBeTruthy();
+ fireEvent.changeText(ui.getByPlaceholderText('Write custom notes...'), 'keeping it');
+ expect(ui.queryByText('Retry')).toBeNull();
+});

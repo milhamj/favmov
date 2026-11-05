@@ -147,6 +147,7 @@ const CollectionAddCard = ({ collection, movie, registerSave, onPendingChange, d
         draft.current = value;
         setNotes(value);
         setSaveError(false);
+        setMembershipFailed(false); // editing after a failed removal means the entry stays, so Retry must not delete it
         debouncedUpdateNotes();
     };
 
