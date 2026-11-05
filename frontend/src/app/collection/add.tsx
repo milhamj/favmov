@@ -63,17 +63,18 @@ const AddToCollectionPage = withAuth(() => {
         pendingAction.current = action;
         setLeaveFailed(false);
         setDraining(true);
+        let timer: ReturnType<typeof setTimeout> | undefined;
         try {
             const results = await Promise.race([
                 Promise.all([...saves.current.values()].map(save => save())),
                 // A stalled request must not hide the way out.
-                new Promise<boolean[]>(resolve => setTimeout(() => resolve([false]), LEAVE_TIMEOUT)),
+                new Promise<boolean[]>(resolve => { timer = setTimeout(() => resolve([false]), LEAVE_TIMEOUT); }),
             ]);
             if (results.every(Boolean)) {
                 pendingAction.current = null;
                 navigation.dispatch(action);
             } else setLeaveFailed(true);
-        } finally { leaving.current = false; setDraining(false); }
+        } finally { clearTimeout(timer); leaving.current = false; setDraining(false); }
     }, [navigation]);
     usePreventRemove(!discard && pendingCards.size > 0, ({ data }) => { void leave(data.action); });
     useEffect(() => {
@@ -140,7 +141,7 @@ const AddToCollectionPage = withAuth(() => {
                 />
                 {leaveFailed && <View accessibilityRole="alert" style={styles.leaveError}>
                     <Text>Your latest edits could not be saved.</Text>
-                    <Text>Use Retry on the failed item, or leave and discard your unsaved edits.</Text>
+                    <Text>Try again, or leave and discard your unsaved edits.</Text>
                     <TouchableOpacity accessibilityRole="button" style={styles.discardButton} onPress={() => setDiscard(true)}><Text>Leave without saving</Text></TouchableOpacity>
                 </View>}
                 <ScrollView style={styles.content}>

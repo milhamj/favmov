@@ -27,12 +27,10 @@ const SearchPage = () => {
     const [movies, setMovies] = useState([] as Movie[]);
     const [people, setPeople] = useState([] as People[]);
     const { page, failedPage, isLoading, isLoadingMore, load, reset, canLoadMore } = usePagedFetch(false);
-    const [totalPages, setTotalPages] = useState(1);
     const [showFilter, setShowFilter] = useState(true);
     const [selectedChip, setSelectedChip] = useState(CHIP_MOVIE);
     const inputRef = useRef<TextInput>(null);
 
-    const isMovielected = selectedChip === CHIP_MOVIE;
     const isTvShowSelected = selectedChip === CHIP_TV_SHOW;
     const isPeopleSelected = selectedChip === CHIP_PEOPLE;
 
@@ -49,15 +47,16 @@ const SearchPage = () => {
     const fetchSearchResult = useCallback(async (newPage: number = 1) => {
         if (!searchQuery) return;
         const settled = () => setShowFilter(true);
+        const hasMore = (count: number, totalPages: number) => count > 0 && newPage < (totalPages || 1);
         if (isPeopleSelected) {
             await load(newPage, () => searchPeople(searchQuery, newPage), data => {
                 setPeople((prev) => (newPage === 1 ? data.people : [...prev, ...data.people]));
-                setTotalPages(data.people.length === 0 ? newPage : data.totalPages || 1);
+                return hasMore(data.people.length, data.totalPages);
             }, settled);
-        } else if (isMovielected || isTvShowSelected) {
+        } else {
             await load(newPage, () => searchMovie(searchQuery, newPage, isTvShowSelected), data => {
                 setMovies((prev) => (newPage === 1 ? data.movies : [...prev, ...data.movies]));
-                setTotalPages(data.movies.length === 0 ? newPage : data.totalPages || 1);
+                return hasMore(data.movies.length, data.totalPages);
             }, settled);
         }
       }, [searchQuery, selectedChip, load]
@@ -75,9 +74,7 @@ const SearchPage = () => {
         return () => clearTimeout(debounceFetch);
     }, [searchQuery, selectedChip, fetchSearchResult]);
     const handleOnEndReached = () => {
-        if (canLoadMore() && page.current < totalPages) {
-            void fetchSearchResult(page.current + 1);
-        }
+        if (canLoadMore()) void fetchSearchResult(page.current + 1);
     };
 
     const renderMovieItem = ({ item, index }: { item: Movie, index: number }) => (

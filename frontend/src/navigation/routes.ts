@@ -28,7 +28,7 @@ export function safeReturnTo(value: unknown): string {
 export function routeWithParams(pathname: string, params: Record<string, string | string[]>): string {
     const query = new URLSearchParams();
     for (const [key, value] of Object.entries(params)) {
-        // Dynamic segments are already represented by the pathname.
+        // shortcut: assumes the only dynamic segment is `id`, pass the route's real params if a protected route adds another.
         if (key === 'id' || value === undefined) continue;
         for (const item of Array.isArray(value) ? value : [value]) query.append(key, item);
     }

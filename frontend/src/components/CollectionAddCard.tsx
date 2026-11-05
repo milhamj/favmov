@@ -37,7 +37,6 @@ const CollectionAddCard = ({ collection, movie, registerSave, onPendingChange, d
     discardingRef.current = discarding;
     const active = useRef<Promise<boolean> | null>(null);
     const membershipRequest = useRef<Promise<boolean> | null>(null);
-    const membershipTarget = useRef<boolean | null>(null);
     const [membershipFailed, setMembershipFailed] = useState(false);
 
     const save = useCallback((): Promise<boolean> => {
@@ -47,7 +46,7 @@ const CollectionAddCard = ({ collection, movie, registerSave, onPendingChange, d
             setSaving(true);
             setSaveError(false);
             try {
-                while (draft.current !== saved.current) {
+                while (!discardingRef.current && draft.current !== saved.current) {
                     const value = draft.current;
                     const result = await updateNotes(collection.id, movie.id.toString(), !!movie.isTvShow, value);
                     if (result instanceof Error) throw result;
@@ -69,6 +68,10 @@ const CollectionAddCard = ({ collection, movie, registerSave, onPendingChange, d
     }, [collection.id, movie.id, movie.isTvShow]);
     const debouncedUpdateNotes = useDebouncedCallback(() => { void save(); }, 1000);
     useEffect(() => {
+        const unsaved = unsavedNotes.get(draftKey);
+        if (unsaved && unsaved.draft !== draft.current) {
+            Toast.show({ type: 'info', text1: 'Unsaved note not restored', text2: 'This note changed since your draft.', position: 'bottom' });
+        }
         unsavedNotes.delete(draftKey);
         if (draft.current !== saved.current) debouncedUpdateNotes();
         return () => {
@@ -76,7 +79,6 @@ const CollectionAddCard = ({ collection, movie, registerSave, onPendingChange, d
         };
     }, [draftKey, debouncedUpdateNotes]);
     const changeMembership = useCallback((value: boolean): Promise<boolean> => {
-        membershipTarget.current = value;
         debouncedUpdateNotes.cancel();
         setIsLoading(true);
         setMembershipFailed(false);
@@ -92,7 +94,6 @@ const CollectionAddCard = ({ collection, movie, registerSave, onPendingChange, d
                     const result = await deleteMovieFromCollection(collection.id, movie.id.toString(), !!movie.isTvShow);
                     if (result instanceof Error) throw result;
                 }
-                membershipTarget.current = null;
                 setIsSaved(value);
                 draft.current = saved.current = serverText;
                 setNotes(serverText);
@@ -114,10 +115,10 @@ const CollectionAddCard = ({ collection, movie, registerSave, onPendingChange, d
     }, [collection.id, debouncedUpdateNotes, movie]);
     const drain = useCallback(async () => {
         debouncedUpdateNotes.cancel();
-        await membershipRequest.current;
-        // A failed membership change is never replayed here: the user may have decided to keep things as they are.
+        // Only a change failing during this leave blocks it: an earlier failure is already on screen, and is never replayed.
+        const membershipSaved = membershipRequest.current ? await membershipRequest.current : true;
         const notesSaved = await save();
-        return notesSaved && membershipTarget.current === null;
+        return membershipSaved && notesSaved;
     }, [debouncedUpdateNotes, save]);
     useEffect(() => {
         registerSave?.(collection.id, drain);
@@ -125,8 +126,8 @@ const CollectionAddCard = ({ collection, movie, registerSave, onPendingChange, d
     }, [registerSave, collection.id, drain]);
 
     useEffect(() => {
-        onPendingChange?.(collection.id, notes !== saved.current || saving || isLoading || membershipFailed);
-    }, [collection.id, onPendingChange, notes, saving, isLoading, membershipFailed]);
+        onPendingChange?.(collection.id, notes !== saved.current || saving || isLoading);
+    }, [collection.id, onPendingChange, notes, saving, isLoading]);
     useEffect(() => () => onPendingChange?.(collection.id, false), [collection.id, onPendingChange]);
 
     const handleAddToCollection = (value: boolean) => {
@@ -169,7 +170,7 @@ const CollectionAddCard = ({ collection, movie, registerSave, onPendingChange, d
             }
             {isSaved && <Text>{saving ? 'Saving' : saveError ? 'Unable to save notes' : draft.current === saved.current ? 'Saved' : 'Unsaved'}</Text>}
             {membershipFailed && <Text>Unable to update collection</Text>}
-            {membershipFailed ? <RetryButton disabled={disabled || saving} onPress={() => void handleAddToCollection(membershipTarget.current!)}/> : saveError && <RetryButton disabled={disabled} onPress={() => void drain()}/>}
+            {membershipFailed ? <RetryButton disabled={disabled || saving} onPress={() => void handleAddToCollection(!isSaved)}/> : saveError && <RetryButton disabled={disabled} onPress={() => void drain()}/>}
             <View style={styles.separator}/>
         </View>
     )

@@ -6,6 +6,7 @@ export function usePagedFetch(initiallyLoading: boolean) {
     const page = useRef(0);
     const generation = useRef(0);
     const fetching = useRef(false);
+    const hasMore = useRef(false);
     const [failedPage, setFailedPage] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(initiallyLoading);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -13,7 +14,7 @@ export function usePagedFetch(initiallyLoading: boolean) {
     const load = useCallback(async <T,>(
         newPage: number,
         request: () => Promise<Success<T> | Error | null>,
-        apply: (data: T) => void,
+        apply: (data: T) => boolean, // whether another page exists
         onSettled?: () => void
     ) => {
         if (fetching.current) return;
@@ -27,7 +28,7 @@ export function usePagedFetch(initiallyLoading: boolean) {
             if (requestGeneration !== generation.current) return;
             if (result instanceof Success) {
                 page.current = newPage;
-                apply(result.data);
+                hasMore.current = apply(result.data);
             } else if (result !== null) setFailedPage(newPage);
         } catch (error) {
             console.error('Error fetching page:', error);
@@ -43,11 +44,12 @@ export function usePagedFetch(initiallyLoading: boolean) {
         generation.current += 1;
         fetching.current = false;
         page.current = 0;
+        hasMore.current = false;
         setFailedPage(null);
         setIsLoading(loading);
         setIsLoadingMore(false);
     }, []);
-    const canLoadMore = () => failedPage === null && page.current > 0 && !fetching.current;
+    const canLoadMore = () => failedPage === null && hasMore.current && !fetching.current;
 
     return { page, failedPage, isLoading, isLoadingMore, load, reset, canLoadMore };
 }

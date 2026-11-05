@@ -1,5 +1,5 @@
 import RetryButton from '../components/RetryButton';
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Movie } from "../model/movieModel";
 import { ActivityIndicator, View, StyleSheet, FlatList, Image, Text } from "react-native";
 import { useLocalSearchParams } from 'expo-router';
@@ -25,7 +25,6 @@ const ExplorePage = () => {
     const [movies, setMovies] = useState([] as Movie[]);
     // Start loading: the prerender should show a loader, not "No results"
     const { page, failedPage, isLoading, isLoadingMore, load, reset, canLoadMore } = usePagedFetch(true);
-    const ended = useRef(false);
 
     const fetchExploreData = async (newPage: number = 1) => {
         if (!sectionType) return;
@@ -35,23 +34,20 @@ const ExplorePage = () => {
             sectionType === SectionType.PopularMovies ? fetchPopularMovies(newPage) :
             null,
         data => {
-            ended.current = data.length === 0;
             setMovies((prev) => (newPage === 1 ? data : [...prev, ...data]));
+            return data.length > 0 && newPage < MAX_PAGE;
         });
     };
 
     useEffect(() => {
         reset(Boolean(sectionType));
-        ended.current = false;
         setMovies([]);
         setTitle(sectionType);
         void fetchExploreData();
     },[sectionType])
 
     const handleOnEndReached = () => {
-        if (canLoadMore() && !ended.current && page.current < MAX_PAGE) {
-            void fetchExploreData(page.current + 1);
-        }
+        if (canLoadMore()) void fetchExploreData(page.current + 1);
     };    
 
     const renderMovieItem = ({ item, index }: { item: Movie, index: number }) => (

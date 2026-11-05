@@ -104,7 +104,7 @@ test('successful card Retry clears the failed-leave banner and prevention', asyn
  await act(async () => { navigation.goBack(); });
  expect(navigation.getCurrentRoute()!.name).toBe('home');
 });
-test.each([false, true])('failed pending membership change blocks Back until retry succeeds, adding=%s', async adding => {
+test.each([false, true])('membership failure during Back blocks that Back and Retry clears it, adding=%s', async adding => {
  const Checkbox = require('expo-checkbox').default;
  const navigation = createNavigationContainerRef<any>();
  let finish: any;

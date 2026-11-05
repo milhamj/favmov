@@ -161,7 +161,7 @@ test('membership Retry repeats the request and clears the failure', async () => 
  expect(ui.queryByText('Unable to update collection')).toBeNull();
 });
 
-test('leaving saves notes but never replays a failed membership change', async () => {
+test('leaving saves notes and never replays or blocks on an already visible membership failure', async () => {
  const Checkbox = require('expo-checkbox').default;
  let drain: any;
  remove.mockResolvedValueOnce(new ApiError('offline'));
@@ -170,10 +170,35 @@ test('leaving saves notes but never replays a failed membership change', async (
  fireEvent.changeText(ui.getByPlaceholderText('Write custom notes...'), 'keeping this');
  let result: any;
  await act(async () => { result = await drain(); });
- expect(result).toBe(false);
+ expect(result).toBe(true);
  expect(update).toHaveBeenCalledWith('c', '1', false, 'keeping this');
  expect(remove).toHaveBeenCalledTimes(1);
  expect(ui.getByDisplayValue('keeping this')).toBeTruthy();
+});
+
+test('a membership change failing during leave blocks that leave', async () => {
+ const Checkbox = require('expo-checkbox').default;
+ let drain: any, finish: any;
+ remove.mockImplementationOnce(() => new Promise(resolve => finish = resolve));
+ const ui = render(<Card collection={collection} movie={movie} registerSave={(_id, save) => { if (save) drain = save; }}/>);
+ await act(async () => { ui.UNSAFE_getByType(Checkbox).props.onValueChange(false); });
+ let leaving: any;
+ await act(async () => { leaving = drain(); });
+ await act(async () => { finish(new ApiError('offline')); });
+ await expect(leaving).resolves.toBe(false);
+});
+
+test('discarding stops a running save from sending newer text', async () => {
+ let finish: any;
+ update.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+ const ui = render(<Card collection={collection} movie={movie}/>);
+ fireEvent.changeText(ui.getByPlaceholderText('Write custom notes...'), 'first');
+ await act(async () => { jest.advanceTimersByTime(1000); });
+ fireEvent.changeText(ui.getByPlaceholderText('Write custom notes...'), 'discard me');
+ ui.rerender(<Card collection={collection} movie={movie} discarding/>);
+ ui.unmount();
+ await act(async () => { finish(new Success(true)); });
+ expect(update).toHaveBeenCalledTimes(1);
 });
 
 test('an add that finds the row keeps the notes already on the server', async () => {
@@ -192,6 +217,7 @@ test('a draft older than the server note is dropped rather than saved over it', 
  await act(async () => { jest.advanceTimersByTime(5000); });
  expect(ui.getByDisplayValue('newer server text')).toBeTruthy();
  expect(update).not.toHaveBeenCalled();
+ expect(require('react-native-toast-message').default.show).toHaveBeenCalledWith(expect.objectContaining({ text1: 'Unsaved note not restored' }));
 });
 
 test('draining a clean card does not show saving state or write', async () => {
