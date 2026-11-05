@@ -136,7 +136,7 @@ const MovieDetailPage = () => {
   const AddToCollectionButton = () => {
     const handleFavoriteClick = () => {
       if (!isAuthenticated) {
-        router.navigate(routes.login);
+        router.navigate(routes.loginWithReturnTo(routes.movie(movie.id, movie.isTvShow)));
         return;
       }
 

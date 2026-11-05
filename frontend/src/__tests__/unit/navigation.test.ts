@@ -1,5 +1,5 @@
 import { router } from '../../navigation/router';
-import { routes } from '../../navigation/routes';
+import { routes, routeWithParams, safeReturnTo } from '../../navigation/routes';
 import { router as expoRouter } from '../../../test/expoRouter';
 
 jest.mock('expo-router', () => require('../../../test/expoRouter'));
@@ -19,8 +19,24 @@ describe('routes', () => {
     expect(routes.people('a/b')).toBe('/people/a%2Fb');
   });
 
-  test('KNOWN ISSUE: routes.collections points at a page that does not exist', () => {
-    expect(routes.collections).toBe('/collections'); // the real page is /collection
+});
+
+describe('return destinations', () => {
+  test('login carries the page to come back to', () => {
+    expect(routes.loginWithReturnTo('/movie/5?is_tv_show=true')).toBe('/login?return_to=%2Fmovie%2F5%3Fis_tv_show%3Dtrue');
+  });
+
+  test.each(['/', '/collection', '/profile', '/movie/5', '/collection/abc-1', '/collection/add?movie_id=5'])('allows %s', (path) => {
+    expect(safeReturnTo(path)).toBe(path);
+  });
+
+  test.each(['https://evil.test', '//evil.test', '/login', '/search', '/movie/abc', '/a b', undefined])('sends %s home instead', (path) => {
+    expect(safeReturnTo(path)).toBe('/');
+  });
+
+  test('rebuilds a page URL from its query params, leaving out the path id', () => {
+    expect(routeWithParams('/collection/add', { movie_id: '5', is_tv_show: 'true' })).toBe('/collection/add?movie_id=5&is_tv_show=true');
+    expect(routeWithParams('/collection/abc', { id: 'abc' })).toBe('/collection/abc');
   });
 });
 

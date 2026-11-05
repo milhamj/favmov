@@ -153,18 +153,37 @@ describe('adding to a collection', () => {
     assert.strictEqual(supabase.rowsOf('dev_tv_shows').length, 1);
   });
 
-  for (const [name, body, message] of [
-    ['a movie twice', movie(1), 'Movie already exists in this collection'],
-    ['a TV show twice', show(2), 'TV Show already exists in this collection'],
-  ]) {
-    test(`rejects ${name}`, async () => {
+  for (const [name, body] of [['a movie', movie(1)], ['a TV show', show(2)]]) {
+    test(`adding ${name} twice keeps the first entry and its notes`, async () => {
       const collection = await createCollection('Twice');
-      await call('POST', `/collections/${collection.id}/movies`, { body });
-      const response = await call('POST', `/collections/${collection.id}/movies`, { body });
-      assert.strictEqual(response.status, 400);
-      assert.strictEqual(response.message, message);
+      const first = await call('POST', `/collections/${collection.id}/movies`, { body });
+      const id = body.movie_id ?? body.tv_show_id;
+      await call('POST', `/collections/${collection.id}/movies/${id}/notes`, { body: { is_tv_show: body.is_tv_show, notes: 'Keep me' } });
+
+      const second = await call('POST', `/collections/${collection.id}/movies`, { body });
+      assert.strictEqual(second.status, 200);
+      assert.strictEqual(second.message, 'Already in this collection');
+      assert.strictEqual(second.data.id, first.data.id);
+      assert.strictEqual(second.data.notes, 'Keep me');
+      assert.strictEqual(supabase.rowsOf('dev_movies_collections').length, 1);
     });
   }
+
+  for (const [name, poster] of [['empty', ''], ['blank', '   '], ['null', null]]) {
+    test(`saves a title with a ${name} poster as null`, async () => {
+      const collection = await createCollection('No art');
+      const response = await call('POST', `/collections/${collection.id}/movies`, { body: movie(1, { poster_path: poster }) });
+      assert.strictEqual(response.status, 201);
+      assert.strictEqual(supabase.rowsOf('dev_movies')[0].poster_path, null);
+    });
+  }
+
+  test('rejects a poster that is not text', async () => {
+    const collection = await createCollection('Bad art');
+    const response = await call('POST', `/collections/${collection.id}/movies`, { body: movie(1, { poster_path: 5 }) });
+    assert.strictEqual(response.status, 400);
+    assert.strictEqual(response.message, 'poster path must be a string.');
+  });
 
   for (const [name, body, message] of [
     ['is_tv_show', { ...movie(1), is_tv_show: undefined }, 'is_tv_show is requires and must be boolean.'],
@@ -301,12 +320,14 @@ describe('removing', () => {
     assert.deepStrictEqual(supabase.rowsOf('dev_movies_collections').map((row) => row.is_tv_show), [false]);
   });
 
-  test('reports a movie that is not in the collection', async () => {
-    const collection = await createCollection('Empty');
-    const response = await call('DELETE', `/collections/${collection.id}/movies/1`);
-    assert.strictEqual(response.status, 400);
-    assert.strictEqual(response.message, 'Movie not found in collection.');
-  });
+  for (const query of ['', '?is_tv_show=true']) {
+    test(`removing a title that is already gone succeeds (${query || 'movie'})`, async () => {
+      const collection = await createCollection('Empty');
+      const response = await call('DELETE', `/collections/${collection.id}/movies/1${query}`);
+      assert.strictEqual(response.status, 200);
+      assert.deepStrictEqual(response.data, { is_success: true });
+    });
+  }
 
   test('deleting a collection deletes its links too', async () => {
     const collection = await createCollection('Doomed');
@@ -345,11 +366,14 @@ describe('database failures', () => {
     assert.deepStrictEqual(supabase.rowsOf('dev_movies_collections'), []);
   });
 
-  test('keeps the collection when deleting its links fails', async () => {
+  test('a failed collection delete keeps the collection and its titles', async () => {
     const collection = await createCollection('Kept');
-    supabase.failNext('DELETE', 'dev_movies_collections');
+    await call('POST', `/collections/${collection.id}/movies`, { body: movie(1) });
+    supabase.failNext('DELETE', 'dev_collections');
+
     assert.strictEqual((await call('DELETE', `/collections/${collection.id}`)).status, 500);
     assert.strictEqual(supabase.rowsOf('dev_collections').length, 1);
+    assert.strictEqual(supabase.rowsOf('dev_movies_collections').length, 1);
   });
 });
 
@@ -380,20 +404,6 @@ describe('environments', () => {
 
 // Each of these pins behaviour that looks wrong, so a fix is a conscious change. See docs/flows.md.
 describe('known issues', () => {
-  test('KNOWN ISSUE: removing a missing TV show answers just "TV Show"', async () => {
-    const collection = await createCollection('Empty');
-    const response = await call('DELETE', `/collections/${collection.id}/movies/1?is_tv_show=true`);
-    assert.strictEqual(response.status, 400);
-    assert.strictEqual(response.message, 'TV Show');
-  });
-
-  test('KNOWN ISSUE: a title without a poster cannot be saved', async () => {
-    const collection = await createCollection('No art');
-    const response = await call('POST', `/collections/${collection.id}/movies`, { body: movie(1, { poster_path: '' }) });
-    assert.strictEqual(response.status, 400);
-    assert.strictEqual(response.message, 'poster path is required.');
-  });
-
   test('KNOWN ISSUE: the string "false" for is_tv_show is treated as true', async () => {
     const collection = await createCollection('Strings');
     const response = await call('POST', `/collections/${collection.id}/movies`, { body: movie(1, { is_tv_show: 'false' }) });
@@ -416,13 +426,4 @@ describe('known issues', () => {
     assert.strictEqual(supabase.rowsOf('dev_movies').length, 1);
   });
 
-  test('KNOWN ISSUE: a failed collection delete still loses its links', async () => {
-    const collection = await createCollection('Half deleted');
-    await call('POST', `/collections/${collection.id}/movies`, { body: movie(1) });
-    supabase.failNext('DELETE', 'dev_collections');
-
-    assert.strictEqual((await call('DELETE', `/collections/${collection.id}`)).status, 500);
-    assert.strictEqual(supabase.rowsOf('dev_collections').length, 1);
-    assert.deepStrictEqual(supabase.rowsOf('dev_movies_collections'), []);
-  });
 });

@@ -72,18 +72,34 @@ test('logout ends the session', async ({ page }) => {
   await openTab(page, 'Profile');
   await expect(page.getByText('alice@example.com')).toBeVisible();
   await page.getByText('Logout').click();
-  // KNOWN ISSUE: the code goes home, but the mounted withAuth screens then redirect to login,
-  // and the "Logout successful" toast is lost on the way
-  await expect(page).toHaveURL('/login');
-  await expect(page.getByText('Logout successful')).toHaveCount(0);
+  await expect(page).toHaveURL('/');
+  await expect(page.getByText('Logout successful')).toBeVisible();
 
   await page.goto('/profile');
-  await expect(page).toHaveURL('/login');
+  await expect(page).toHaveURL('/login?return_to=%2Fprofile');
 });
 
-test('KNOWN ISSUE: reloading the add-to-collection page throws the user out', async ({ page }) => {
+test('the add-to-collection page survives a reload, and can create the first collection', async ({ page }) => {
   await signIn(page);
   await page.goto('/collection/add?movie_id=101');
-  await expect(page.getByText('Movie collections are needed')).toBeVisible();
-  await expect(page).toHaveURL('/');
+  await expect(page.getByText('Add Galaxy Quest to Collection')).toBeVisible();
+
+  await page.getByText('Create Collection').click();
+  await page.getByPlaceholder('Type collection name here...').fill('Sci-Fi');
+  await page.getByText('Save', { exact: true }).click();
+  await page.getByRole('checkbox').click();
+  await expect(page.getByPlaceholder('Write custom notes...')).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByRole('checkbox')).toBeChecked();
+});
+
+test('a guest sent to login from a protected page returns to it', async ({ page }) => {
+  await page.goto('/profile');
+  await page.getByPlaceholder('Email').fill('alice@example.com');
+  await page.getByText('Send OTP').click();
+  await page.getByPlaceholder('Input your OTP here...').fill('123456');
+  await page.getByText('LOGIN', { exact: true }).click();
+  await expect(page).toHaveURL('/profile');
+  await expect(page.getByText('alice@example.com')).toBeVisible();
 });

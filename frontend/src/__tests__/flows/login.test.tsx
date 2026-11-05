@@ -6,12 +6,10 @@ import withAuth from '../../components/withAuth';
 import { useAuth } from '../../hooks/useAuth';
 import { Error as ApiError, Success } from '../../model/apiResponse';
 import { signInWithOtp, verifyOtp } from '../../services/authService';
-import { router } from '../../../test/expoRouter';
-
-// The first render transforms React Native, which passes the 5s default on a cold cache
-jest.setTimeout(30_000);
+import { pathname, router, screenFocused, searchParams } from '../../../test/expoRouter';
 
 jest.mock('expo-router', () => require('../../../test/expoRouter'));
+jest.mock('@react-navigation/native', () => require('../../../test/expoRouter'));
 jest.mock('../../services/authService', () => ({ signInWithOtp: jest.fn(), verifyOtp: jest.fn() }));
 jest.mock('../../hooks/useAuth', () => ({ useAuth: jest.fn() }));
 
@@ -28,6 +26,9 @@ const requestCode = async () => {
 beforeEach(() => {
   jest.clearAllMocks();
   jest.useFakeTimers();
+  searchParams.current = {};
+  pathname.current = '/collection';
+  screenFocused.current = true;
   sendOtp.mockResolvedValue(new Success({}));
   checkOtp.mockResolvedValue(new Success({}));
 });
@@ -60,6 +61,20 @@ describe('login', () => {
 
     act(() => { jest.advanceTimersByTime(2000); });
     expect(router.back).toHaveBeenCalled();
+  });
+
+  test.each([
+    ['/collection/add?movie_id=5', '/collection/add?movie_id=5'],
+    ['https://evil.test', '/'],
+  ])('with return_to %s, signing in goes to %s', async (returnTo, destination) => {
+    searchParams.current = { return_to: returnTo };
+    await requestCode();
+    fireEvent.press(screen.getByText('LOGIN'));
+    await waitFor(() => expect(Toast.show).toHaveBeenCalledWith(expect.objectContaining({ text1: 'Login success!' })));
+
+    act(() => { jest.advanceTimersByTime(2000); });
+    expect(router.dismissTo).toHaveBeenCalledWith(destination);
+    expect(router.back).not.toHaveBeenCalled();
   });
 
   test('lets the user retry a wrong code', async () => {
@@ -108,11 +123,20 @@ describe('withAuth', () => {
     expect(router.replace).not.toHaveBeenCalled();
   });
 
-  test('sends guests to login', () => {
+  test('sends guests to login, remembering the page and its query', () => {
     authState({ loading: false, isAuthenticated: false });
+    pathname.current = '/collection/add';
+    searchParams.current = { movie_id: '5' };
     render(<Protected />);
     expect(screen.queryByText('Secret')).toBeNull();
-    expect(router.replace).toHaveBeenCalledWith('/login');
+    expect(router.replace).toHaveBeenCalledWith('/login?return_to=%2Fcollection%2Fadd%3Fmovie_id%3D5');
+  });
+
+  test('a screen out of focus does not redirect', () => {
+    authState({ loading: false, isAuthenticated: false });
+    screenFocused.current = false;
+    render(<Protected />);
+    expect(router.replace).not.toHaveBeenCalled();
   });
 
   test('shows the page to signed-in users', () => {

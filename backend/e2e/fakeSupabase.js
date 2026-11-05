@@ -5,8 +5,9 @@ const { randomUUID } = require('node:crypto');
  * In-memory stand-in for the Supabase HTTP API, so the e2e suites run the real server and the
  * real supabase-js client with no network or credentials.
  *
+ * Models the unique indexes and the collection cascade, which the app relies on.
  * shortcut: Row Level Security and the two RPCs are guesses from how the code uses them, because
- * the SQL isn't in this repo. Replace with `supabase start` once the schema is checked in.
+ * the live schema isn't in this repo. Replace with `supabase start` once it is checked in.
  */
 const createFakeSupabase = () => {
   const tables = {};
@@ -19,7 +20,15 @@ const createFakeSupabase = () => {
   const addUser = (token, user) => tokens.set(token, { aud: 'authenticated', created_at: '2025-01-15T00:00:00Z', ...user });
 
   const applyFilters = (rows, params) => rows.filter((row) => [...params].every(([key, value]) =>
-    ['select', 'order', 'columns'].includes(key) || String(row[key]) === value.replace(/^eq\./, '')));
+    ['select', 'order', 'columns', 'limit'].includes(key) || String(row[key]) === value.replace(/^eq\./, '')));
+
+  const isDuplicate = (table, row) => {
+    const taken = (...keys) => rowsOf(table).some((item) => keys.every((key) => item[key] === row[key]));
+    if (table.endsWith('movies_collections')) {
+      return (row.movie_id != null && taken('collection_id', 'movie_id')) || (row.tv_show_id != null && taken('collection_id', 'tv_show_id'));
+    }
+    return (table.endsWith('movies') || table.endsWith('tv_shows')) && taken('id');
+  };
 
   const embed = (row, select = '') => {
     const result = { ...row };
@@ -83,7 +92,7 @@ const createFakeSupabase = () => {
     };
 
     if (req.method === 'GET') {
-      const rows = sortRows(applyFilters(rowsOf(table), params), params.get('order'));
+      const rows = sortRows(applyFilters(rowsOf(table), params), params.get('order')).slice(0, params.get('limit') ?? undefined);
       return send(rows.map((row) => embed(row, params.get('select'))));
     }
     if (req.method === 'POST') {
@@ -94,6 +103,9 @@ const createFakeSupabase = () => {
           : { id: randomUUID(), user_id: user?.id, created_at: nextTime() };
         return { ...defaults, ...values };
       });
+      if (inserted.some((row) => isDuplicate(table, row))) {
+        return res.json(409, { code: '23505', message: 'duplicate key value violates unique constraint', details: null, hint: null });
+      }
       rowsOf(table).push(...inserted);
       return wantsRows ? send(inserted, 201) : res.json(201);
     }
@@ -104,6 +116,10 @@ const createFakeSupabase = () => {
     }
     if (req.method === 'DELETE') {
       tables[table] = rowsOf(table).filter((row) => !matched.includes(row));
+      if (/^(dev|prod)_collections$/.test(table)) {
+        const links = `${table.split('_')[0]}_movies_collections`;
+        tables[links] = rowsOf(links).filter((link) => !matched.some((collection) => collection.id === link.collection_id));
+      }
       return res.json(204);
     }
     return res.json(405, { message: 'Method not allowed' });

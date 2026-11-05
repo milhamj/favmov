@@ -54,10 +54,23 @@ test('search says when nothing matches', async ({ page }) => {
   await expect(page.getByText('No results found.')).toBeVisible();
 });
 
+test('a failed search can be retried', async ({ page }) => {
+  let broken = true;
+  await page.route('https://api.themoviedb.org/3/search/movie**', (route) => (broken ? route.abort() : route.fallback()));
+
+  await page.goto('/search');
+  await page.getByPlaceholder('Type any Movie title...').fill('galaxy');
+  await expect(page.getByText('Unable to load results')).toBeVisible();
+
+  broken = false;
+  await page.getByText('Retry').click();
+  await expect(page.getByText('Galaxy Quest')).toBeVisible();
+});
+
 test('protected pages send guests to login', async ({ page }) => {
   for (const path of ['/collection', '/profile', '/collection/some-id']) {
     await page.goto(path);
-    await expect(page).toHaveURL('/login');
+    await expect(page).toHaveURL(`/login?return_to=${encodeURIComponent(path)}`);
   }
 });
 
@@ -65,7 +78,7 @@ test('the favorite button asks a guest to log in', async ({ page }) => {
   await page.goto('/movie/101');
   await expect(page.getByText('About Galaxy Quest')).toBeVisible();
   await icon(page, 'favoriteOutline').click();
-  await expect(page).toHaveURL('/login');
+  await expect(page).toHaveURL('/login?return_to=%2Fmovie%2F101');
 });
 
 test('an unknown page answers 404', async ({ page }) => {

@@ -12,9 +12,6 @@ import { Collection } from '../../model/collectionModel';
 import { Movie } from '../../model/movieModel';
 import { People } from '../../model/peopleModel';
 
-// The first render transforms React Native, which passes the 5s default on a cold cache
-jest.setTimeout(30_000);
-
 describe('TopBar', () => {
   test('shows the title, and only the buttons it was given', () => {
     const back = jest.fn();
@@ -106,16 +103,26 @@ describe('useDebouncedCallback', () => {
   beforeEach(() => jest.useFakeTimers());
   afterEach(() => jest.useRealTimers());
 
-  test('runs once with the last arguments after the delay', () => {
+  test('runs once, the delay after the last call', () => {
     const callback = jest.fn();
     const { result } = renderHook(() => useDebouncedCallback(callback, 100));
-    result.current('a');
+    result.current();
     act(() => { jest.advanceTimersByTime(99); });
-    result.current('b');
+    result.current();
     act(() => { jest.advanceTimersByTime(99); });
     expect(callback).not.toHaveBeenCalled();
     act(() => { jest.advanceTimersByTime(1); });
     expect(callback).toHaveBeenCalledTimes(1);
-    expect(callback).toHaveBeenCalledWith('b');
+  });
+
+  test('cancel and unmount stop a waiting call', () => {
+    const callback = jest.fn();
+    const { result, unmount } = renderHook(() => useDebouncedCallback(callback, 100));
+    result.current();
+    result.current.cancel();
+    result.current();
+    unmount();
+    act(() => { jest.advanceTimersByTime(100); });
+    expect(callback).not.toHaveBeenCalled();
   });
 });

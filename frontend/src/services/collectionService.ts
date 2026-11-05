@@ -133,7 +133,7 @@ export const postAddMovieToCollection = async (
       movie_id: !isTvShow ? movie.id : undefined,
       tv_show_id: isTvShow ? movie.id : undefined,
       title: movie.title,
-      poster_path: movie.posterPath,
+      poster_path: movie.posterPath?.trim() || null,
       rating: movie.rating ? movie.rating : null,
       rating_count: movie.ratingCount ? movie.ratingCount : null,
       release_date: movie.releaseDate ? movie.releaseDate : null,
@@ -142,7 +142,7 @@ export const postAddMovieToCollection = async (
 
     if (!response.data.success) {
       return new Error(
-        response.data.message || `Failed to add ${isTvShow ? "movie" : "tv show"} to the collection.`,
+        response.data.message || `Failed to add ${isTvShow ? "tv show" : "movie"} to the collection.`,
         response.data.status
       );
     }
@@ -169,7 +169,7 @@ export const postAddMovieToCollection = async (
   } catch (error: any) {
     console.error('Error removing movie from the collection:', error);
     return new Error(
-      error.response?.data?.message || `Failed to add ${isTvShow ? "movie" : "tv show"} to the collection.`,
+      error.response?.data?.message || `Failed to add ${isTvShow ? "tv show" : "movie"} to the collection.`,
       error.response?.status
     );
   }
@@ -185,7 +185,7 @@ export const deleteMovieFromCollection = async (
     
     if (!response.data.success) {
       return new Error(
-        response.data.message || `Failed to remove ${isTvShow ? "movie" : "tv show"} from the collection.`,
+        response.data.message || `Failed to remove ${isTvShow ? "tv show" : "movie"} from the collection.`,
         response.data.status
       );
     }
@@ -194,7 +194,7 @@ export const deleteMovieFromCollection = async (
   } catch (error: any) {
     console.error('Error removing movie from collection:', error);
     return new Error(
-      error.response?.data?.message || `Failed to remove ${isTvShow ? "movie" : "tv show"} from the collection.`,
+      error.response?.data?.message || `Failed to remove ${isTvShow ? "tv show" : "movie"} from the collection.`,
       error.response?.status
     );
   }
@@ -214,16 +214,16 @@ export const updateNotes = async (
     
     if (!response.data.success) {
       return new Error(
-        response.data.message || `Failed to update the ${isTvShow ? "movie" : "tv show"}'s notes to the collection.`,
+        response.data.message || `Failed to update the ${isTvShow ? "tv show" : "movie"}'s notes to the collection.`,
         response.data.status
       );
     }
     
-    return new Success<boolean>(true, `${isTvShow ? "Movie" : "TV Show"}'s notes has been updated successfully.`);
+    return new Success<boolean>(true, `${isTvShow ? "TV Show" : "Movie"}'s notes has been updated successfully.`);
   } catch (error: any) {
-    console.error('Error removing movie from collection:', error);
+    console.error('Error updating notes:', error);
     return new Error(
-      error.response?.data?.message || `Failed to update the ${isTvShow ? "movie" : "tv show"}'s notes to the collection.`,
+      error.response?.data?.message || `Failed to update the ${isTvShow ? "tv show" : "movie"}'s notes to the collection.`,
       error.response?.status
     );
   }

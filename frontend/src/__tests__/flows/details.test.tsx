@@ -14,12 +14,11 @@ import { fetchMovieDetails } from '../../services/movieService';
 import { fetchPeopleDetails } from '../../services/peopleService';
 import { supabase } from '../../services/supabaseClient';
 import { MovieStore } from '../../stores/movieStore';
+import { unsavedNotes } from '../../stores/unsavedNotesStore';
 import { refocus, router, searchParams } from '../../../test/expoRouter';
 
-// The first render transforms React Native, which passes the 5s default on a cold cache
-jest.setTimeout(30_000);
-
 jest.mock('expo-router', () => require('../../../test/expoRouter'));
+jest.mock('@react-navigation/native', () => require('../../../test/expoRouter'));
 jest.mock('../../services/movieService', () => ({ searchMovie: jest.fn(), fetchTrendingMovies: jest.fn(), fetchTrendingShows: jest.fn(), fetchPopularMovies: jest.fn(), fetchFavoriteMovies: jest.fn(), fetchMovieDetails: jest.fn() }));
 jest.mock('../../services/peopleService', () => ({ searchPeople: jest.fn(), fetchPeopleDetails: jest.fn() }));
 jest.mock('../../services/collectionService', () => ({ createCollection: jest.fn(), deleteMovieFromCollection: jest.fn(), getCheckMovieExistInCollection: jest.fn(), getCollectionDetail: jest.fn(), getUserCollections: jest.fn(), postAddMovieToCollection: jest.fn(), updateNotes: jest.fn() }));
@@ -94,7 +93,7 @@ describe('movie detail', () => {
     render(<MovieDetailPage />);
     fireEvent.press(await screen.findByText('favorite-outline'));
     expect(savedIn).not.toHaveBeenCalled();
-    expect(router.navigate).toHaveBeenCalledWith('/login');
+    expect(router.navigate).toHaveBeenCalledWith('/login?return_to=%2Fmovie%2F7');
   });
 
   test('a saved title shows a filled heart and opens the editor with its data', async () => {
@@ -174,12 +173,21 @@ describe('people detail', () => {
     expect(router.navigate).toHaveBeenCalledWith('/movie/1?is_tv_show=true');
   });
 
-  test('KNOWN ISSUE: a failed lookup shows a toast but the spinner never ends', async () => {
+  test('a failed lookup offers a retry that recovers', async () => {
     person.mockResolvedValue(new ApiError('Failed to fetch people details.'));
     render(<PeopleDetailPage />);
-    await waitFor(() => expect(Toast.show).toHaveBeenCalled());
-    expect(screen.getByText('People')).toBeTruthy();
-    expect(screen.queryByText('Biography')).toBeNull();
+    expect(await screen.findByText('Failed to fetch people details.')).toBeTruthy();
+
+    person.mockResolvedValue(new Success(new People({ id: 3, name: 'Ann' })));
+    fireEvent.press(screen.getByText('Retry'));
+    expect(await screen.findByText('Biography')).toBeTruthy();
+  });
+
+  test('an unknown person has nothing to retry', async () => {
+    person.mockResolvedValue(new ApiError('Failed to fetch people details.', 404));
+    render(<PeopleDetailPage />);
+    expect(await screen.findByText('Person not found')).toBeTruthy();
+    expect(screen.queryByText('Retry')).toBeNull();
   });
 });
 
@@ -198,11 +206,13 @@ describe('profile', () => {
     expect(screen.getByText('Member since 15 January 2025')).toBeTruthy();
   });
 
-  test('logs out and returns home', async () => {
+  test('logs out, drops unsaved note drafts, and returns home', async () => {
     signOut.mockResolvedValue({ error: null });
+    unsavedNotes.set('draft', { draft: 'x', base: { current: '' } });
     render(<ProfilePage />);
     fireEvent.press(screen.getByText('Logout'));
     await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/'));
+    expect(unsavedNotes.size).toBe(0);
     expect(Toast.show).toHaveBeenCalledWith(expect.objectContaining({ text1: 'Logout successful' }));
   });
 

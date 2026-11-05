@@ -11,9 +11,6 @@ import { CollectionStateStore } from '../../stores/collectionStateStore';
 import { MovieStore } from '../../stores/movieStore';
 import { refocus, router, searchParams } from '../../../test/expoRouter';
 
-// The first render transforms React Native, which passes the 5s default on a cold cache
-jest.setTimeout(30_000);
-
 jest.mock('expo-router', () => require('../../../test/expoRouter'));
 jest.mock('../../services/movieService', () => ({ searchMovie: jest.fn(), fetchTrendingMovies: jest.fn(), fetchTrendingShows: jest.fn(), fetchPopularMovies: jest.fn(), fetchFavoriteMovies: jest.fn(), fetchMovieDetails: jest.fn() }));
 jest.mock('../../hooks/useAuth', () => ({ useAuth: jest.fn() }));
@@ -59,6 +56,13 @@ describe('home', () => {
     expect(router.navigate).toHaveBeenCalledWith('/search');
   });
 
+  test('the favorites header is not a link', async () => {
+    signedIn(true);
+    render(<HomeSection section={SectionType.YourFavorites} />);
+    fireEvent.press(await screen.findByText('Your Favorites'));
+    expect(router.navigate).not.toHaveBeenCalled();
+  });
+
   test('a section header opens its full list', async () => {
     render(<HomeSection section={SectionType.PopularMovies} />);
     fireEvent.press(await screen.findByText('View All'));
@@ -102,7 +106,7 @@ describe('home', () => {
 
 describe('explore', () => {
   const open = (section: string) => {
-    searchParams.current = { section_type: encodeURIComponent(section) };
+    searchParams.current = { section_type: section };
     render(<ExplorePage />);
   };
 
@@ -139,16 +143,33 @@ describe('explore', () => {
     expect(await screen.findByText('No results found.')).toBeTruthy();
   });
 
-  test('KNOWN ISSUE: a failed load looks like an empty list', async () => {
+  test('a failed load offers a retry that recovers', async () => {
     trending.mockResolvedValue(new ApiError('Failed'));
     open(SectionType.TrendingMovies);
-    expect(await screen.findByText('No results found.')).toBeTruthy();
+    expect(await screen.findByText('Unable to load results')).toBeTruthy();
+
+    trending.mockResolvedValue(list('Trending One'));
+    fireEvent.press(screen.getByText('Retry'));
+    expect(await screen.findByText('Trending One')).toBeTruthy();
   });
 
-  test('KNOWN ISSUE: without a section the title reads "undefined"', async () => {
+  test('a failed later page keeps the list and retries that page', async () => {
+    open(SectionType.PopularMovies);
+    await screen.findByText('Popular One');
+    popular.mockResolvedValue(new ApiError('Failed'));
+    await act(async () => { screen.UNSAFE_getByType(FlatList).props.onEndReached(); });
+
+    popular.mockResolvedValue(new Success([new Movie({ id: 2, title: 'Popular Two' })]));
+    fireEvent.press(await screen.findByText('Retry'));
+    expect(await screen.findByText('Popular Two')).toBeTruthy();
+    expect(popular).toHaveBeenLastCalledWith(2);
+  });
+
+  test('without a section there is nothing to load', async () => {
     searchParams.current = {};
     render(<ExplorePage />);
-    expect(await screen.findByText('undefined')).toBeTruthy();
+    expect(await screen.findByText('No results found.')).toBeTruthy();
+    expect(trending).not.toHaveBeenCalled();
   });
 });
 

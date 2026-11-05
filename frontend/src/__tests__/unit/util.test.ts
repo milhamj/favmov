@@ -1,10 +1,15 @@
-import { getRatingColor, parseBooleanParam, parseIntParam, parseStrParam } from '../../utils/util';
+import { appendUnique, getRatingColor, parseBooleanParam, parseIntParam, parseStrParam } from '../../utils/util';
 import { COLORS } from '../../styles/colors';
 
 describe('route param parsing', () => {
-  test('takes the first value and decodes it', () => {
-    expect(parseStrParam('Popular%20Movies')).toBe('Popular Movies');
-    expect(parseStrParam(['a%20b', 'c'])).toBe('a b');
+  test('takes the first value, leaving it as the router decoded it', () => {
+    expect(parseStrParam('Popular Movies')).toBe('Popular Movies');
+    expect(parseStrParam(['a b', 'c'])).toBe('a b');
+    expect(parseStrParam('100%')).toBe('100%');
+  });
+
+  test('a missing param is empty', () => {
+    expect(parseStrParam(undefined as any)).toBe('');
   });
 
   test('parses numbers and booleans', () => {
@@ -14,14 +19,11 @@ describe('route param parsing', () => {
     expect(parseBooleanParam('false')).toBe(false);
     expect(parseBooleanParam(undefined as any)).toBe(false);
   });
+});
 
-  test('KNOWN ISSUE: a missing param becomes the string "undefined"', () => {
-    expect(parseStrParam(undefined as any)).toBe('undefined');
-  });
-
-  test('KNOWN ISSUE: a stray percent sign throws', () => {
-    expect(() => parseStrParam('100%')).toThrow(URIError);
-  });
+test('appendUnique drops repeated ids, across and within pages', () => {
+  const titles = appendUnique([{ id: 1 }], [{ id: 1 }, { id: 2 }, { id: 2 }]);
+  expect(titles.map((title) => title.id)).toEqual([1, 2]);
 });
 
 test.each([

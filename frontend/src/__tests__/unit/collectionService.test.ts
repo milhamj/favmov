@@ -76,14 +76,20 @@ describe('postAddMovieToCollection', () => {
   });
 
   test('surfaces the backend message', async () => {
-    api.post.mockRejectedValue(rejected(400, 'Movie already exists in this collection'));
-    expect(await postAddMovieToCollection('c1', movie, false)).toMatchObject({ message: 'Movie already exists in this collection', errorCode: 400 });
+    api.post.mockRejectedValue(rejected(404, 'Collection not found or access denied'));
+    expect(await postAddMovieToCollection('c1', movie, false)).toMatchObject({ message: 'Collection not found or access denied', errorCode: 404 });
   });
 
-  test('KNOWN ISSUE: the fallback message swaps movie and TV show', async () => {
+  test('sends a blank poster as null', async () => {
+    api.post.mockResolvedValue(ok({ id: 1 }));
+    await postAddMovieToCollection('c1', new Movie({ id: 7, title: 'Up', posterPath: '  ' }), false);
+    expect(api.post.mock.calls[0][1]).toMatchObject({ poster_path: null });
+  });
+
+  test('the fallback message names the media type', async () => {
     api.post.mockRejectedValue(new Error('Network Error'));
-    expect(await postAddMovieToCollection('c1', movie, false)).toMatchObject({ message: 'Failed to add tv show to the collection.' });
-    expect(await postAddMovieToCollection('c1', movie, true)).toMatchObject({ message: 'Failed to add movie to the collection.' });
+    expect(await postAddMovieToCollection('c1', movie, false)).toMatchObject({ message: 'Failed to add movie to the collection.' });
+    expect(await postAddMovieToCollection('c1', movie, true)).toMatchObject({ message: 'Failed to add tv show to the collection.' });
   });
 });
 

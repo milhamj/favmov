@@ -10,17 +10,18 @@ import { Error as ApiError, Success } from '../../model/apiResponse';
 import { Collection, CollectionCard } from '../../model/collectionModel';
 import { Movie } from '../../model/movieModel';
 import {
-  createCollection, deleteMovieFromCollection, getCollectionDetail, getUserCollections, postAddMovieToCollection, updateNotes,
+  createCollection, deleteMovieFromCollection, getCheckMovieExistInCollection, getCollectionDetail, getUserCollections, postAddMovieToCollection, updateNotes,
 } from '../../services/collectionService';
 import { CollectionStateStore } from '../../stores/collectionStateStore';
 import { MovieStore } from '../../stores/movieStore';
+import { unsavedNotes } from '../../stores/unsavedNotesStore';
+import { fetchMovieDetails } from '../../services/movieService';
 import { refocus, router, searchParams } from '../../../test/expoRouter';
 
-// The first render transforms React Native, which passes the 5s default on a cold cache
-jest.setTimeout(30_000);
-
 jest.mock('expo-router', () => require('../../../test/expoRouter'));
+jest.mock('@react-navigation/native', () => require('../../../test/expoRouter'));
 jest.mock('../../services/collectionService', () => ({ createCollection: jest.fn(), deleteMovieFromCollection: jest.fn(), getCheckMovieExistInCollection: jest.fn(), getCollectionDetail: jest.fn(), getUserCollections: jest.fn(), postAddMovieToCollection: jest.fn(), updateNotes: jest.fn() }));
+jest.mock('../../services/movieService', () => ({ fetchMovieDetails: jest.fn() }));
 jest.mock('../../hooks/useAuth', () => ({ useAuth: jest.fn() }));
 
 const listCollections = getUserCollections as jest.Mock;
@@ -29,6 +30,8 @@ const create = createCollection as jest.Mock;
 const add = postAddMovieToCollection as jest.Mock;
 const remove = deleteMovieFromCollection as jest.Mock;
 const saveNotes = updateNotes as jest.Mock;
+const savedIn = getCheckMovieExistInCollection as jest.Mock;
+const details = fetchMovieDetails as jest.Mock;
 const collections = (...names: string[]) => new Success(names.map((name) => new Collection(`id-${name}`, name)));
 
 beforeEach(() => {
@@ -61,6 +64,12 @@ describe('collections tab', () => {
     listCollections.mockResolvedValue(new ApiError('Failed to fetch collections'));
     render(<CollectionPage />);
     await waitFor(() => expect(Toast.show).toHaveBeenCalledWith(expect.objectContaining({ type: 'error', text2: 'Failed to fetch collections' })));
+  });
+
+  test('KNOWN ISSUE: a failed load also claims the user has no collections', async () => {
+    listCollections.mockResolvedValue(new ApiError('Failed to fetch collections'));
+    render(<CollectionPage />);
+    expect(await screen.findByText("You don't have any collections yet.")).toBeTruthy();
   });
 
   test('creating a collection confirms and reloads the list', async () => {
@@ -159,34 +168,64 @@ describe('collection detail', () => {
 });
 
 describe('add to collection page', () => {
-  const open = (movie: Movie) => {
-    searchParams.current = { movie_id: String(movie.id) };
-    MovieStore.cacheMovie(movie);
-    render(<AddToCollectionPage />);
-  };
+  const membership = (...ids: string[]) => new Success(ids.map((id) => new Collection(id, id)));
+
+  beforeEach(() => {
+    searchParams.current = { movie_id: '1' };
+    savedIn.mockResolvedValue(membership());
+    details.mockResolvedValue(new Success(new Movie({ id: 1, title: 'From TMDB' })));
+  });
 
   test('lists collections holding the title first, and shortens long titles', async () => {
     listCollections.mockResolvedValue(collections('Other', 'Holds it'));
-    open(new Movie({ id: 1, title: 'A very long movie title indeed', collections: [new Collection('id-Holds it', 'Holds it')] }));
+    savedIn.mockResolvedValue(membership('id-Holds it'));
+    MovieStore.cacheMovie(new Movie({ id: 1, title: 'A very long movie title indeed' }));
+    render(<AddToCollectionPage />);
     await screen.findByText('Holds it');
 
     expect(screen.getByText('Add A very long movie ti... to Collection')).toBeTruthy();
+    expect(details).not.toHaveBeenCalled();
     const names = screen.getAllByText(/Holds it|Other/).map((node) => node.props.children);
     expect(names).toEqual(['Holds it', 'Other']);
   });
 
-  test('leaves with an error if the page was opened without title data', async () => {
-    searchParams.current = { movie_id: '1' };
+  test('a reload rebuilds the page from the URL', async () => {
+    searchParams.current = { movie_id: '1', is_tv_show: 'true' };
     render(<AddToCollectionPage />);
-    await waitFor(() => expect(Toast.show).toHaveBeenCalledWith(expect.objectContaining({ text2: 'Movie collections are needed' })));
-    expect(router.back).toHaveBeenCalled();
+    expect(await screen.findByText('Add From TMDB to Collection')).toBeTruthy();
+    expect(details).toHaveBeenCalledWith('1', true);
+    expect(savedIn).toHaveBeenCalledWith('1', true);
   });
 
-  test('KNOWN ISSUE: "Create Collection" here goes home, not to the collections tab', async () => {
+  test('a bad id explains itself with nothing to retry', async () => {
+    searchParams.current = { movie_id: 'abc' };
+    render(<AddToCollectionPage />);
+    expect(await screen.findByText('Invalid title URL')).toBeTruthy();
+    expect(screen.queryByText('Retry')).toBeNull();
+    expect(details).not.toHaveBeenCalled();
+  });
+
+  test('a failed load offers a retry that recovers', async () => {
+    listCollections.mockResolvedValue(new ApiError('Failed to fetch collections'));
+    render(<AddToCollectionPage />);
+    expect(await screen.findByText('Failed to fetch collections')).toBeTruthy();
+
+    listCollections.mockResolvedValue(collections('Sci-Fi'));
+    fireEvent.press(screen.getByText('Retry'));
+    expect(await screen.findByText('Sci-Fi')).toBeTruthy();
+  });
+
+  test('the first collection can be created here', async () => {
     listCollections.mockResolvedValue(collections());
-    open(new Movie({ id: 1, title: 'Up', collections: [] }));
+    create.mockResolvedValue(new Success(new Collection('id-Drama', 'Drama')));
+    render(<AddToCollectionPage />);
     fireEvent.press(await screen.findByText('Create Collection'));
-    expect(router.navigate).toHaveBeenCalledWith('/');
+    fireEvent.changeText(screen.getByPlaceholderText('Type collection name here...'), 'Drama');
+    listCollections.mockResolvedValue(collections('Drama'));
+    fireEvent.press(screen.getByText('Save'));
+
+    expect(await screen.findByText('Drama')).toBeTruthy();
+    expect(CollectionStateStore.getLastUpdated()).toBeGreaterThan(0);
   });
 });
 
@@ -196,7 +235,10 @@ describe('collection checkbox and notes', () => {
   const toggle = (value: boolean) => act(async () => { screen.UNSAFE_getByType(Checkbox).props.onValueChange(value); });
   const card = (isInCollection: boolean) => render(<CollectionAddCard collection={new CollectionCard('c1', 'Sci-Fi', isInCollection)} movie={movie} />);
 
-  beforeEach(() => jest.useFakeTimers());
+  beforeEach(() => {
+    jest.useFakeTimers();
+    unsavedNotes.clear();
+  });
   afterEach(() => jest.useRealTimers());
 
   test('adding saves the title, records the change, and reveals notes', async () => {
@@ -209,6 +251,13 @@ describe('collection checkbox and notes', () => {
     expect(CollectionStateStore.getLastUpdated()).toBeGreaterThan(0);
   });
 
+  test('re-adding shows the notes the server already holds', async () => {
+    add.mockResolvedValue(new Success({ notes: 'From before' }));
+    card(false);
+    await toggle(true);
+    expect(screen.getByPlaceholderText(notesBox).props.value).toBe('From before');
+  });
+
   test('removing hides the notes', async () => {
     card(true);
     await toggle(false);
@@ -216,13 +265,18 @@ describe('collection checkbox and notes', () => {
     expect(screen.queryByPlaceholderText(notesBox)).toBeNull();
   });
 
-  test('a failed add leaves the box unticked and warns', async () => {
-    add.mockResolvedValue(new ApiError('TV Show already exists in this collection'));
+  test('a failed add leaves the box unticked and offers a retry', async () => {
+    add.mockResolvedValue(new ApiError('Failed to add'));
     card(false);
     await toggle(true);
     expect(screen.queryByPlaceholderText(notesBox)).toBeNull();
-    expect(Toast.show).toHaveBeenCalledWith(expect.objectContaining({ text2: 'TV Show already exists in this collection' }));
+    expect(screen.getByText('Unable to update collection')).toBeTruthy();
+    expect(Toast.show).toHaveBeenCalledWith(expect.objectContaining({ text2: 'Failed to add' }));
     expect(CollectionStateStore.getLastUpdated()).toBe(0);
+
+    add.mockResolvedValue(new Success({}));
+    await act(async () => { fireEvent.press(screen.getByText('Retry')); });
+    expect(screen.getByPlaceholderText(notesBox)).toBeTruthy();
   });
 
   test('a failed removal keeps the title saved', async () => {
@@ -230,38 +284,36 @@ describe('collection checkbox and notes', () => {
     card(true);
     await toggle(false);
     expect(screen.getByPlaceholderText(notesBox)).toBeTruthy();
+    expect(screen.getByText('Unable to update collection')).toBeTruthy();
   });
 
-  test('saves trimmed notes one second after typing stops', async () => {
+  test('saves notes one second after typing stops, and shows the state', async () => {
     card(true);
-    fireEvent.changeText(screen.getByPlaceholderText(notesBox), ' Good');
+    expect(screen.getByText('Saved')).toBeTruthy();
+    fireEvent.changeText(screen.getByPlaceholderText(notesBox), 'Good');
+    expect(screen.getByText('Unsaved')).toBeTruthy();
     await act(async () => { await jest.advanceTimersByTimeAsync(500); });
-    fireEvent.changeText(screen.getByPlaceholderText(notesBox), ' Good one ');
+    fireEvent.changeText(screen.getByPlaceholderText(notesBox), 'Good one');
     await act(async () => { await jest.advanceTimersByTimeAsync(999); });
     expect(saveNotes).not.toHaveBeenCalled();
 
     await act(async () => { await jest.advanceTimersByTimeAsync(1); });
     expect(saveNotes).toHaveBeenCalledTimes(1);
     expect(saveNotes).toHaveBeenCalledWith('c1', '1', true, 'Good one');
+    expect(screen.getByText('Saved')).toBeTruthy();
     expect(CollectionStateStore.getLastUpdated()).toBeGreaterThan(0);
   });
 
-  test('warns when notes fail to save', async () => {
+  test('offers a retry when notes fail to save', async () => {
     saveNotes.mockResolvedValue(new ApiError('Failed to update notes'));
     card(true);
     fireEvent.changeText(screen.getByPlaceholderText(notesBox), 'x');
     await act(async () => { await jest.advanceTimersByTimeAsync(1000); });
     expect(Toast.show).toHaveBeenCalledWith(expect.objectContaining({ text2: 'Failed to update notes' }));
-  });
+    expect(screen.getByText('Unable to save notes')).toBeTruthy();
 
-  test('KNOWN ISSUE: notes still show after remove and re-add, though the server dropped them', async () => {
-    const saved = new Collection('c1', 'Sci-Fi');
-    saved.moviesCollectionNotes = 'Old notes';
-    render(<CollectionAddCard collection={new CollectionCard('c1', 'Sci-Fi', true)} movie={new Movie({ id: 1, collections: [saved] })} />);
-    await toggle(false);
-    await toggle(true);
-
-    expect(add.mock.calls[0][1].notes).toBeUndefined();
-    expect(screen.getByPlaceholderText(notesBox).props.value).toBe('Old notes');
+    saveNotes.mockResolvedValue(new Success(true));
+    await act(async () => { fireEvent.press(screen.getByText('Retry')); });
+    expect(screen.getByText('Saved')).toBeTruthy();
   });
 });

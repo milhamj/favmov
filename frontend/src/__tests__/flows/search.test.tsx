@@ -10,9 +10,6 @@ import { searchPeople } from '../../services/peopleService';
 import { MovieStore } from '../../stores/movieStore';
 import { router } from '../../../test/expoRouter';
 
-// The first render transforms React Native, which passes the 5s default on a cold cache
-jest.setTimeout(30_000);
-
 jest.mock('expo-router', () => require('../../../test/expoRouter'));
 jest.mock('../../services/movieService', () => ({ searchMovie: jest.fn(), fetchTrendingMovies: jest.fn(), fetchTrendingShows: jest.fn(), fetchPopularMovies: jest.fn(), fetchFavoriteMovies: jest.fn(), fetchMovieDetails: jest.fn() }));
 jest.mock('../../services/peopleService', () => ({ searchPeople: jest.fn(), fetchPeopleDetails: jest.fn() }));
@@ -117,20 +114,49 @@ test('goes back from the top bar', () => {
   expect(router.back).toHaveBeenCalled();
 });
 
-test('KNOWN ISSUE: a failed search looks like an empty result', async () => {
+test('a failed search offers a retry that recovers', async () => {
   findMovies.mockResolvedValue(new ApiError('Failed to search movie'));
   await type('up');
-  expect(screen.getByText('No results found.')).toBeTruthy();
+  expect(screen.getByText('Unable to load results')).toBeTruthy();
+  expect(screen.queryByText('No results found.')).toBeNull();
+
+  findMovies.mockResolvedValue(results(['Up']));
+  fireEvent.press(screen.getByText('Retry'));
+  await settle();
+  expect(screen.getByText('Up')).toBeTruthy();
 });
 
-test('KNOWN ISSUE: text typed during a running search is never searched', async () => {
+test('a failed later page keeps the results and retries that page', async () => {
+  findMovies.mockResolvedValue(results(['First'], 2));
+  await type('up');
+  findMovies.mockResolvedValue(new ApiError('Failed'));
+  await act(async () => { screen.UNSAFE_getByType(FlatList).props.onEndReached(); });
+  expect(screen.getByText('First')).toBeTruthy();
+
+  findMovies.mockResolvedValue(results(['First', 'Second'], 2));
+  fireEvent.press(screen.getByText('Retry'));
+  await settle();
+  expect(findMovies).toHaveBeenLastCalledWith('up', 2, false);
+  expect(screen.getByText('Second')).toBeTruthy();
+});
+
+test('a title repeated across pages shows once', async () => {
+  findMovies.mockResolvedValue(results(['First'], 2));
+  await type('up');
+  findMovies.mockResolvedValue(results(['First'], 2));
+  await act(async () => { screen.UNSAFE_getByType(FlatList).props.onEndReached(); });
+  expect(screen.getAllByText('First')).toHaveLength(1);
+});
+
+test('text typed during a running search replaces it', async () => {
   let finish = (_: unknown) => {};
   findMovies.mockReturnValueOnce(new Promise((resolve) => { finish = resolve; }));
   await type('first');
+  findMovies.mockResolvedValue(results(['Second result']));
   await type('second');
   await act(async () => { finish(results(['First result'])); });
-  await settle();
 
-  expect(findMovies).toHaveBeenCalledTimes(1);
-  expect(screen.getByText('First result')).toBeTruthy();
+  expect(findMovies).toHaveBeenLastCalledWith('second', 1, false);
+  expect(screen.getByText('Second result')).toBeTruthy();
+  expect(screen.queryByText('First result')).toBeNull();
 });
