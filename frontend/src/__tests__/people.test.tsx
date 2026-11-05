@@ -65,5 +65,5 @@ test('keeps the small person photo on the page and opens the original in the vie
  await act(async () => {});
  expect(ui.UNSAFE_getAllByType(Image).map(image => image.props.source.uri)).toEqual(['small//person.jpg']);
  fireEvent.press(ui.getByLabelText('View full image'));
- expect(router.navigate).toHaveBeenCalledWith(routes.image('big//person.jpg'));
+ expect(router.navigate).toHaveBeenCalledWith(routes.image('big//person.jpg', 'small//person.jpg'));
 });

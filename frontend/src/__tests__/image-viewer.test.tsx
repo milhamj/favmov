@@ -12,7 +12,7 @@ beforeEach(() => jest.clearAllMocks());
 test('opens the big image when there is one', () => {
  const ui = render(<ImageViewer smallImageUrl={small} bigImageUrl={big}/>);
  fireEvent.press(ui.getByLabelText('View full image'));
- expect(router.navigate).toHaveBeenCalledWith(routes.image(big));
+ expect(router.navigate).toHaveBeenCalledWith(routes.image(big, small));
 });
 test('falls back to the small image', () => {
  const ui = render(<ImageViewer smallImageUrl={small}/>);
@@ -29,5 +29,5 @@ test('opens a viewer-only image without loading it in the thumbnail', () => {
  const ui = render(<ImageViewer smallImageUrl={small} fullImageUrl={big}/>);
  expect(ui.UNSAFE_getAllByType(Image).map(image => image.props.source.uri)).toEqual([small]);
  fireEvent.press(ui.getByLabelText('View full image'));
- expect(router.navigate).toHaveBeenCalledWith(routes.image(big));
+ expect(router.navigate).toHaveBeenCalledWith(routes.image(big, small));
 });

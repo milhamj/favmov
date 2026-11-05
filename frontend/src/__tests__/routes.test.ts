@@ -17,3 +17,10 @@ test.each(['https://image.tmdb.org/t/p/w500/a.jpg', 'https://gdlqv951tx.ufs.sh/f
 test.each(['http://image.tmdb.org/a.jpg', 'https://evil.test/a.jpg', 'https://image.tmdb.org.evil.test/a.jpg', 'https://image.tmdb.org@evil.test/a.jpg', 'javascript:alert(1)', '', undefined, ['https://image.tmdb.org/a.jpg']])('rejects image url %s', url => {
  expect(safeImageUrl(url)).toBeNull();
 });
+
+test('image route encodes a distinct preview and omits duplicate previews', () => {
+ const url = 'https://image.tmdb.org/t/p/original/a.jpg';
+ const preview = 'https://image.tmdb.org/t/p/w500/a.jpg';
+ expect(routes.image(url, preview)).toBe('/image?url=' + encodeURIComponent(url) + '&preview=' + encodeURIComponent(preview));
+ expect(routes.image(url, url)).toBe(routes.image(url));
+});

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Platform, StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import { Image, Platform, StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { Icon } from 'react-native-elements';
 import ZoomImageViewer from 'react-native-image-zoom-viewer';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -22,8 +22,17 @@ export default function ImagePage() {
   };
 
   useEffect(() => {
-    setImageUrl(safeImageUrl(params.url));
-  }, [params.url]);
+    const original = safeImageUrl(params.url);
+    const preview = safeImageUrl(params.preview);
+    setImageUrl(original ? preview || original : null);
+    if (!original || !preview || original === preview) return;
+
+    let current = true;
+    void Image.prefetch(original).then(loaded => {
+      if (current && loaded) setImageUrl(original);
+    }).catch(() => {}); // Keep the preview when the original cannot load.
+    return () => { current = false; };
+  }, [params.url, params.preview]);
 
   useEffect(() => {
     if (Platform.OS !== 'web') return;

@@ -77,9 +77,9 @@ describe('movie detail', () => {
     const backdrop = await screen.findByLabelText('View full backdrop');
     expect(screen.UNSAFE_getAllByType(Image).map(image => image.props.source.uri)).toEqual(['small//backdrop.jpg', 'small//poster.jpg']);
     fireEvent.press(backdrop);
-    expect(router.navigate).toHaveBeenLastCalledWith('/image?url=' + encodeURIComponent('big//backdrop.jpg'));
+    expect(router.navigate).toHaveBeenLastCalledWith('/image?url=' + encodeURIComponent('big//backdrop.jpg') + '&preview=' + encodeURIComponent('small//backdrop.jpg'));
     fireEvent.press(screen.getByLabelText('View full poster'));
-    expect(router.navigate).toHaveBeenLastCalledWith('/image?url=' + encodeURIComponent('big//poster.jpg'));
+    expect(router.navigate).toHaveBeenLastCalledWith('/image?url=' + encodeURIComponent('big//poster.jpg') + '&preview=' + encodeURIComponent('small//poster.jpg'));
   });
 
   test('cast and crew link to their pages', async () => {

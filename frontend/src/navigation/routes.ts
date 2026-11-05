@@ -1,6 +1,7 @@
 export const routes = {
     profile: '/profile',
-    image: (url: string) => `/image?url=${encodeURIComponent(url)}`,
+    image: (url: string, preview?: string) =>
+        `/image?url=${encodeURIComponent(url)}${preview && preview !== url ? `&preview=${encodeURIComponent(preview)}` : ''}`,
     search: '/search',
     loginWithReturnTo: (path: string) => `/login?return_to=${encodeURIComponent(safeReturnTo(path))}`,
     
