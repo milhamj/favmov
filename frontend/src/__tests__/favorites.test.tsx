@@ -1,6 +1,5 @@
 import React from 'react';
 import { render, act, fireEvent } from '@testing-library/react-native';
-import { Pressable } from 'react-native';
 import HomeSection, { SectionType } from '../components/HomeSection';
 import { Success } from '../model/apiResponse';
 import { Movie } from '../model/movieModel';
@@ -17,7 +16,7 @@ test.each(Object.values(SectionType))('%s has supported heading/card navigation'
  jest.clearAllMocks();
  const ui = render(<HomeSection section={section}/>);
  await act(async () => {});
- if (section === SectionType.YourFavorites) expect(ui.UNSAFE_queryAllByType(Pressable)).toHaveLength(0);
+ if (section === SectionType.YourFavorites) { fireEvent.press(ui.getByText(section)); expect(router.navigate).not.toHaveBeenCalled(); expect(ui.queryByText('View All')).toBeNull(); }
  else { fireEvent.press(ui.getByText(section)); expect(router.navigate).toHaveBeenCalledWith('/explore?section_type=' + encodeURIComponent(section)); }
  fireEvent.press(ui.getByText('Title'));
  expect(router.navigate).toHaveBeenLastCalledWith('/movie/7?is_tv_show=true');

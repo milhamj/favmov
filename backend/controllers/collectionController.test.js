@@ -70,7 +70,7 @@ const runMembership = (handler, options) => new Promise((resolve, reject) => {
     insert() { inserted = true; writes.push(isEntry ? 'entry' : 'media'); return chain; },
     delete() { writes.push('delete'); return chain; },
     single: async () => ({ data: isCollection || mediaExists ? { id: 'row' } : null, error: null }),
-    maybeSingle: async () => ({ data: writes.includes('entry') ? entryAfterConflict : entry, error: checkError }),
+    limit: async () => { const row = writes.includes('entry') ? entryAfterConflict : entry; return { data: checkError ? null : row ? [row] : [], error: checkError }; },
     then(done, fail) {
      const error = !inserted ? null : isEntry ? entryInsertError : mediaInsertError;
      return Promise.resolve({ data: error ? null : [{ id: 1 }], error }).then(done, fail);
@@ -114,4 +114,9 @@ test('other insert failures stay errors', async t => {
  t.mock.method(console, 'error', () => {});
  const { code } = await runMembership(addMovieToCollection, { entryInsertError: { code: '500', message: 'boom' } });
  assert.equal(code, 500);
+});
+test('older duplicate entries still count as already added', async () => {
+ const { code, writes } = await runMembership(addMovieToCollection, { entry: { notes: 'first of two' } });
+ assert.equal(code, 200);
+ assert.deepEqual(writes, []);
 });

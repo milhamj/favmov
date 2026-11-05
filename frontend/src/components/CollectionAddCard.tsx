@@ -75,9 +75,13 @@ const CollectionAddCard = ({ collection, movie, registerSave, onPendingChange, d
         unsavedNotes.delete(draftKey);
         if (draft.current !== saved.current) debouncedUpdateNotes();
         return () => {
-            if (!discardingRef.current && draft.current !== saved.current) unsavedNotes.set(draftKey, { draft: draft.current, base: saved });
+            if (!discardingRef.current && draft.current !== saved.current) {
+                // Some exits skip the leave guard, so save now; the stored draft covers a save that cannot succeed.
+                unsavedNotes.set(draftKey, { draft: draft.current, base: saved });
+                void save();
+            }
         };
-    }, [draftKey, debouncedUpdateNotes]);
+    }, [draftKey, debouncedUpdateNotes, save]);
     const changeMembership = useCallback((value: boolean): Promise<boolean> => {
         debouncedUpdateNotes.cancel();
         setIsLoading(true);

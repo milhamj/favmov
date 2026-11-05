@@ -199,18 +199,18 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
     .select('*')
     .eq('collection_id', collection_id)
     .eq(is_tv_show ? 'tv_show_id' : 'movie_id', mediaId)
-    .maybeSingle();
+    .limit(1); // older data may hold duplicates, which must not turn an add into an error
 
   // Adding is idempotent, so a retry after a lost response finds its entry
-  const { data: existingEntry, error: existingEntryError } = await findEntry();
+  const { data: existingEntries, error: existingEntryError } = await findEntry();
 
   if (existingEntryError) {
     console.error(`Error checking collection ${mediaLabel}:`, existingEntryError);
     return errorResponse(res, `Error adding ${mediaLabel} to collection.`, 500, existingEntryError.message);
   }
 
-  if (existingEntry) {
-    return successResponse(res, existingEntry, 'Already in this collection');
+  if (existingEntries.length > 0) {
+    return successResponse(res, existingEntries[0], 'Already in this collection');
   }
 
   // Check if the movie/tv show already exists in its table, if not then add
@@ -260,7 +260,7 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
     // A concurrent add won the unique index, so the entry the caller asked for exists.
     const { data: existing } = await findEntry();
 
-    if (existing) return successResponse(res, existing, 'Already in this collection');
+    if (existing?.[0]) return successResponse(res, existing[0], 'Already in this collection');
   }
 
   if (error) {

@@ -125,16 +125,25 @@ test('failed slow removal resumes autosave only after membership is known', asyn
  expect(ui.getByText('Saved')).toBeTruthy();
 });
 
-test('a draft lost to unmount without a save is restored and autosaved on return', async () => {
+test('unmounting with a pending edit saves it immediately', async () => {
+ const ui = render(<Card collection={collection} movie={movie}/>);
+ fireEvent.changeText(ui.getByPlaceholderText('Write custom notes...'), 'left in a hurry');
+ ui.unmount();
+ await act(async () => {});
+ expect(update).toHaveBeenCalledWith('c', '1', false, 'left in a hurry');
+});
+
+test('a draft that cannot save on unmount is restored and autosaved on return', async () => {
+ update.mockResolvedValueOnce(new ApiError('signed out'));
  const first = render(<Card collection={collection} movie={movie}/>);
  fireEvent.changeText(first.getByPlaceholderText('Write custom notes...'), 'kept through login');
  first.unmount();
- await act(async () => { jest.advanceTimersByTime(5000); });
- expect(update).not.toHaveBeenCalled();
+ await act(async () => {});
  const second = render(<Card collection={collection} movie={movie}/>);
  expect(second.getByDisplayValue('kept through login')).toBeTruthy();
  await act(async () => { jest.advanceTimersByTime(1000); });
- expect(update).toHaveBeenCalledWith('c', '1', false, 'kept through login');
+ expect(update).toHaveBeenCalledTimes(2);
+ expect(update).toHaveBeenLastCalledWith('c', '1', false, 'kept through login');
 });
 
 test('a draft is not restored after discarding or once the title left the collection', async () => {

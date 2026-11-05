@@ -97,12 +97,12 @@ const HomeSection: React.FC<{
           </View>
         case 'success':
           return <View style={styles.section}>
-            {section === SectionType.YourFavorites ? (
-              <View style={styles.header}><Text style={styles.headerTitle}>{section}</Text></View>
-            ) : <Pressable style={styles.header} onPress={handleHeaderPress}>
+            <Pressable style={styles.header} disabled={section === SectionType.YourFavorites} onPress={handleHeaderPress}>
               <Text style={styles.headerTitle}>{section}</Text>
-              <Text style={styles.headerAction}>View All</Text>
-            </Pressable>}
+              { section !== SectionType.YourFavorites &&
+                <Text style={styles.headerAction}>View All</Text>
+              }
+            </Pressable>
             <FlatList
               data={movieState.data}
               renderItem={renderMoviePoster}
