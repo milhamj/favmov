@@ -18,3 +18,8 @@ test('falls back to the small image', () => {
  fireEvent.press(ui.getByLabelText('View full image'));
  expect(router.navigate).toHaveBeenCalledWith(routes.image(small));
 });
+test('uses a caller label so several images on one page stay distinguishable', () => {
+ const ui = render(<ImageViewer smallImageUrl={small} accessibilityLabel="View poster"/>);
+ expect(ui.getByLabelText('View poster')).toBeTruthy();
+ expect(ui.queryByLabelText('View full image')).toBeNull();
+});

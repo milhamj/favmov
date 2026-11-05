@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Platform, StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { Icon } from 'react-native-elements';
 import ZoomImageViewer from 'react-native-image-zoom-viewer';
@@ -7,12 +7,18 @@ import { useLocalSearchParams } from 'expo-router';
 import { router } from '../navigation/router';
 import { safeImageUrl } from '../navigation/routes';
 
-const close = () => router.goBackSafely();
-
 export default function ImagePage() {
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
   const [imageUrl, setImageUrl] = useState<string | null | undefined>(undefined);
+  const closing = useRef(false);
+
+  // The screen outlives its pop during the transition, so a repeat close would pop the page underneath.
+  const close = () => {
+    if (closing.current) return;
+    closing.current = true;
+    router.goBackSafely();
+  };
 
   useEffect(() => {
     setImageUrl(safeImageUrl(params.url));

@@ -8,13 +8,15 @@ interface ImageViewerProps {
   bigImageUrl?: string;
   style?: StyleProp<ViewStyle>;
   imageStyle?: ImageStyle;
+  accessibilityLabel?: string;
 }
 
 const ImageViewer: React.FC<ImageViewerProps> = ({ 
   smallImageUrl,
   bigImageUrl, 
   style, 
-  imageStyle 
+  imageStyle,
+  accessibilityLabel = 'View full image'
 }) => {
   const [isBigImageLoaded, setIsBigImageLoaded] = useState(false);
 
@@ -22,7 +24,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
       <View style={style}>
         <TouchableOpacity 
           accessibilityRole="button"
-          accessibilityLabel="View full image"
+          accessibilityLabel={accessibilityLabel}
           onPress={() => router.navigate(routes.image(bigImageUrl || smallImageUrl))}
           style={styles.imageContainer}>
           {

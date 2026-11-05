@@ -31,6 +31,13 @@ test('close button goes back', () => {
  fireEvent.press(render(<ImagePage/>).getByLabelText('Close image'));
  expect(router.goBackSafely).toHaveBeenCalledTimes(1);
 });
+test('a second close before unmount does not pop the page underneath', () => {
+ const ui = render(<ImagePage/>);
+ fireEvent.press(ui.getByLabelText('Close image'));
+ fireEvent.press(ui.getByLabelText('Close image'));
+ fireEvent.press(ui.getByText(url));
+ expect(router.goBackSafely).toHaveBeenCalledTimes(1);
+});
 test('swipe down goes back', () => {
  fireEvent.press(render(<ImagePage/>).getByText(url));
  expect(router.goBackSafely).toHaveBeenCalledTimes(1);
