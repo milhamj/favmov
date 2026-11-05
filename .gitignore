@@ -38,4 +38,4 @@ yarn-error.*
 *.tsbuildinfo
 
 # local docs
-docs/
+docs/superpowers/
