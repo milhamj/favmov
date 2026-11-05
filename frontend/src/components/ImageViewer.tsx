@@ -20,7 +20,8 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
   imageStyle,
   accessibilityLabel = 'View full image'
 }) => {
-  const [isBigImageLoaded, setIsBigImageLoaded] = useState(false);
+  const [loadedImageUrl, setLoadedImageUrl] = useState<string>();
+  const isBigImageLoaded = !!bigImageUrl && loadedImageUrl === bigImageUrl;
 
   return (
       <View style={style}>
@@ -38,8 +39,8 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
             bigImageUrl ? (
               <Image
                 source={{ uri: bigImageUrl }}
-                style={[styles.image, !isBigImageLoaded ? styles.imageBig : null]}
-                onLoadEnd={() => setIsBigImageLoaded(true)}
+                style={[styles.image, imageStyle, !isBigImageLoaded ? styles.imageBig : null]}
+                onLoad={() => setLoadedImageUrl(bigImageUrl)}
               />
             ) : null
           }
