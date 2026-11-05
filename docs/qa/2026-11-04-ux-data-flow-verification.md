@@ -210,9 +210,4 @@ blocked the cascade migration; assertions confirmed both old constraints and the
 orphan data survived unchanged. The fixture was cleaned, migrations reapplied,
 and the main SQL test passed again. No user data or live services were accessed.
 
-Deployment instructions are in `backend/db/README.md`. Apply schema changes before
-the dependent API/frontend. Custom live triggers were not supplied or inspected;
-the local fixture reproduces relevant constraints and SELECT/DELETE RLS only.
-Poster rollback was also tested with an existing null poster: it failed while
-preserving that row and all four nullable column definitions. Live Supabase
-behavior remains unverified.
+The migrations were applied to Supabase on 2026-11-05 and removed from the repository. `Readme.md` lists the database rules the API relies on.

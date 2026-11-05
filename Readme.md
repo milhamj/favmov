@@ -80,12 +80,14 @@ changes; a failed save leaves the editor open with Retry and a page-level Leave 
 terminating the app can still lose unsaved drafts, and simultaneous editing in
 multiple tabs is not coordinated.
 
-The supplied Supabase schema confirmed non-cascading collection foreign keys and
-NOT NULL poster columns. Migrations now enable atomic collection deletion and
-nullable artwork in both environments. **Apply all database migrations before
-deploying the API/frontend.** No live database migration or deployment has been
-performed. See `backend/db/README.md` for deployment order, lock/orphan checks,
-rollback limits, and disposable PostgreSQL test commands.
+The API relies on these Supabase rules, applied to both dev and prod tables on
+2026-11-05. Any new environment needs them too:
+
+- `*_movies_collections.collection_id` cascades on delete, because deleting a
+  collection only deletes the parent row.
+- `poster_path` is nullable on `*_movies` and `*_tv_shows`.
+- `*_movies_collections` has unique partial indexes on (`collection_id`, `movie_id`)
+  and (`collection_id`, `tv_show_id`).
 
 See `docs/qa/2026-11-04-ux-data-flow-verification.md` for verification evidence and
 remaining platform checks.
