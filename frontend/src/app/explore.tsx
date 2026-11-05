@@ -5,7 +5,7 @@ import { ActivityIndicator, View, StyleSheet, FlatList, Image, Text } from "reac
 import { useLocalSearchParams } from 'expo-router';
 import { router } from '../navigation/router';
 import { routes } from '../navigation/routes';
-import { parseStrParam } from "../utils/util";
+import { appendUnique, parseStrParam } from "../utils/util";
 import { SectionType } from "../components/HomeSection";
 import { fetchPopularMovies, fetchTrendingMovies, fetchTrendingShows } from "../services/movieService";
 import PageContainer from "../components/PageContainer";
@@ -32,7 +32,7 @@ const ExplorePage = () => {
             sectionType === SectionType.PopularMovies ? fetchPopularMovies(newPage) :
             null,
         data => {
-            setMovies((prev) => (newPage === 1 ? data : [...prev, ...data]));
+            setMovies((prev) => appendUnique(newPage === 1 ? [] : prev, data));
             return data.length > 0;
         });
     };

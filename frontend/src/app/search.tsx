@@ -15,6 +15,7 @@ import { People } from '../model/peopleModel';
 import PeopleCardHorizontal from '../components/PeopleCardHorizontal';
 import { searchPeople } from '../services/peopleService';
 import { usePagedFetch } from '../hooks/usePagedFetch';
+import { appendUnique } from '../utils/util';
 
 const CHIP_MOVIE = 'Movie';
 const CHIP_TV_SHOW = 'TV Show';
@@ -50,12 +51,12 @@ const SearchPage = () => {
         const hasMore = (count: number, totalPages: number) => count > 0 && newPage < (totalPages || 1);
         if (isPeopleSelected) {
             await load(newPage, () => searchPeople(searchQuery, newPage), data => {
-                setPeople((prev) => (newPage === 1 ? data.people : [...prev, ...data.people]));
+                setPeople((prev) => appendUnique(newPage === 1 ? [] : prev, data.people));
                 return hasMore(data.people.length, data.totalPages);
             }, settled);
         } else {
             await load(newPage, () => searchMovie(searchQuery, newPage, isTvShowSelected), data => {
-                setMovies((prev) => (newPage === 1 ? data.movies : [...prev, ...data.movies]));
+                setMovies((prev) => appendUnique(newPage === 1 ? [] : prev, data.movies));
                 return hasMore(data.movies.length, data.totalPages);
             }, settled);
         }

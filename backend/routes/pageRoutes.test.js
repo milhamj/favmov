@@ -9,6 +9,7 @@ const createPageRoutes = require('./pageRoutes');
 const exportedFiles = [
   'index.html', 'login.html', 'search.html', 'explore.html', 'profile.html', 'collection.html', '+not-found.html',
   'collection/add.html', 'collection/[id].html', 'movie/[id].html', 'people/[id].html',
+  'assets/node_modules/.pnpm/expo-router/unmatched.png', '.env',
 ];
 
 const cases = [
@@ -35,13 +36,15 @@ const cases = [
   ['/nope', 404, '+not-found.html'],
   ['/nope/', 404, '+not-found.html'],
   ['/movie/5/extra', 404, '+not-found.html'],
+  ['/assets/node_modules/.pnpm/expo-router/unmatched.png', 200, 'assets/node_modules/.pnpm/expo-router/unmatched.png'],
+  ['/.env', 404, '+not-found.html'],
 ];
 
 test('serves each URL its own prerendered page', async (t) => {
   const tmdbKey = process.env.FAVMOV_TMDB_API_KEY;
   delete process.env.FAVMOV_TMDB_API_KEY;
   const publicDir = await fs.mkdtemp(path.join(os.tmpdir(), 'favmov-pages-'));
-  await Promise.all(['collection', 'movie', 'people'].map((dir) => fs.mkdir(path.join(publicDir, dir))));
+  await Promise.all(['collection', 'movie', 'people', 'assets/node_modules/.pnpm/expo-router'].map((dir) => fs.mkdir(path.join(publicDir, dir), { recursive: true })));
   await Promise.all(exportedFiles.map((file) => fs.writeFile(path.join(publicDir, file), file)));
 
   const app = express();

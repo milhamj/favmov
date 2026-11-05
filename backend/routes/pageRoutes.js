@@ -11,6 +11,8 @@ const createPageRoutes = (publicDir) => {
     if (req.path.length > 1 && req.path.endsWith('/')) req.url = req.url.replace(/\/+(?=\?|$)/, '');
     next();
   });
+  // Expo exports package assets under node_modules/.pnpm, and express.static hides dot folders by default
+  router.use('/assets/node_modules', express.static(path.join(publicDir, 'assets', 'node_modules'), { dotfiles: 'allow', redirect: false }));
   router.use(express.static(publicDir, { extensions: ['html'], redirect: false }));
 
   // Each route has its own prerendered HTML; serving another route's breaks hydration - must be last
