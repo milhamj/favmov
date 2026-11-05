@@ -49,9 +49,6 @@ const transformMovieData = (item: any): Movie => {
   return movie;
 }
 
-// The collection editor waits on these before leaving, so a stalled request must end.
-const EDITOR_WRITE = { timeout: 15000 };
-
 export const createCollection = async (
   name: string
 ): Promise<Success<Collection> | Error> => {
@@ -141,11 +138,11 @@ export const postAddMovieToCollection = async (
       rating_count: movie.ratingCount ? movie.ratingCount : null,
       release_date: movie.releaseDate ? movie.releaseDate : null,
       is_tv_show: isTvShow,
-    }, EDITOR_WRITE);
+    });
 
     if (!response.data.success) {
       return new Error(
-        response.data.message || `Failed to add ${isTvShow ? "movie" : "tv show"} to the collection.`,
+        response.data.message || `Failed to add ${isTvShow ? "tv show" : "movie"} to the collection.`,
         response.data.status
       );
     }
@@ -172,7 +169,7 @@ export const postAddMovieToCollection = async (
   } catch (error: any) {
     console.error('Error removing movie from the collection:', error);
     return new Error(
-      error.response?.data?.message || `Failed to add ${isTvShow ? "movie" : "tv show"} to the collection.`,
+      error.response?.data?.message || `Failed to add ${isTvShow ? "tv show" : "movie"} to the collection.`,
       error.response?.status
     );
   }
@@ -184,11 +181,11 @@ export const deleteMovieFromCollection = async (
   isTvShow: boolean
 ): Promise<Success<boolean> | Error> => {
   try {
-    const response = await backendClient.delete(`/collections/${collectionId}/movies/${movieId}?is_tv_show=${isTvShow}`, EDITOR_WRITE);
+    const response = await backendClient.delete(`/collections/${collectionId}/movies/${movieId}?is_tv_show=${isTvShow}`);
     
     if (!response.data.success) {
       return new Error(
-        response.data.message || `Failed to remove ${isTvShow ? "movie" : "tv show"} from the collection.`,
+        response.data.message || `Failed to remove ${isTvShow ? "tv show" : "movie"} from the collection.`,
         response.data.status
       );
     }
@@ -197,7 +194,7 @@ export const deleteMovieFromCollection = async (
   } catch (error: any) {
     console.error('Error removing movie from collection:', error);
     return new Error(
-      error.response?.data?.message || `Failed to remove ${isTvShow ? "movie" : "tv show"} from the collection.`,
+      error.response?.data?.message || `Failed to remove ${isTvShow ? "tv show" : "movie"} from the collection.`,
       error.response?.status
     );
   }
@@ -213,20 +210,20 @@ export const updateNotes = async (
     const response = await backendClient.post(`/collections/${collectionId}/movies/${movieId}/notes`, {
       notes: notes,
       is_tv_show: isTvShow,
-    }, EDITOR_WRITE);
+    });
     
     if (!response.data.success) {
       return new Error(
-        response.data.message || `Failed to update the ${isTvShow ? "movie" : "tv show"}'s notes to the collection.`,
+        response.data.message || `Failed to update the ${isTvShow ? "tv show" : "movie"}'s notes to the collection.`,
         response.data.status
       );
     }
     
-    return new Success<boolean>(true, `${isTvShow ? "Movie" : "TV Show"}'s notes has been updated successfully.`);
+    return new Success<boolean>(true, `${isTvShow ? "TV Show" : "Movie"}'s notes has been updated successfully.`);
   } catch (error: any) {
     console.error('Error removing movie from collection:', error);
     return new Error(
-      error.response?.data?.message || `Failed to update the ${isTvShow ? "movie" : "tv show"}'s notes to the collection.`,
+      error.response?.data?.message || `Failed to update the ${isTvShow ? "tv show" : "movie"}'s notes to the collection.`,
       error.response?.status
     );
   }

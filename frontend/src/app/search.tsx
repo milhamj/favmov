@@ -26,7 +26,7 @@ const SearchPage = () => {
     const [searchQuery, setSearchQuery]  = useState('');
     const [movies, setMovies] = useState([] as Movie[]);
     const [people, setPeople] = useState([] as People[]);
-    const { page, failedPage, isLoading, isLoadingMore, load, cancel, reset, canLoadMore } = usePagedFetch(false);
+    const { page, failedPage, isLoading, isLoadingMore, load, reset, canLoadMore } = usePagedFetch(false);
     const [totalPages, setTotalPages] = useState(1);
     const [showFilter, setShowFilter] = useState(true);
     const [selectedChip, setSelectedChip] = useState(CHIP_MOVIE);
@@ -72,8 +72,8 @@ const SearchPage = () => {
         const debounceFetch = setTimeout(() => {
             if (searchQuery) void fetchSearchResult(1);
         }, 300);
-        return () => { clearTimeout(debounceFetch); cancel(); };
-    }, [searchQuery, selectedChip, fetchSearchResult, cancel]);
+        return () => clearTimeout(debounceFetch);
+    }, [searchQuery, selectedChip, fetchSearchResult]);
     const handleOnEndReached = () => {
         if (canLoadMore() && page.current < totalPages) {
             void fetchSearchResult(page.current + 1);
@@ -176,7 +176,7 @@ const SearchPage = () => {
                     isLoading ? (
                         <FullPageLoader />
                     ) : failedPage === 1 ? (
-                        <View><Text>Unable to load results</Text>{renderFooter()}</View>
+                        <RetryButton message="Unable to load results" onPress={() => void fetchSearchResult(1)}/>
                     ) : isEmptyQuery || isEmptyResult ? (
                         <View style={styles.emptyState}>
                             <Image source={require('../../assets/empty_search.png')} style={styles.emptyImage} />

@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, fireEvent, act, renderHook } from '@testing-library/react-native';
-import Card, { unsavedNotes } from '../components/CollectionAddCard';
+import Card from '../components/CollectionAddCard';
+import { unsavedNotes } from '../stores/unsavedNotesStore';
 import { Movie } from '../model/movieModel';
 import { Success, Error as ApiError } from '../model/apiResponse';
 import { updateNotes, deleteMovieFromCollection, postAddMovieToCollection } from '../services/collectionService';

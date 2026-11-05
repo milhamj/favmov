@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, fireEvent, act } from '@testing-library/react-native';
 import Editor from '../app/collection/add';
-import { unsavedNotes } from '../components/CollectionAddCard';
+import { unsavedNotes } from '../stores/unsavedNotesStore';
 import { CollectionStateStore } from '../stores/collectionStateStore';
 import { MovieStore } from '../stores/movieStore';
 import { Movie } from '../model/movieModel';
@@ -162,4 +162,18 @@ test('an incomplete cached movie fetches details rather than accepting an empty 
  await act(async () => {});
  expect(fetchMovieDetails).toHaveBeenCalledWith('7', true);
  expect(ui.getByText('Add Arrival to Collection')).toBeTruthy();
+});
+
+test('a stalled save still reaches the way out after the leave timeout', async () => {
+ jest.useFakeTimers();
+ const ui = render(<Editor/>);
+ await act(async () => {});
+ (updateNotes as jest.Mock).mockImplementation(() => new Promise(() => {}));
+ fireEvent.changeText(ui.getByPlaceholderText('Write custom notes...'), 'stuck');
+ await act(async () => { mockPreventRemove.callback({ data: { action: { type: 'GO_BACK' } } }); });
+ expect(ui.queryByText('Leave without saving')).toBeNull();
+ await act(async () => { jest.advanceTimersByTime(15000); });
+ await act(async () => { fireEvent.press(ui.getByText('Leave without saving')); });
+ expect(mockDispatch).toHaveBeenCalledWith({ type: 'GO_BACK' });
+ jest.useRealTimers();
 });

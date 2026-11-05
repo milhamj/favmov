@@ -19,6 +19,8 @@ import { fetchMovieDetails } from '../../services/movieService';
 import { CollectionStateStore } from '../../stores/collectionStateStore';
 import { MovieStore } from '../../stores/movieStore';
 
+const LEAVE_TIMEOUT = 15000;
+
 const AddToCollectionPage = withAuth(() => {
     const params = useLocalSearchParams();
     const rawId = parseStrParam(params.movie_id);
@@ -62,7 +64,11 @@ const AddToCollectionPage = withAuth(() => {
         setLeaveFailed(false);
         setDraining(true);
         try {
-            const results = await Promise.all([...saves.current.values()].map(save => save()));
+            const results = await Promise.race([
+                Promise.all([...saves.current.values()].map(save => save())),
+                // A stalled request must not hide the way out.
+                new Promise<boolean[]>(resolve => setTimeout(() => resolve([false]), LEAVE_TIMEOUT)),
+            ]);
             if (results.every(Boolean)) {
                 pendingAction.current = null;
                 navigation.dispatch(action);
@@ -144,7 +150,7 @@ const AddToCollectionPage = withAuth(() => {
                                 <ActivityIndicator style={styles.loadingItem} size="large" color="tomato" />
                             </View>
                         ) : error ? (
-                            <View><Text>{error}</Text><RetryButton onPress={() => setAttempt(n => n + 1)}/></View>
+                            <RetryButton message={error} onPress={() => setAttempt(n => n + 1)}/>
                         ) : refreshError && collectionCards.length === 0 ? null : collectionCards.length === 0 ? (
                             <View style={styles.emptyState}>
                                 <Image 
@@ -169,10 +175,7 @@ const AddToCollectionPage = withAuth(() => {
                             </View>
                         )
                     }
-                    {refreshError && <View>
-                        <Text>Unable to refresh collections: {refreshError}</Text>
-                        <RetryButton disabled={draining || refreshingCollections} onPress={() => void refreshCollections()}/>
-                    </View>}
+                    {refreshError && <RetryButton message={`Unable to refresh collections: ${refreshError}`} disabled={draining || refreshingCollections} onPress={() => void refreshCollections()}/>}
                 </ScrollView>
                 <CreateCollectionSheet visible={creating} onClose={(success) => {
                     setCreating(false);

@@ -55,17 +55,26 @@ for (const environment of ['development', 'production']) {
 }
 
 const { addMovieToCollection, removeMovieFromCollection } = require('./collectionController');
-const runMembership = (handler, row, params, body, query, checkError = null) => new Promise((resolve, reject) => {
+const addBody = { is_tv_show: false, movie_id: 7, title: 'Title', poster_path: null };
+const runMembership = (handler, options) => new Promise((resolve, reject) => {
+ process.env.FAVMOV_NODE_ENV ??= 'development';
+ const { entry = null, entryAfterConflict = null, mediaExists = true, checkError = null, mediaInsertError = null, entryInsertError = null } = options;
  const writes = [];
- const req = { params, body, query, user: { id: 'owner' }, supabase: {
-  from() {
-   const result = { data: row ? [row] : [], error: null };
+ const req = { params: { collection_id: 'collection', movie_id: '7' }, body: addBody, query: { is_tv_show: 'false' }, user: { id: 'owner' }, supabase: {
+  from(table) {
+   const isEntry = table.endsWith('_movies_collections');
+   const isCollection = table.endsWith('_collections') && !isEntry;
+   let inserted = false;
    const chain = {
     select() { return chain; }, eq() { return chain; },
-    insert() { writes.push('insert'); return chain; }, delete() { writes.push('delete'); return chain; },
-    single: async () => ({ data: { id: 'collection', ...row }, error: null }),
-    maybeSingle: async () => ({ data: row, error: checkError }),
-    then(done, fail) { return Promise.resolve(result).then(done, fail); }
+    insert() { inserted = true; writes.push(isEntry ? 'entry' : 'media'); return chain; },
+    delete() { writes.push('delete'); return chain; },
+    single: async () => ({ data: isCollection || mediaExists ? { id: 'row' } : null, error: null }),
+    maybeSingle: async () => ({ data: writes.includes('entry') ? entryAfterConflict : entry, error: checkError }),
+    then(done, fail) {
+     const error = !inserted ? null : isEntry ? entryInsertError : mediaInsertError;
+     return Promise.resolve({ data: error ? null : [{ id: 1 }], error }).then(done, fail);
+    }
    };
    return chain;
   }
@@ -73,24 +82,36 @@ const runMembership = (handler, row, params, body, query, checkError = null) => 
  const res = { status(code) { this.code = code; return this; }, json(payload) { resolve({ code: this.code, payload, writes }); } };
  handler(req, res, reject);
 });
-test('adding a title already in the collection succeeds with the existing row', async t => {
- process.env.FAVMOV_NODE_ENV ??= 'development';
- const { code, payload, writes } = await runMembership(addMovieToCollection, { notes: 'kept' }, { collection_id: 'collection' }, { is_tv_show: false, movie_id: 7, title: 'Title', poster_path: null });
+test('adding a title already in the collection succeeds with the existing row', async () => {
+ const { code, payload, writes } = await runMembership(addMovieToCollection, { entry: { notes: 'kept' } });
  assert.equal(code, 200);
  assert.equal(payload.data.notes, 'kept');
  assert.deepEqual(writes, []);
 });
-test('removing a title already gone succeeds without a write', async t => {
- process.env.FAVMOV_NODE_ENV ??= 'development';
- const { code, payload, writes } = await runMembership(removeMovieFromCollection, null, { collection_id: 'collection', movie_id: '7' }, {}, { is_tv_show: 'false' });
+test('removing a title already gone succeeds', async () => {
+ const { code, payload, writes } = await runMembership(removeMovieFromCollection, {});
  assert.equal(code, 200);
  assert.equal(payload.success, true);
- assert.deepEqual(writes, []);
+ assert.deepEqual(writes, ['delete']);
 });
 test('a failed existence check never inserts a possible duplicate', async t => {
- process.env.FAVMOV_NODE_ENV ??= 'development';
  t.mock.method(console, 'error', () => {});
- const { code, writes } = await runMembership(addMovieToCollection, null, { collection_id: 'collection' }, { is_tv_show: false, movie_id: 7, title: 'Title', poster_path: null }, undefined, { message: 'connection reset' });
+ const { code, writes } = await runMembership(addMovieToCollection, { checkError: { message: 'connection reset' } });
  assert.equal(code, 500);
  assert.deepEqual(writes, []);
+});
+test('losing the entry race returns the winning row', async () => {
+ const { code, payload } = await runMembership(addMovieToCollection, { entryInsertError: { code: '23505' }, entryAfterConflict: { notes: 'winner' } });
+ assert.equal(code, 200);
+ assert.equal(payload.data.notes, 'winner');
+});
+test('losing the media row race still adds the entry', async () => {
+ const { code, writes } = await runMembership(addMovieToCollection, { mediaExists: false, mediaInsertError: { code: '23505' } });
+ assert.equal(code, 201);
+ assert.deepEqual(writes, ['media', 'entry']);
+});
+test('other insert failures stay errors', async t => {
+ t.mock.method(console, 'error', () => {});
+ const { code } = await runMembership(addMovieToCollection, { entryInsertError: { code: '500', message: 'boom' } });
+ assert.equal(code, 500);
 });

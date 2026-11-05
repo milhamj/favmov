@@ -13,7 +13,7 @@ import { supabase } from '../../services/supabaseClient';
 import Toast from 'react-native-toast-message';
 import withAuth from '../../components/withAuth';
 import { router } from '../../navigation/router';
-import { unsavedNotes } from '../../components/CollectionAddCard';
+import { unsavedNotes } from '../../stores/unsavedNotesStore';
 
 const ProfilePage = withAuth(() => {
   const { user } = useAuth();

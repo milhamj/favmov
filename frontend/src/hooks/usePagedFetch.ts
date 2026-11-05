@@ -39,7 +39,6 @@ export function usePagedFetch(initiallyLoading: boolean) {
         fetching.current = false;
         onSettled?.();
     }, []);
-    const cancel = useCallback(() => { generation.current += 1; }, []);
     const reset = useCallback((loading: boolean) => {
         generation.current += 1;
         fetching.current = false;
@@ -50,5 +49,5 @@ export function usePagedFetch(initiallyLoading: boolean) {
     }, []);
     const canLoadMore = () => failedPage === null && page.current > 0 && !fetching.current;
 
-    return { page, failedPage, isLoading, isLoadingMore, load, cancel, reset, canLoadMore };
+    return { page, failedPage, isLoading, isLoadingMore, load, reset, canLoadMore };
 }

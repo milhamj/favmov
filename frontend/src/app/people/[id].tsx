@@ -147,7 +147,7 @@ const PeopleDetailPage = () => {
                         </View>
                     </ScrollView>
                 ) : state.status === 'error' ? (
-                    <View><Text>{state.error}</Text><RetryButton onPress={() => setAttempt(n => n + 1)}/></View>
+                    <RetryButton message={state.error} onPress={() => setAttempt(n => n + 1)}/>
                 ) : (
                     <FullPageLoader/>
                 )

@@ -46,7 +46,8 @@ WHERE n.nspname = 'public' AND NOT t.tgisinternal
 ## Rollback
 
 Revert the application first. The files under `rollback/` restore the supplied
-NO ACTION collection constraints and NOT NULL poster columns. Run each with
+NO ACTION collection constraints and NOT NULL poster columns, and drop the unique
+entry indexes. Run each with
 `psql ... -v ON_ERROR_STOP=1 -f ...`. Poster rollback intentionally fails if any
 posterless row now exists; it leaves all four columns nullable and does not invent
 artwork or delete titles. Keeping the nullable columns is compatible with the old

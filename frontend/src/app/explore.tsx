@@ -24,7 +24,7 @@ const ExplorePage = () => {
     const [title, setTitle] = useState(''); // query params are unknown when prerendering
     const [movies, setMovies] = useState([] as Movie[]);
     // Start loading: the prerender should show a loader, not "No results"
-    const { page, failedPage, isLoading, isLoadingMore, load, cancel, reset, canLoadMore } = usePagedFetch(true);
+    const { page, failedPage, isLoading, isLoadingMore, load, reset, canLoadMore } = usePagedFetch(true);
     const ended = useRef(false);
 
     const fetchExploreData = async (newPage: number = 1) => {
@@ -46,7 +46,6 @@ const ExplorePage = () => {
         setMovies([]);
         setTitle(sectionType);
         void fetchExploreData();
-        return cancel;
     },[sectionType])
 
     const handleOnEndReached = () => {
@@ -99,7 +98,7 @@ const ExplorePage = () => {
                     isLoading ? (
                         <FullPageLoader />
                     ) : failedPage === 1 ? (
-                        <View><Text>Unable to load results</Text>{renderFooter()}</View>
+                        <RetryButton message="Unable to load results" onPress={() => void fetchExploreData(1)}/>
                     ) : isEmptyResult ? (
                         <View style={styles.emptyState}>
                             <Image source={require('../../assets/empty_search.png')} style={styles.emptyImage} />

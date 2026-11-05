@@ -233,7 +233,8 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
         release_date
       }])
 
-      if (insertTvShowError) {
+      // 23505: a concurrent add stored this title first, which is all this step needs.
+      if (insertTvShowError && insertTvShowError.code !== '23505') {
         console.error('Error inserting tv show:', insertTvShowError);
         const debugMessage = insertTvShowError?.message
         return errorResponse(res, 'Error adding TV show to collection.', 500, debugMessage);
@@ -279,7 +280,8 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
         release_date
       }])
 
-      if (insertMovieError) {
+      // 23505: a concurrent add stored this title first, which is all this step needs.
+      if (insertMovieError && insertMovieError.code !== '23505') {
         console.error('Error inserting movie:', insertMovieError);
         const debugMessage = insertMovieError?.message
         return errorResponse(res, 'Error adding movie to collection.', 500, debugMessage);
@@ -298,6 +300,18 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
     notes,
   }])
   .select();
+
+  if (error?.code === '23505') {
+    // A concurrent add won the unique index, so the entry the caller asked for exists.
+    const { data: existing } = await req.supabase
+    .from(moviesCollectionsTable)
+    .select('*')
+    .eq('collection_id', collection_id)
+    .eq(is_tv_show ? 'tv_show_id' : 'movie_id', is_tv_show ? tv_show_id : movie_id)
+    .maybeSingle();
+
+    if (existing) return successResponse(res, existing, 'Already in this collection');
+  }
 
   if (error) {
     console.error('Error adding movie to collection:', error);
@@ -530,30 +544,6 @@ exports.removeMovieFromCollection = asyncHandler(async (req, res) => {
   if (moviesCollectionsTableError) {
     console.error('Environment error:', moviesCollectionsTableError);
     return errorResponse(res, moviesCollectionsTableError, 500);
-  }
-
-  // Check whether the movie exists in the collection
-  const selectQuery = req.supabase.from(moviesCollectionsTable)
-    .select('*')
-    .eq('collection_id', collection_id)
-    .eq('user_id', userId);
-
-  if (is_tv_show) {
-    selectQuery.eq('tv_show_id', movie_id);
-  } else {
-    selectQuery.eq('movie_id', movie_id);
-  }
-
-  const { data: selectData, error: selectError } = await selectQuery
-
-  if (selectError) {
-    console.error('Error fetching collection movies:', selectError);
-    const debugMessage = selectError?.message
-    return errorResponse(res, 'Failed to fetch collection movies', 500, debugMessage);
-  }
-
-  if (selectData.length === 0) {
-    return successResponse(res, { is_success: true }, 'Already removed from collection');
   }
 
   // Remove movie from collection
