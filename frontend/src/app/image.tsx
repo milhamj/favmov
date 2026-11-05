@@ -12,6 +12,7 @@ export default function ImagePage() {
   const insets = useSafeAreaInsets();
   const [imageUrl, setImageUrl] = useState<string | null | undefined>(undefined);
   const closing = useRef(false);
+  const closeButton = useRef<React.ElementRef<typeof TouchableOpacity>>(null);
 
   // The screen outlives its pop during the transition, so a repeat close would pop the page underneath.
   const close = () => {
@@ -26,6 +27,8 @@ export default function ImagePage() {
 
   useEffect(() => {
     if (Platform.OS !== 'web') return;
+    // shortcut: focus is not returned to the thumbnail on close, add it if thumbnails move down the tab order.
+    closeButton.current?.focus();
     const onKeyUp = (event: KeyboardEvent) => {
       if (event.key === 'Escape') close();
     };
@@ -36,6 +39,7 @@ export default function ImagePage() {
   return (
     <View style={styles.container}>
       <TouchableOpacity
+        ref={closeButton}
         style={[styles.closeButton, { top: insets.top + 20 }]}
         accessibilityRole="button"
         accessibilityLabel="Close image"
@@ -44,6 +48,7 @@ export default function ImagePage() {
       </TouchableOpacity>
       {imageUrl ? (
         <ZoomImageViewer
+          key={imageUrl} // it only re-measures when `index` changes, so a new url needs a remount
           imageUrls={[{ url: imageUrl }]}
           enableSwipeDown={true}
           saveToLocalByLongPress={false}

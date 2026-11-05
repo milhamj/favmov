@@ -64,3 +64,18 @@ test('Escape closes on web and removes its listener on unmount', () => {
   global.document = originalDocument;
  }
 });
+
+test('moves focus to the close button on web, as the old Modal did', () => {
+ const platform = Platform.OS;
+ const originalDocument = global.document;
+ const { focus } = require('react-native/jest/MockNativeMethods');
+ Platform.OS = 'web';
+ global.document = { addEventListener: jest.fn(), removeEventListener: jest.fn() } as any;
+ try {
+  render(<ImagePage/>);
+  expect(focus).toHaveBeenCalledTimes(1);
+ } finally {
+  Platform.OS = platform;
+  global.document = originalDocument;
+ }
+});
