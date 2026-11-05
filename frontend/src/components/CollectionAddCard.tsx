@@ -11,7 +11,8 @@ import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
 import { CollectionStateStore } from '../stores/collectionStateStore';
 
 // Losing the session unmounts the editor and no save can succeed, so keep drafts for the return from login.
-export const unsavedNotes = new Map<string, string>();
+// base is the server text the draft started from; a changed server note wins over an old draft.
+export const unsavedNotes = new Map<string, { draft: string; base: string }>();
 
 interface CollectionAddCardProps {
     disabled?: boolean;
@@ -27,7 +28,10 @@ const CollectionAddCard = ({ collection, movie, registerSave, onPendingChange, d
     const serverNotes = movie.notesInCollection(collection.id) || '';
     const [isLoading, setIsLoading] = useState(false);
     const [isSaved, setIsSaved] = useState(collection.isInCollection);
-    const [notes, setNotes] = useState(() => (collection.isInCollection ? unsavedNotes.get(draftKey) : undefined) ?? serverNotes);
+    const [notes, setNotes] = useState(() => {
+        const unsaved = collection.isInCollection ? unsavedNotes.get(draftKey) : undefined;
+        return unsaved?.base === serverNotes ? unsaved.draft : serverNotes;
+    });
     const [saveError, setSaveError] = useState(false);
     const [saving, setSaving] = useState(false);
     const draft = useRef(notes);
@@ -41,6 +45,7 @@ const CollectionAddCard = ({ collection, movie, registerSave, onPendingChange, d
 
     const save = useCallback((): Promise<boolean> => {
         if (active.current) return active.current;
+        if (draft.current === saved.current) return Promise.resolve(true);
         const run = async () => {
             setSaving(true);
             setSaveError(false);
@@ -61,8 +66,7 @@ const CollectionAddCard = ({ collection, movie, registerSave, onPendingChange, d
                 setSaving(false);
             }
         };
-        // Start in a microtask so even a clean draft clears the assigned promise.
-        active.current = Promise.resolve().then(run);
+        active.current = run();
         return active.current;
     }, [collection.id, movie.id, movie.isTvShow]);
     const debouncedUpdateNotes = useDebouncedCallback(() => { void save(); }, 1000);
@@ -70,7 +74,7 @@ const CollectionAddCard = ({ collection, movie, registerSave, onPendingChange, d
         unsavedNotes.delete(draftKey);
         if (draft.current !== saved.current) debouncedUpdateNotes();
         return () => {
-            if (!discardingRef.current && draft.current !== saved.current) unsavedNotes.set(draftKey, draft.current);
+            if (!discardingRef.current && draft.current !== saved.current) unsavedNotes.set(draftKey, { draft: draft.current, base: saved.current });
         };
     }, [draftKey, debouncedUpdateNotes]);
     const changeMembership = useCallback((value: boolean): Promise<boolean> => {
@@ -83,7 +87,8 @@ const CollectionAddCard = ({ collection, movie, registerSave, onPendingChange, d
             try {
                 // The failed attempt may have committed, and replaying it would then return 400 forever.
                 const current = retrying ? await getCheckMovieExistInCollection(movie.id.toString(), !!movie.isTvShow) : null;
-                if (!(current instanceof Success && current.data.some(c => c.id === collection.id) === value)) {
+                const existing = current instanceof Success ? current.data.find(c => c.id === collection.id) : undefined;
+                if (!(current instanceof Success && !!existing === value)) {
                     const result = value
                         ? await postAddMovieToCollection(collection.id, movie, !!movie.isTvShow)
                         : await deleteMovieFromCollection(collection.id, movie.id.toString(), !!movie.isTvShow);
@@ -91,8 +96,9 @@ const CollectionAddCard = ({ collection, movie, registerSave, onPendingChange, d
                 }
                 membershipTarget.current = null;
                 setIsSaved(value);
-                draft.current = saved.current = '';
-                setNotes('');
+                const serverText = (value && existing?.moviesCollectionNotes) || '';
+                draft.current = saved.current = serverText;
+                setNotes(serverText);
                 setSaveError(false);
                 CollectionStateStore.setLastUpdated(Date.now());
                 return true;
@@ -111,13 +117,11 @@ const CollectionAddCard = ({ collection, movie, registerSave, onPendingChange, d
     }, [collection.id, debouncedUpdateNotes, movie]);
     const drain = useCallback(async () => {
         debouncedUpdateNotes.cancel();
-        if (membershipRequest.current && !(await membershipRequest.current)) return false;
-        if (membershipTarget.current !== null) {
-            await active.current;
-            if (!(await changeMembership(membershipTarget.current))) return false;
-        }
-        return save();
-    }, [changeMembership, debouncedUpdateNotes, save]);
+        await membershipRequest.current;
+        // A failed membership change is never replayed here: the user may have decided to keep things as they are.
+        const notesSaved = await save();
+        return notesSaved && membershipTarget.current === null;
+    }, [debouncedUpdateNotes, save]);
     useEffect(() => {
         registerSave?.(collection.id, drain);
         return () => registerSave?.(collection.id, null);

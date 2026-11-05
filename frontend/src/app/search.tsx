@@ -180,6 +180,7 @@ const SearchPage = () => {
                 placeholderTextColor="#666666"
                 value={searchQuery}
                 onChangeText={(newQuery) => {
+                    if (newQuery === searchQuery) return;
                     invalidate(newQuery);
                     setSearchQuery(newQuery);
                     setShowFilter(newQuery ? false : true);

@@ -85,3 +85,18 @@ test('a malformed encoded section does not crash rendering', async () => {
  expect(ui.queryByText('Retry')).toBeNull();
  mockSection = 'Trending Movies';
 });
+test('re-emitting the same search text keeps the results', async () => {
+ (searchMovie as jest.Mock).mockResolvedValueOnce(new Success(data('Arrival')));
+ const ui = render(<Search/>);
+ fireEvent.changeText(ui.getByPlaceholderText('Type any Movie title...'), 'Arrival');
+ await act(async () => { jest.advanceTimersByTime(300); });
+ fireEvent.changeText(ui.getByPlaceholderText('Type any Movie title...'), 'Arrival');
+ await act(async () => { jest.advanceTimersByTime(300); });
+ expect(ui.getByText('Arrival')).toBeTruthy();
+});
+test('a missing section is not treated as the text undefined', async () => {
+ mockSection = undefined as any;
+ const ui = render(<Explore/>);
+ await act(async () => {});
+ expect(ui.queryByText('undefined')).toBeNull();
+});

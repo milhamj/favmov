@@ -134,7 +134,7 @@ const AddToCollectionPage = withAuth(() => {
                 />
                 {leaveFailed && <View accessibilityRole="alert" style={styles.leaveError}>
                     <Text>Your latest edits could not be saved.</Text>
-                    <Text>Try Back again, or leave and discard your unsaved edits.</Text>
+                    <Text>Use Retry on the failed item, or leave and discard your unsaved edits.</Text>
                     <TouchableOpacity accessibilityRole="button" style={styles.discardButton} onPress={() => setDiscard(true)}><Text>Leave without saving</Text></TouchableOpacity>
                 </View>}
                 <ScrollView style={styles.content}>

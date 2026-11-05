@@ -142,7 +142,7 @@ test('a draft is not restored after discarding or once the title left the collec
  discarded.rerender(<Card collection={collection} movie={movie} discarding/>);
  discarded.unmount();
  expect(unsavedNotes.size).toBe(0);
- unsavedNotes.set('c:1:false', 'orphan');
+ unsavedNotes.set('c:1:false', { draft: 'orphan', base: '' });
  const removed = render(<Card collection={{ ...collection, isInCollection: false }} movie={movie}/>);
  await act(async () => { jest.advanceTimersByTime(5000); });
  expect(update).not.toHaveBeenCalled();
@@ -174,17 +174,47 @@ test('membership retry replays the change when the server has not applied it', a
  expect(ui.queryByText('Unable to update collection')).toBeNull();
 });
 
-test('leaving again retries a failed membership change and reports its result', async () => {
+test('leaving saves notes but never replays a failed membership change', async () => {
  const Checkbox = require('expo-checkbox').default;
  let drain: any;
- remove.mockResolvedValueOnce(new ApiError('offline')).mockResolvedValueOnce(new ApiError('offline')).mockResolvedValueOnce(new Success(true));
- (getCheckMovieExistInCollection as jest.Mock).mockResolvedValue(new ApiError('offline'));
+ remove.mockResolvedValueOnce(new ApiError('offline'));
  const ui = render(<Card collection={collection} movie={movie} registerSave={(_id, save) => { if (save) drain = save; }}/>);
  await act(async () => { ui.UNSAFE_getByType(Checkbox).props.onValueChange(false); });
+ fireEvent.changeText(ui.getByPlaceholderText('Write custom notes...'), 'keeping this');
  let result: any;
  await act(async () => { result = await drain(); });
  expect(result).toBe(false);
- await act(async () => { result = await drain(); });
- expect(result).toBe(true);
- expect(remove).toHaveBeenCalledTimes(3);
+ expect(update).toHaveBeenCalledWith('c', '1', false, 'keeping this');
+ expect(remove).toHaveBeenCalledTimes(1);
+ expect(ui.getByDisplayValue('keeping this')).toBeTruthy();
+});
+
+test('a retried add that finds the row keeps the notes already on the server', async () => {
+ const Checkbox = require('expo-checkbox').default;
+ (postAddMovieToCollection as jest.Mock).mockResolvedValueOnce(new ApiError('already exists'));
+ (getCheckMovieExistInCollection as jest.Mock).mockResolvedValueOnce(new Success([{ id: 'c', moviesCollectionNotes: 'from elsewhere' }]));
+ const ui = render(<Card collection={{ ...collection, isInCollection: false }} movie={movie}/>);
+ await act(async () => { ui.UNSAFE_getByType(Checkbox).props.onValueChange(true); });
+ await act(async () => { fireEvent.press(ui.getByText('Retry')); });
+ expect(ui.getByDisplayValue('from elsewhere')).toBeTruthy();
+ expect(ui.getByText('Saved')).toBeTruthy();
+});
+
+test('a draft older than the server note is dropped rather than saved over it', async () => {
+ unsavedNotes.set('c:1:false', { draft: 'old draft', base: 'older server text' });
+ const fresh = new Movie({ id: 1, collections: [{ id: 'c', name: 'Watch', moviesCollectionNotes: 'newer server text' } as any] });
+ const ui = render(<Card collection={collection} movie={fresh}/>);
+ await act(async () => { jest.advanceTimersByTime(5000); });
+ expect(ui.getByDisplayValue('newer server text')).toBeTruthy();
+ expect(update).not.toHaveBeenCalled();
+});
+
+test('draining a clean card does not show saving state or write', async () => {
+ let drain: any;
+ const ui = render(<Card collection={collection} movie={movie} registerSave={(_id, save) => { if (save) drain = save; }}/>);
+ let pending: any;
+ act(() => { pending = drain(); });
+ expect(ui.queryByText('Saving')).toBeNull();
+ await act(async () => { await pending; });
+ expect(update).not.toHaveBeenCalled();
 });

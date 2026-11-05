@@ -3,7 +3,7 @@ import { COLORS } from "../styles/colors";
 export const parseStrParam = (param: string | string[]): string => {
   const value = Array.isArray(param) ? param[0] : param;
   try {
-    return decodeURIComponent(value);
+    return decodeURIComponent(value ?? '');
   } catch {
     return value;
   }
