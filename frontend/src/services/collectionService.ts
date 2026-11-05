@@ -221,7 +221,7 @@ export const updateNotes = async (
     
     return new Success<boolean>(true, `${isTvShow ? "TV Show" : "Movie"}'s notes has been updated successfully.`);
   } catch (error: any) {
-    console.error('Error removing movie from collection:', error);
+    console.error('Error updating notes:', error);
     return new Error(
       error.response?.data?.message || `Failed to update the ${isTvShow ? "tv show" : "movie"}'s notes to the collection.`,
       error.response?.status

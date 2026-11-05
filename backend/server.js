@@ -1,4 +1,6 @@
 require('dotenv').config();
+// Before the other requires: config/supabase.js exits on load when its keys are missing
+require('./utils/checkEnv').checkEnv();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');

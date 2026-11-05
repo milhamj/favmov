@@ -109,3 +109,21 @@ test('paging stops at the last page TMDB allows', async () => {
  await act(async () => { await hook.result.current.load(499, async () => new Success([]), () => true); });
  expect(hook.result.current.canLoadMore()).toBe(true);
 });
+test.each(['explore', 'search'])('%s drops titles TMDB repeats on a later page', async (screen) => {
+ const page = (...ids: number[]) => ids.map(id => new Movie({ id, title: `Title ${id}` }));
+ const ids = (ui: any) => ui.UNSAFE_getByType(FlatList).props.data.map((movie: Movie) => movie.id);
+ let ui: any;
+ if (screen === 'explore') {
+  (fetchTrendingMovies as jest.Mock).mockResolvedValueOnce(new Success(page(1, 2))).mockResolvedValueOnce(new Success(page(2, 3, 3)));
+  ui = render(<Explore/>);
+  await act(async () => {});
+ } else {
+  (searchMovie as jest.Mock).mockResolvedValueOnce(new Success({ movies: page(1, 2), totalPages: 3 })).mockResolvedValueOnce(new Success({ movies: page(2, 3, 3), totalPages: 3 }));
+  ui = render(<Search/>);
+  fireEvent.changeText(ui.getByPlaceholderText('Type any Movie title...'), 'Alien');
+  await act(async () => { jest.advanceTimersByTime(300); });
+ }
+ expect(ids(ui)).toEqual([1, 2]);
+ await act(async () => { ui.UNSAFE_getByType(FlatList).props.onEndReached(); });
+ expect(ids(ui)).toEqual([1, 2, 3]);
+});
