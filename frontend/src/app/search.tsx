@@ -1,10 +1,9 @@
 import RetryButton from '../components/RetryButton';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Platform, TextInput, FlatList, Image, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Platform, TextInput, FlatList, Image, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import PageContainer  from '../components/PageContainer';
 import { Movie } from '../model/movieModel';
 import { searchMovie } from '../services/movieService';
-import { Success } from '../model/apiResponse';
 import TopBar from '../components/TopBar';
 import MovieCard from '../components/MovieCard';
 import SelectableChip from '../components/SelectableChip';

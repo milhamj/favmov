@@ -82,7 +82,7 @@ multiple tabs is not coordinated.
 
 The supplied Supabase schema confirmed non-cascading collection foreign keys and
 NOT NULL poster columns. Migrations now enable atomic collection deletion and
-nullable artwork in both environments. **Apply both database migrations before
+nullable artwork in both environments. **Apply all database migrations before
 deploying the API/frontend.** No live database migration or deployment has been
 performed. See `backend/db/README.md` for deployment order, lock/orphan checks,
 rollback limits, and disposable PostgreSQL test commands.

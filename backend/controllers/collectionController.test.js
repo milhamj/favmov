@@ -55,7 +55,7 @@ for (const environment of ['development', 'production']) {
 }
 
 const { addMovieToCollection, removeMovieFromCollection } = require('./collectionController');
-const runMembership = (handler, row, params, body, query) => new Promise((resolve, reject) => {
+const runMembership = (handler, row, params, body, query, checkError = null) => new Promise((resolve, reject) => {
  const writes = [];
  const req = { params, body, query, user: { id: 'owner' }, supabase: {
   from() {
@@ -64,6 +64,7 @@ const runMembership = (handler, row, params, body, query) => new Promise((resolv
     select() { return chain; }, eq() { return chain; },
     insert() { writes.push('insert'); return chain; }, delete() { writes.push('delete'); return chain; },
     single: async () => ({ data: { id: 'collection', ...row }, error: null }),
+    maybeSingle: async () => ({ data: row, error: checkError }),
     then(done, fail) { return Promise.resolve(result).then(done, fail); }
    };
    return chain;
@@ -84,5 +85,12 @@ test('removing a title already gone succeeds without a write', async t => {
  const { code, payload, writes } = await runMembership(removeMovieFromCollection, null, { collection_id: 'collection', movie_id: '7' }, {}, { is_tv_show: 'false' });
  assert.equal(code, 200);
  assert.equal(payload.success, true);
+ assert.deepEqual(writes, []);
+});
+test('a failed existence check never inserts a possible duplicate', async t => {
+ process.env.FAVMOV_NODE_ENV ??= 'development';
+ t.mock.method(console, 'error', () => {});
+ const { code, writes } = await runMembership(addMovieToCollection, null, { collection_id: 'collection' }, { is_tv_show: false, movie_id: 7, title: 'Title', poster_path: null }, undefined, { message: 'connection reset' });
+ assert.equal(code, 500);
  assert.deepEqual(writes, []);
 });

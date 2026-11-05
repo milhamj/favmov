@@ -7,7 +7,7 @@ const { getTableName, MOVIES, TV_SHOWS } = require('./tableNames');
 const getChanges = (item, tmdb, isTvShow) => {
   const latest = {
     title: isTvShow ? tmdb.name : tmdb.title,
-    poster_path: tmdb.poster_path,
+    poster_path: tmdb.poster_path ?? item.poster_path, // TMDB dropping its artwork must not erase ours
     rating: tmdb.vote_average,
     rating_count: tmdb.vote_count,
     release_date: isTvShow ? tmdb.first_air_date : tmdb.release_date,

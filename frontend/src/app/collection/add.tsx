@@ -236,10 +236,6 @@ const styles = StyleSheet.create({
     listContent: {
         paddingBottom: 16,
     },
-    columnWrapper: {
-        justifyContent: 'space-between',
-        marginBottom: 4,
-    },
 })
 
 export default AddToCollectionPage;

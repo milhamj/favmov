@@ -217,6 +217,14 @@ test('a draft survives trimming by the server and saves that finish after unmoun
  expect(second.getByDisplayValue('ab c')).toBeTruthy();
 });
 
+test('a failed save shows the server reason', async () => {
+ update.mockResolvedValue(new ApiError('Movie not found in collection.'));
+ const ui = render(<Card collection={collection} movie={movie}/>);
+ fireEvent.changeText(ui.getByPlaceholderText('Write custom notes...'), 'draft');
+ await act(async () => { jest.advanceTimersByTime(1000); });
+ expect(require('react-native-toast-message').default.show).toHaveBeenCalledWith(expect.objectContaining({ text2: 'Movie not found in collection.' }));
+});
+
 test('note Retry cannot send a draft while the editor is discarding', async () => {
  update.mockResolvedValue(new ApiError('offline'));
  const ui = render(<Card collection={collection} movie={movie}/>);

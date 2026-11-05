@@ -58,8 +58,9 @@ const CollectionAddCard = ({ collection, movie, registerSave, onPendingChange, d
                     CollectionStateStore.setLastUpdated(Date.now());
                 }
                 return true;
-            } catch {
+            } catch (failure: any) {
                 setSaveError(true);
+                Toast.show({ type: 'error', text1: 'Error', text2: failure.message || 'Unable to save notes', position: 'bottom' });
                 return false;
             } finally {
                 active.current = null;

@@ -6,7 +6,6 @@ import { useLocalSearchParams } from 'expo-router';
 import { router } from '../navigation/router';
 import { routes } from '../navigation/routes';
 import { parseStrParam } from "../utils/util";
-import { Success } from "../model/apiResponse";
 import { SectionType } from "../components/HomeSection";
 import { fetchPopularMovies, fetchTrendingMovies, fetchTrendingShows } from "../services/movieService";
 import PageContainer from "../components/PageContainer";

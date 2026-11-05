@@ -49,6 +49,9 @@ const transformMovieData = (item: any): Movie => {
   return movie;
 }
 
+// The collection editor waits on these before leaving, so a stalled request must end.
+const EDITOR_WRITE = { timeout: 15000 };
+
 export const createCollection = async (
   name: string
 ): Promise<Success<Collection> | Error> => {
@@ -138,7 +141,7 @@ export const postAddMovieToCollection = async (
       rating_count: movie.ratingCount ? movie.ratingCount : null,
       release_date: movie.releaseDate ? movie.releaseDate : null,
       is_tv_show: isTvShow,
-    });
+    }, EDITOR_WRITE);
 
     if (!response.data.success) {
       return new Error(
@@ -181,7 +184,7 @@ export const deleteMovieFromCollection = async (
   isTvShow: boolean
 ): Promise<Success<boolean> | Error> => {
   try {
-    const response = await backendClient.delete(`/collections/${collectionId}/movies/${movieId}?is_tv_show=${isTvShow}`);
+    const response = await backendClient.delete(`/collections/${collectionId}/movies/${movieId}?is_tv_show=${isTvShow}`, EDITOR_WRITE);
     
     if (!response.data.success) {
       return new Error(
@@ -210,7 +213,7 @@ export const updateNotes = async (
     const response = await backendClient.post(`/collections/${collectionId}/movies/${movieId}/notes`, {
       notes: notes,
       is_tv_show: isTvShow,
-    });
+    }, EDITOR_WRITE);
     
     if (!response.data.success) {
       return new Error(

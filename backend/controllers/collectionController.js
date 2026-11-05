@@ -194,12 +194,17 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
 
   if (is_tv_show) {
     // Check if tv show already exists in the collection
-    const { data: existingTvShowInCollection } = await req.supabase
+    const { data: existingTvShowInCollection, error: existingTvShowError } = await req.supabase
     .from(moviesCollectionsTable)
     .select('*')
     .eq('collection_id', collection_id)
     .eq('tv_show_id', tv_show_id)
-    .single();
+    .maybeSingle();
+
+    if (existingTvShowError) {
+      console.error('Error checking collection TV show:', existingTvShowError);
+      return errorResponse(res, 'Error adding TV show to collection.', 500, existingTvShowError.message);
+    }
 
     if (existingTvShowInCollection) {
       return successResponse(res, existingTvShowInCollection, 'TV Show already in this collection');
@@ -235,12 +240,17 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
       }
     }
   } else {
-    const { data: existingMovieInCollection } = await req.supabase
+    const { data: existingMovieInCollection, error: existingMovieError } = await req.supabase
     .from(moviesCollectionsTable)
     .select('*')
     .eq('collection_id', collection_id)
     .eq('movie_id', movie_id)
-    .single();
+    .maybeSingle();
+
+    if (existingMovieError) {
+      console.error('Error checking collection movie:', existingMovieError);
+      return errorResponse(res, 'Error adding movie to collection.', 500, existingMovieError.message);
+    }
 
     if (existingMovieInCollection) {
       return successResponse(res, existingMovieInCollection, 'Movie already in this collection');

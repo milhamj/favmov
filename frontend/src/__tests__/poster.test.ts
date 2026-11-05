@@ -6,6 +6,6 @@ test.each([false, true])('normalizes missing poster for TV=%s and renders fallba
  (backendClient.post as jest.Mock).mockResolvedValue({ data: { success: true, data: {} } });
  const movie = new Movie({ id: 7, title: 'Title' });
  await postAddMovieToCollection('c', movie, isTv);
- expect(backendClient.post).toHaveBeenCalledWith('/collections/c/movies', expect.objectContaining({ poster_path: null }));
+ expect(backendClient.post).toHaveBeenCalledWith('/collections/c/movies', expect.objectContaining({ poster_path: null }), expect.anything());
  expect(movie.smallPosterUrl()).toBe(DEFAULT_MOVIE_POSTER);
 });
