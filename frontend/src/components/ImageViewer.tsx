@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Image, StyleSheet, TouchableOpacity, StyleProp, ViewStyle, ImageStyle } from 'react-native';
-import FullImageViewer from './FullImageViewer';
+import { router } from '../navigation/router';
+import { routes } from '../navigation/routes';
 
 interface ImageViewerProps {
   smallImageUrl: string;
@@ -15,26 +16,14 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
   style, 
   imageStyle 
 }) => {
-  const [isImageViewerVisible, setImageViewerVisible] = useState(false);
-  const [selectedImageUrl, setSelectedImageUrl] = useState('');
   const [isBigImageLoaded, setIsBigImageLoaded] = useState(false);
 
-  const handleImagePress = () => {
-    const imageUrl = bigImageUrl || smallImageUrl;
-    setSelectedImageUrl(imageUrl);
-    setImageViewerVisible(true);
-  };
-
   return (
-    <>
       <View style={style}>
-        <FullImageViewer
-          visible={isImageViewerVisible}
-          imageUrl={selectedImageUrl}
-          onClose={() => setImageViewerVisible(false)}
-        />
         <TouchableOpacity 
-          onPress={() => handleImagePress()} 
+          accessibilityRole="button"
+          accessibilityLabel="View full image"
+          onPress={() => router.navigate(routes.image(bigImageUrl || smallImageUrl))} 
           style={styles.imageContainer}>
           {
             !isBigImageLoaded ? (
@@ -52,7 +41,6 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
           }
         </TouchableOpacity>
       </View>
-    </>
   );
 };
 

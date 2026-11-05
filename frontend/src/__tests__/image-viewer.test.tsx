@@ -1,0 +1,20 @@
+import React from 'react';
+import { render, fireEvent } from '@testing-library/react-native';
+import ImageViewer from '../components/ImageViewer';
+import { router } from '../navigation/router';
+import { routes } from '../navigation/routes';
+
+jest.mock('../navigation/router', () => ({ router: { navigate: jest.fn() } }));
+const small = 'https://image.tmdb.org/t/p/w500/a.jpg';
+const big = 'https://image.tmdb.org/t/p/original/a.jpg';
+beforeEach(() => jest.clearAllMocks());
+test('opens the big image when there is one', () => {
+ const ui = render(<ImageViewer smallImageUrl={small} bigImageUrl={big}/>);
+ fireEvent.press(ui.getByLabelText('View full image'));
+ expect(router.navigate).toHaveBeenCalledWith(routes.image(big));
+});
+test('falls back to the small image', () => {
+ const ui = render(<ImageViewer smallImageUrl={small}/>);
+ fireEvent.press(ui.getByLabelText('View full image'));
+ expect(router.navigate).toHaveBeenCalledWith(routes.image(small));
+});
