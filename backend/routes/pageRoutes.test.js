@@ -63,3 +63,64 @@ test('serves each URL its own prerendered page', async (t) => {
     assert.deepStrictEqual([url, response.status, await response.text()], [url, status, file]);
   }
 });
+
+const movieHtml = '<title>Default</title><meta name="description" content="Default"><meta property="og:title" content="Default"><meta property="og:url" content="Default">';
+
+const startMoviePages = async (t) => {
+  const tmdbKey = process.env.FAVMOV_TMDB_API_KEY;
+  process.env.FAVMOV_TMDB_API_KEY = 'test-key';
+  const publicDir = await fs.mkdtemp(path.join(os.tmpdir(), 'favmov-seo-'));
+  await fs.mkdir(path.join(publicDir, 'movie'));
+  await fs.writeFile(path.join(publicDir, 'movie', '[id].html'), movieHtml);
+
+  const app = express();
+  app.use(createPageRoutes(publicDir));
+  const server = await new Promise((resolve) => {
+    const listening = app.listen(0, () => resolve(listening));
+  });
+  t.after(async () => {
+    if (tmdbKey) process.env.FAVMOV_TMDB_API_KEY = tmdbKey;
+    else delete process.env.FAVMOV_TMDB_API_KEY;
+    await new Promise((resolve) => server.close(resolve));
+    await fs.rm(publicDir, { recursive: true });
+  });
+
+  // Page requests below go through the real fetch; only TMDB calls are answered here
+  const realFetch = global.fetch;
+  return (tmdb) => {
+    t.mock.method(global, 'fetch', async (url, options) => (String(url).includes('themoviedb') ? tmdb(url) : realFetch(url, options)));
+    return (pagePath) => realFetch(`http://localhost:${server.address().port}${pagePath}`);
+  };
+};
+
+// Ids differ per test because movieSeo caches lookups for the life of the process
+test('fills a movie page from TMDB, and a TV show from the tv endpoint', async (t) => {
+  const urls = [];
+  const get = (await startMoviePages(t))(async (url) => {
+    urls.push(url);
+    return { ok: true, status: 200, json: async () => ({ name: 'A Show', overview: 'About it' }) };
+  });
+
+  const response = await get('/movie/9001?is_tv_show=true');
+  const html = await response.text();
+  assert.strictEqual(response.status, 200);
+  assert.deepStrictEqual(urls, ['https://api.themoviedb.org/3/tv/9001']);
+  assert.match(html, /<title>A Show \| FavMov<\/title>/);
+  assert.match(html, /name="description" content="About it"/);
+  assert.match(html, /og:url" content="https:\/\/favmov\.milhamj\.com\/movie\/9001\?is_tv_show=true"/);
+});
+
+test('answers 404 with the default head for a title TMDB does not have', async (t) => {
+  const get = (await startMoviePages(t))(async () => ({ ok: false, status: 404 }));
+  const response = await get('/movie/9002');
+  assert.strictEqual(response.status, 404);
+  assert.strictEqual(await response.text(), movieHtml);
+});
+
+test('keeps serving the page with the default head when TMDB is down', async (t) => {
+  t.mock.method(console, 'error', () => {});
+  const get = (await startMoviePages(t))(async () => ({ ok: false, status: 503 }));
+  const response = await get('/movie/9003');
+  assert.strictEqual(response.status, 200);
+  assert.strictEqual(await response.text(), movieHtml);
+});
