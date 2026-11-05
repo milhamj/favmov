@@ -185,3 +185,14 @@ test('an invalid URL shows its error without a Retry that cannot help', async ()
  expect(ui.getByText('Invalid title URL')).toBeTruthy();
  expect(ui.queryByText('Retry')).toBeNull();
 });
+
+test('a cached title survives a failed load for the retry', async () => {
+ const { MovieStore } = require('../stores/movieStore');
+ MovieStore.cacheMovie(new Movie({ id: 7, title: 'Cached', isTvShow: true }));
+ (getUserCollections as jest.Mock).mockResolvedValueOnce(new ApiError('offline'));
+ const ui = render(<Editor/>);
+ await act(async () => {});
+ await act(async () => { fireEvent.press(ui.getByText('Retry')); });
+ expect(fetchMovieDetails).not.toHaveBeenCalled();
+ expect(ui.getByText('Add Cached to Collection')).toBeTruthy();
+});

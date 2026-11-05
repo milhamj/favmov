@@ -41,7 +41,10 @@ const CollectionAddCard = ({ collection, movie, registerSave, onPendingChange, d
 
     const save = useCallback((): Promise<boolean> => {
         if (active.current) return active.current;
-        if (draft.current === saved.current) return Promise.resolve(true);
+        if (draft.current === saved.current) {
+            setSaveError(false);
+            return Promise.resolve(true);
+        }
         const run = async () => {
             setSaving(true);
             setSaveError(false);
@@ -77,8 +80,9 @@ const CollectionAddCard = ({ collection, movie, registerSave, onPendingChange, d
         return () => {
             if (!discardingRef.current && draft.current !== saved.current) {
                 // Some exits skip the leave guard, so save now; the stored draft covers a save that cannot succeed.
-                unsavedNotes.set(draftKey, { draft: draft.current, base: saved });
-                void save().then(ok => { if (ok) unsavedNotes.delete(draftKey); });
+                const unsaved = { draft: draft.current, base: saved };
+                unsavedNotes.set(draftKey, unsaved);
+                void save().then(ok => { if (ok && unsavedNotes.get(draftKey) === unsaved) unsavedNotes.delete(draftKey); });
             }
         };
     }, [draftKey, debouncedUpdateNotes, save]);

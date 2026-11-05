@@ -104,7 +104,7 @@ test('successful card Retry clears the failed-leave banner and prevention', asyn
  await act(async () => { navigation.goBack(); });
  expect(navigation.getCurrentRoute()!.name).toBe('home');
 });
-test.each([false, true])('membership failure during Back blocks that Back and Retry clears it, adding=%s', async adding => {
+test.each([false, true])('membership failure during Back keeps the editor open with its inline error, adding=%s', async adding => {
  const Checkbox = require('expo-checkbox').default;
  const navigation = createNavigationContainerRef<any>();
  let finish: any;
@@ -117,9 +117,10 @@ test.each([false, true])('membership failure during Back blocks that Back and Re
  await act(async () => { navigation.goBack(); });
  await act(async () => { finish(new ApiError('offline')); });
  expect(navigation.getCurrentRoute()!.name).toBe('editor');
- expect(ui.getByText('Your latest edits could not be saved.')).toBeTruthy();
- await act(async () => { fireEvent.press(ui.getByText('Retry')); });
+ expect(ui.getByText('Unable to update collection')).toBeTruthy();
  expect(ui.queryByText('Your latest edits could not be saved.')).toBeNull();
+ await act(async () => { fireEvent.press(ui.getByText('Retry')); });
+ expect(ui.queryByText('Unable to update collection')).toBeNull();
  await act(async () => { navigation.goBack(); });
  expect(navigation.getCurrentRoute()!.name).toBe('home');
 });

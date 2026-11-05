@@ -279,3 +279,27 @@ test('note Retry cannot send a draft while the editor is discarding', async () =
  await act(async () => { fireEvent.press(ui.getByText('Retry')); });
  expect(update).toHaveBeenCalledTimes(1);
 });
+
+test('Retry clears the error when the text returned to what is saved', async () => {
+ let finish: any;
+ update.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+ const ui = render(<Card collection={collection} movie={movie}/>);
+ fireEvent.changeText(ui.getByPlaceholderText('Write custom notes...'), 'typo');
+ await act(async () => { jest.advanceTimersByTime(1000); });
+ fireEvent.changeText(ui.getByPlaceholderText('Write custom notes...'), '');
+ await act(async () => { finish(new ApiError('offline')); });
+ await act(async () => { fireEvent.press(ui.getByText('Retry')); });
+ expect(ui.queryByText('Retry')).toBeNull();
+});
+
+test('a slow unmount save cannot delete a newer stored draft', async () => {
+ let finish: any;
+ update.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+ const first = render(<Card collection={collection} movie={movie}/>);
+ fireEvent.changeText(first.getByPlaceholderText('Write custom notes...'), 'older');
+ first.unmount();
+ const newer = { draft: 'newer', base: { current: '' } };
+ unsavedNotes.set('c:1:false', newer);
+ await act(async () => { finish(new Success(true)); });
+ expect(unsavedNotes.get('c:1:false')).toBe(newer);
+});

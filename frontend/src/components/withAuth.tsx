@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef } from "react";
+import { memo, useEffect } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { router } from "../navigation/router";
 import { routes, routeWithParams } from "../navigation/routes";
@@ -14,13 +14,11 @@ const withAuth = (Component: React.ComponentType) => {
         const pathname = usePathname();
         const params = useLocalSearchParams();
         const focused = useIsFocused();
-        const destination = useRef('');
-        destination.current = routeWithParams(pathname, params);
         const { isAuthenticated, loading } = useAuth();
 
         useEffect(() => {
             if (focused && !loading && !isAuthenticated) {
-                router.replace(routes.loginWithReturnTo(destination.current));
+                router.replace(routes.loginWithReturnTo(routeWithParams(pathname, params)));
             }
         }, [isAuthenticated, loading, focused]);
 

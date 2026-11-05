@@ -83,7 +83,7 @@ const AddToCollectionPage = withAuth(() => {
             setLeaveFailed(false);
             pendingAction.current = null;
         }
-    }, [pendingCards]);
+    }, [pendingCards, leaveFailed]);
     useEffect(() => {
         if (discard && pendingAction.current) {
             const action = pendingAction.current;
@@ -100,7 +100,7 @@ const AddToCollectionPage = withAuth(() => {
         const load = async () => {
             try {
                 if (!validMovieId) throw new globalThis.Error('Invalid title URL');
-                const cached = MovieStore.getCachedMovieAndDelete(String(movieId), isTvShow);
+                const cached = MovieStore.getCachedMovie(String(movieId), isTvShow);
                 // Always re-read membership: cached notes can be stale, and saving over them would lose newer text.
                 const [details, membership, collections] = await Promise.all([
                     cached?.title.trim() ? Promise.resolve(new Success(cached)) : fetchMovieDetails(String(movieId), isTvShow),
@@ -111,6 +111,7 @@ const AddToCollectionPage = withAuth(() => {
                 if (!(membership instanceof Success)) throw membership;
                 if (!(collections instanceof Success)) throw collections;
                 const restored = new Movie({ ...details.data, isTvShow, collections: membership.data });
+                MovieStore.deleteMovie(String(movieId), isTvShow);
                 setMovie(restored);
                 setCollectionCards(collections.data.map(c => new CollectionCard(c.id, c.name, membership.data.some(m => m.id === c.id))).sort((a, b) => Number(b.isInCollection) - Number(a.isInCollection)));
             } catch (failure: any) {
@@ -140,7 +141,7 @@ const AddToCollectionPage = withAuth(() => {
                       onClick: () => router.goBackSafely()
                     }}
                 />
-                {leaveFailed && <View accessibilityRole="alert" style={styles.leaveError}>
+                {leaveFailed && pendingCards.size > 0 && <View accessibilityRole="alert" style={styles.leaveError}>
                     <Text>Your latest edits could not be saved.</Text>
                     <Text>Try again, or leave and discard your unsaved edits.</Text>
                     <TouchableOpacity accessibilityRole="button" style={styles.discardButton} onPress={() => setDiscard(true)}><Text>Leave without saving</Text></TouchableOpacity>
