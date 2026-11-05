@@ -15,8 +15,6 @@ import MovieCard from "../components/MovieCard";
 import { MovieStore } from "../stores/movieStore";
 import { usePagedFetch } from "../hooks/usePagedFetch";
 
-const MAX_PAGE = 500;
-
 const ExplorePage = () => {
     const params = useLocalSearchParams();
     const sectionType = parseStrParam(params.section_type);
@@ -35,7 +33,7 @@ const ExplorePage = () => {
             null,
         data => {
             setMovies((prev) => (newPage === 1 ? data : [...prev, ...data]));
-            return data.length > 0 && newPage < MAX_PAGE;
+            return data.length > 0;
         });
     };
 

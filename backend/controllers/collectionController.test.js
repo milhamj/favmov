@@ -120,3 +120,19 @@ test('older duplicate entries still count as already added', async () => {
  assert.equal(code, 200);
  assert.deepEqual(writes, []);
 });
+
+const { updateMovieCollectionNotes } = require('./collectionController');
+for (const [rows, status] of [[[{ notes: 'new' }], 201], [[], 404]]) {
+ test(`updating notes matching ${rows.length} rows returns ${status} in one query`, async () => {
+  process.env.FAVMOV_NODE_ENV ??= 'development';
+  let queries = 0;
+  const response = await new Promise((resolve, reject) => {
+   const chain = { update() { return chain; }, eq() { return chain; }, select: async () => ({ data: rows, error: null }) };
+   const req = { body: { is_tv_show: false, notes: 'new' }, params: { collection_id: 'collection', movie_id: '7' }, user: { id: 'owner' }, supabase: { from() { queries++; return chain; } } };
+   const res = { status(code) { this.code = code; return this; }, json() { resolve(this.code); } };
+   updateMovieCollectionNotes(req, res, reject);
+  });
+  assert.equal(response, status);
+  assert.equal(queries, 1);
+ });
+}

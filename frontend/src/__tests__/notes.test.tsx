@@ -303,3 +303,15 @@ test('a slow unmount save cannot delete a newer stored draft', async () => {
  await act(async () => { finish(new Success(true)); });
  expect(unsavedNotes.get('c:1:false')).toBe(newer);
 });
+
+test('unmounting during a removal neither saves nor stores the draft', async () => {
+ const Checkbox = require('expo-checkbox').default;
+ remove.mockImplementationOnce(() => new Promise(() => {}));
+ const ui = render(<Card collection={collection} movie={movie}/>);
+ fireEvent.changeText(ui.getByPlaceholderText('Write custom notes...'), 'being removed');
+ await act(async () => { ui.UNSAFE_getByType(Checkbox).props.onValueChange(false); });
+ ui.unmount();
+ await act(async () => {});
+ expect(update).not.toHaveBeenCalled();
+ expect(unsavedNotes.size).toBe(0);
+});

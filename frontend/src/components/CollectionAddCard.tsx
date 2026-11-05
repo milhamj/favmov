@@ -78,7 +78,7 @@ const CollectionAddCard = ({ collection, movie, registerSave, onPendingChange, d
         unsavedNotes.delete(draftKey);
         if (draft.current !== saved.current) debouncedUpdateNotes();
         return () => {
-            if (!discardingRef.current && draft.current !== saved.current) {
+            if (!discardingRef.current && !membershipRequest.current && draft.current !== saved.current) {
                 // Some exits skip the leave guard, so save now; the stored draft covers a save that cannot succeed.
                 const unsaved = { draft: draft.current, base: saved };
                 unsavedNotes.set(draftKey, unsaved);

@@ -100,3 +100,12 @@ test('a missing section is not treated as the text undefined', async () => {
  await act(async () => {});
  expect(ui.queryByText('undefined')).toBeNull();
 });
+test('paging stops at the last page TMDB allows', async () => {
+ const { renderHook } = require('@testing-library/react-native');
+ const { usePagedFetch } = require('../hooks/usePagedFetch');
+ const hook = renderHook(() => usePagedFetch(false));
+ await act(async () => { await hook.result.current.load(500, async () => new Success([]), () => true); });
+ expect(hook.result.current.canLoadMore()).toBe(false);
+ await act(async () => { await hook.result.current.load(499, async () => new Success([]), () => true); });
+ expect(hook.result.current.canLoadMore()).toBe(true);
+});

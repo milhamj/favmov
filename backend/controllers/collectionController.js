@@ -298,19 +298,6 @@ exports.updateMovieCollectionNotes = asyncHandler(async (req, res) => {
     return errorResponse(res, moviesCollectionsTableError, 500);
   }
 
-  // Check if the movie/tv show exists in the collection
-  const { data: existData, error: existError } = await req.supabase
-  .from(moviesCollectionsTable)
-  .select('*')
-  .eq('collection_id', collection_id)
-  .eq('user_id', userId)
-  .eq(is_tv_show ? 'tv_show_id' : 'movie_id', movie_id)
-  .limit(1); // older data may hold duplicates, and the update below covers them all
-
-  if (existError || !existData?.length) {
-    return errorResponse(res, `${is_tv_show ? 'TV Show' : 'Movie'} not found in collection.`, 404, existError?.message);
-  }
-
   // Update movie/tv show notes in collection
   const { data, error } = await req.supabase
   .from(moviesCollectionsTable)
@@ -324,6 +311,10 @@ exports.updateMovieCollectionNotes = asyncHandler(async (req, res) => {
     console.error('Error updating movie/tv show\'s collection notes:', error);
     const debugMessage = error?.message
     return errorResponse(res, 'Failed to update notes', 500, debugMessage);
+  }
+
+  if (data.length === 0) {
+    return errorResponse(res, `${is_tv_show ? 'TV Show' : 'Movie'} not found in collection.`, 404);
   }
 
   return successResponse(res, data[0], 'Collection notes updated successfully', 201);

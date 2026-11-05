@@ -1,6 +1,8 @@
 import { useCallback, useRef, useState } from 'react';
 import { Error, Success } from '../model/apiResponse';
 
+const MAX_PAGE = 500; // TMDB rejects later pages
+
 // Infinite-list paging: a failed page stays retryable, and responses from before a reset are ignored.
 export function usePagedFetch(initiallyLoading: boolean) {
     const page = useRef(0);
@@ -28,7 +30,7 @@ export function usePagedFetch(initiallyLoading: boolean) {
             if (requestGeneration !== generation.current) return;
             if (result instanceof Success) {
                 page.current = newPage;
-                hasMore.current = apply(result.data);
+                hasMore.current = apply(result.data) && newPage < MAX_PAGE;
             } else if (result !== null) setFailedPage(newPage);
         } catch (error) {
             console.error('Error fetching page:', error);
