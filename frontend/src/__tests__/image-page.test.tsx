@@ -10,7 +10,9 @@ jest.mock('../navigation/router', () => ({ router: { goBackSafely: jest.fn() } }
 jest.mock('react-native-safe-area-context', () => ({ useSafeAreaInsets: () => ({ top: 0 }) }));
 jest.mock('react-native-image-zoom-viewer', () => ({ imageUrls, onSwipeDown }: any) => {
  const { Text } = require('react-native');
- return <Text onPress={onSwipeDown}>{imageUrls[0].url}</Text>;
+ // Keeps its first url, like the real viewer keeps the first image's measurements.
+ const [shown] = require('react').useState(imageUrls[0].url);
+ return <Text onPress={onSwipeDown}>{shown}</Text>;
 });
 const url = 'https://image.tmdb.org/t/p/w500/a.jpg';
 beforeEach(() => { mockUrl = url; jest.clearAllMocks(); });
@@ -37,6 +39,12 @@ test('a second close before unmount does not pop the page underneath', () => {
  fireEvent.press(ui.getByLabelText('Close image'));
  fireEvent.press(ui.getByText(url));
  expect(router.goBackSafely).toHaveBeenCalledTimes(1);
+});
+test('a new url remounts the zoom viewer', () => {
+ const ui = render(<ImagePage/>);
+ mockUrl = 'https://image.tmdb.org/t/p/w500/b.jpg';
+ ui.rerender(<ImagePage/>);
+ expect(ui.getByText(mockUrl as string)).toBeTruthy();
 });
 test('swipe down goes back', () => {
  fireEvent.press(render(<ImagePage/>).getByText(url));
@@ -72,8 +80,9 @@ test('moves focus to the close button on web, as the old Modal did', () => {
  Platform.OS = 'web';
  global.document = { addEventListener: jest.fn(), removeEventListener: jest.fn() } as any;
  try {
-  render(<ImagePage/>);
+  const ui = render(<ImagePage/>);
   expect(focus).toHaveBeenCalledTimes(1);
+  ui.unmount();
  } finally {
   Platform.OS = platform;
   global.document = originalDocument;

@@ -218,7 +218,6 @@ const styles = StyleSheet.create({
     poster: {
         height: 150,
         aspectRatio: 2 / 3,
-        borderRadius: 8,
     },
 })
 
