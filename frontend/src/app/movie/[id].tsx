@@ -186,7 +186,7 @@ const MovieDetailPage = () => {
               <ImageViewer
                 style={styles.backdrop}
                 accessibilityLabel="View full backdrop"
-                bigImageUrl={movie.bigBackdropUrl()!!}
+                fullImageUrl={movie.bigBackdropUrl()!!}
                 smallImageUrl={movie.smallBackdropUrl()!!} /> 
             ) : <View style={styles.backdropEmpty} />
           }
@@ -194,7 +194,8 @@ const MovieDetailPage = () => {
             style={styles.poster}
             imageStyle={styles.posterImage}
             accessibilityLabel="View full poster"
-            smallImageUrl={movie.smallPosterUrl()} />
+            smallImageUrl={movie.smallPosterUrl()}
+            fullImageUrl={movie.bigPosterUrl()} />
           <AddToCollectionButton/>
         </View>
         <View style={styles.detailsContainer}>
