@@ -202,7 +202,7 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
     .single();
 
     if (existingTvShowInCollection) {
-      return errorResponse(res, 'TV Show already exists in this collection', 400);
+      return successResponse(res, existingTvShowInCollection, 'TV Show already in this collection');
     }
 
     // Check if the TV show already exists in the tv shows table, if not then add
@@ -243,7 +243,7 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
     .single();
 
     if (existingMovieInCollection) {
-      return errorResponse(res, 'Movie already exists in this collection', 400);
+      return successResponse(res, existingMovieInCollection, 'Movie already in this collection');
     }
 
     // Check if the movie already exists in the movies table, if not then add
@@ -543,7 +543,7 @@ exports.removeMovieFromCollection = asyncHandler(async (req, res) => {
   }
 
   if (selectData.length === 0) {
-    return errorResponse(res, is_tv_show ? 'TV Show' : 'Movie' + ' not found in collection.', 400);
+    return successResponse(res, { is_success: true }, 'Already removed from collection');
   }
 
   // Remove movie from collection

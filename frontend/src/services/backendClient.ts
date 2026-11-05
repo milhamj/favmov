@@ -4,6 +4,7 @@ import { supabase } from './supabaseClient';
 
 const axiosInstance = axios.create({
   baseURL: FAVMOV_API_BASE_URL_PROD,
+  timeout: 15000, // the collection editor waits on saves before leaving, so a stalled request must end
   headers: {
     'Content-Type': 'application/json',
   },

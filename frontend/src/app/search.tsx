@@ -15,6 +15,7 @@ import FullPageLoader from '../components/FullPageLoader';
 import { People } from '../model/peopleModel';
 import PeopleCardHorizontal from '../components/PeopleCardHorizontal';
 import { searchPeople } from '../services/peopleService';
+import { usePagedFetch } from '../hooks/usePagedFetch';
 
 const CHIP_MOVIE = 'Movie';
 const CHIP_TV_SHOW = 'TV Show';
@@ -26,16 +27,11 @@ const SearchPage = () => {
     const [searchQuery, setSearchQuery]  = useState('');
     const [movies, setMovies] = useState([] as Movie[]);
     const [people, setPeople] = useState([] as People[]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const { page, failedPage, isLoading, isLoadingMore, load, cancel, reset, canLoadMore } = usePagedFetch(false);
     const [totalPages, setTotalPages] = useState(1);
     const [showFilter, setShowFilter] = useState(true);
     const [selectedChip, setSelectedChip] = useState(CHIP_MOVIE);
-    const page = useRef(0);
-    const generation = useRef(0);
-    const [failedPage, setFailedPage] = useState<number | null>(null);
     const inputRef = useRef<TextInput>(null);
-    const isFetchingRef = useRef(false);
 
     const isMovielected = selectedChip === CHIP_MOVIE;
     const isTvShowSelected = selectedChip === CHIP_TV_SHOW;
@@ -52,64 +48,35 @@ const SearchPage = () => {
 
     // Fetch movies when searchQuery, selectedFilter, or page changes
     const fetchSearchResult = useCallback(async (newPage: number = 1) => {
-        if (isFetchingRef.current || !searchQuery) return;
-    
-        const requestGeneration = generation.current;
-        isFetchingRef.current = true;
-        setFailedPage(null);
-        setIsLoading(newPage === 1);
-        setIsLoadingMore(newPage > 1);
-    
-        try {
-            if (isMovielected || isTvShowSelected) {
-                const result = await searchMovie(searchQuery, newPage, isTvShowSelected);
-                if (requestGeneration !== generation.current) return;
-                if (result instanceof Success) {
-                    page.current = newPage;
-                    setMovies((prev) => (newPage === 1 ? result.data.movies : [...prev, ...result.data.movies]));
-                    setTotalPages(result.data.movies.length === 0 ? newPage : result.data.totalPages || 1);
-                } else setFailedPage(newPage);
-            } else if (isPeopleSelected) {
-                const result = await searchPeople(searchQuery, newPage);
-                if (requestGeneration !== generation.current) return;
-                if (result instanceof Success) {
-                    page.current = newPage;
-                    setPeople((prev) => (newPage === 1 ? result.data.people : [...prev, ...result.data.people]));
-                    setTotalPages(result.data.people.length === 0 ? newPage : result.data.totalPages || 1);
-                } else setFailedPage(newPage);
-            }
-        } catch (error) {
-            //TODO milhamj: update error handling and also remove the try-catch
-            console.error('Error fetching search result:', error);
-            if (requestGeneration === generation.current) setFailedPage(newPage);
-        } finally {
-          if (requestGeneration !== generation.current) return;
-          setIsLoading(false);
-          setIsLoadingMore(false);
-          setShowFilter(true);
-          isFetchingRef.current = false;
+        if (!searchQuery) return;
+        const settled = () => setShowFilter(true);
+        if (isPeopleSelected) {
+            await load(newPage, () => searchPeople(searchQuery, newPage), data => {
+                setPeople((prev) => (newPage === 1 ? data.people : [...prev, ...data.people]));
+                setTotalPages(data.people.length === 0 ? newPage : data.totalPages || 1);
+            }, settled);
+        } else if (isMovielected || isTvShowSelected) {
+            await load(newPage, () => searchMovie(searchQuery, newPage, isTvShowSelected), data => {
+                setMovies((prev) => (newPage === 1 ? data.movies : [...prev, ...data.movies]));
+                setTotalPages(data.movies.length === 0 ? newPage : data.totalPages || 1);
+            }, settled);
         }
-      }, [searchQuery, selectedChip]
+      }, [searchQuery, selectedChip, load]
     );
 
     const invalidate = (query: string) => {
-        generation.current += 1;
-        isFetchingRef.current = false;
-        page.current = 0;
-        setFailedPage(null);
+        reset(Boolean(query));
         setMovies([]);
         setPeople([]);
-        setIsLoading(Boolean(query));
-        setIsLoadingMore(false);
     };
     useEffect(() => {
         const debounceFetch = setTimeout(() => {
             if (searchQuery) void fetchSearchResult(1);
         }, 300);
-        return () => { clearTimeout(debounceFetch); generation.current += 1; };
-    }, [searchQuery, selectedChip, fetchSearchResult]);
+        return () => { clearTimeout(debounceFetch); cancel(); };
+    }, [searchQuery, selectedChip, fetchSearchResult, cancel]);
     const handleOnEndReached = () => {
-        if (failedPage === null && page.current > 0 && !isFetchingRef.current && page.current < totalPages) {
+        if (canLoadMore() && page.current < totalPages) {
             void fetchSearchResult(page.current + 1);
         }
     };

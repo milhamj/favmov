@@ -3,16 +3,16 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Text, StyleSheet, View, ActivityIndicator, TextInput } from 'react-native';
 import Checkbox from 'expo-checkbox';
 import { CollectionCard } from '../model/collectionModel';
-import { deleteMovieFromCollection, getCheckMovieExistInCollection, postAddMovieToCollection, updateNotes } from '../services/collectionService';
+import { deleteMovieFromCollection, postAddMovieToCollection, updateNotes } from '../services/collectionService';
 import { Movie } from '../model/movieModel';
-import { Error, Success } from '../model/apiResponse';
+import { Error } from '../model/apiResponse';
 import Toast from 'react-native-toast-message';
 import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
 import { CollectionStateStore } from '../stores/collectionStateStore';
 
 // Losing the session unmounts the editor and no save can succeed, so keep drafts for the return from login.
-// base is the server text the draft started from; a changed server note wins over an old draft.
-export const unsavedNotes = new Map<string, { draft: string; base: string }>();
+// base tracks the last server text, including saves finishing after unmount; a changed server note wins over an old draft.
+export const unsavedNotes = new Map<string, { draft: string; base: { current: string } }>();
 
 interface CollectionAddCardProps {
     disabled?: boolean;
@@ -30,7 +30,7 @@ const CollectionAddCard = ({ collection, movie, registerSave, onPendingChange, d
     const [isSaved, setIsSaved] = useState(collection.isInCollection);
     const [notes, setNotes] = useState(() => {
         const unsaved = collection.isInCollection ? unsavedNotes.get(draftKey) : undefined;
-        return unsaved?.base === serverNotes ? unsaved.draft : serverNotes;
+        return unsaved?.base.current.trim() === serverNotes.trim() ? unsaved.draft : serverNotes;
     });
     const [saveError, setSaveError] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -74,29 +74,28 @@ const CollectionAddCard = ({ collection, movie, registerSave, onPendingChange, d
         unsavedNotes.delete(draftKey);
         if (draft.current !== saved.current) debouncedUpdateNotes();
         return () => {
-            if (!discardingRef.current && draft.current !== saved.current) unsavedNotes.set(draftKey, { draft: draft.current, base: saved.current });
+            if (!discardingRef.current && draft.current !== saved.current) unsavedNotes.set(draftKey, { draft: draft.current, base: saved });
         };
     }, [draftKey, debouncedUpdateNotes]);
     const changeMembership = useCallback((value: boolean): Promise<boolean> => {
-        const retrying = membershipTarget.current === value;
         membershipTarget.current = value;
         debouncedUpdateNotes.cancel();
         setIsLoading(true);
         setMembershipFailed(false);
         const run = async () => {
             try {
-                // The failed attempt may have committed, and replaying it would then return 400 forever.
-                const current = retrying ? await getCheckMovieExistInCollection(movie.id.toString(), !!movie.isTvShow) : null;
-                const existing = current instanceof Success ? current.data.find(c => c.id === collection.id) : undefined;
-                if (!(current instanceof Success && !!existing === value)) {
-                    const result = value
-                        ? await postAddMovieToCollection(collection.id, movie, !!movie.isTvShow)
-                        : await deleteMovieFromCollection(collection.id, movie.id.toString(), !!movie.isTvShow);
+                let serverText = '';
+                if (value) {
+                    const result = await postAddMovieToCollection(collection.id, movie, !!movie.isTvShow);
+                    if (result instanceof Error) throw result;
+                    // The row may already exist, for example after a lost response, with notes of its own.
+                    serverText = result.data.notes ?? '';
+                } else {
+                    const result = await deleteMovieFromCollection(collection.id, movie.id.toString(), !!movie.isTvShow);
                     if (result instanceof Error) throw result;
                 }
                 membershipTarget.current = null;
                 setIsSaved(value);
-                const serverText = (value && existing?.moviesCollectionNotes) || '';
                 draft.current = saved.current = serverText;
                 setNotes(serverText);
                 setSaveError(false);
@@ -172,7 +171,7 @@ const CollectionAddCard = ({ collection, movie, registerSave, onPendingChange, d
             }
             {isSaved && <Text>{saving ? 'Saving' : saveError ? 'Unable to save notes' : draft.current === saved.current ? 'Saved' : 'Unsaved'}</Text>}
             {membershipFailed && <Text>Unable to update collection</Text>}
-            {membershipFailed ? <RetryButton disabled={disabled} onPress={() => void handleAddToCollection(membershipTarget.current!)}/> : saveError && <RetryButton onPress={() => void drain()}/>}
+            {membershipFailed ? <RetryButton disabled={disabled || saving} onPress={() => void handleAddToCollection(membershipTarget.current!)}/> : saveError && <RetryButton disabled={disabled} onPress={() => void drain()}/>}
             <View style={styles.separator}/>
         </View>
     )

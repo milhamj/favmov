@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { memo, useEffect, useRef } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { router } from "../navigation/router";
 import { routes, routeWithParams } from "../navigation/routes";
@@ -8,6 +8,8 @@ import FullPageLoader from "./FullPageLoader";
 import { usePathname, useLocalSearchParams } from 'expo-router';
 
 const withAuth = (Component: React.ComponentType) => {
+    // usePathname below changes on every navigation; only this wrapper needs to re-render for it.
+    const Protected = memo(Component);
     return (props: any) => {
         const pathname = usePathname();
         const params = useLocalSearchParams();
@@ -25,7 +27,7 @@ const withAuth = (Component: React.ComponentType) => {
         if (loading) return <FullPageLoader />;
         if (!isAuthenticated) return null;
 
-        return <Component {...props} />;
+        return <Protected {...props} />;
     };
 };
 

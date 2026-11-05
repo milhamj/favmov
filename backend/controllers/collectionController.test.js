@@ -53,3 +53,36 @@ for (const environment of ['development', 'production']) {
   });
  }
 }
+
+const { addMovieToCollection, removeMovieFromCollection } = require('./collectionController');
+const runMembership = (handler, row, params, body, query) => new Promise((resolve, reject) => {
+ const writes = [];
+ const req = { params, body, query, user: { id: 'owner' }, supabase: {
+  from() {
+   const result = { data: row ? [row] : [], error: null };
+   const chain = {
+    select() { return chain; }, eq() { return chain; },
+    insert() { writes.push('insert'); return chain; }, delete() { writes.push('delete'); return chain; },
+    single: async () => ({ data: { id: 'collection', ...row }, error: null }),
+    then(done, fail) { return Promise.resolve(result).then(done, fail); }
+   };
+   return chain;
+  }
+ } };
+ const res = { status(code) { this.code = code; return this; }, json(payload) { resolve({ code: this.code, payload, writes }); } };
+ handler(req, res, reject);
+});
+test('adding a title already in the collection succeeds with the existing row', async t => {
+ process.env.FAVMOV_NODE_ENV ??= 'development';
+ const { code, payload, writes } = await runMembership(addMovieToCollection, { notes: 'kept' }, { collection_id: 'collection' }, { is_tv_show: false, movie_id: 7, title: 'Title', poster_path: null });
+ assert.equal(code, 200);
+ assert.equal(payload.data.notes, 'kept');
+ assert.deepEqual(writes, []);
+});
+test('removing a title already gone succeeds without a write', async t => {
+ process.env.FAVMOV_NODE_ENV ??= 'development';
+ const { code, payload, writes } = await runMembership(removeMovieFromCollection, null, { collection_id: 'collection', movie_id: '7' }, {}, { is_tv_show: 'false' });
+ assert.equal(code, 200);
+ assert.equal(payload.success, true);
+ assert.deepEqual(writes, []);
+});

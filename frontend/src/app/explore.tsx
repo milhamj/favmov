@@ -14,6 +14,7 @@ import TopBar from "../components/TopBar";
 import FullPageLoader from "../components/FullPageLoader";
 import MovieCard from "../components/MovieCard";
 import { MovieStore } from "../stores/movieStore";
+import { usePagedFetch } from "../hooks/usePagedFetch";
 
 const MAX_PAGE = 500;
 
@@ -23,62 +24,34 @@ const ExplorePage = () => {
 
     const [title, setTitle] = useState(''); // query params are unknown when prerendering
     const [movies, setMovies] = useState([] as Movie[]);
-    const [isLoading, setIsLoading] = useState(true); // the prerender should show a loader, not "No results"
-    const [isLoadingMore, setIsLoadingMore] = useState(false);
-    const page = useRef(0);
-    const generation = useRef(0);
+    // Start loading: the prerender should show a loader, not "No results"
+    const { page, failedPage, isLoading, isLoadingMore, load, cancel, reset, canLoadMore } = usePagedFetch(true);
     const ended = useRef(false);
-    const [failedPage, setFailedPage] = useState<number | null>(null);
-    const isFetchingRef = useRef(false);
 
     const fetchExploreData = async (newPage: number = 1) => {
-        if (isFetchingRef.current || !sectionType) return;
-    
-        const requestGeneration = generation.current;
-        isFetchingRef.current = true;
-        setFailedPage(null);
-        setIsLoading(newPage === 1);
-        setIsLoadingMore(newPage > 1);
-    
-        try {
-            const result =
-                sectionType === SectionType.TrendingMovies ? await fetchTrendingMovies(newPage) :
-                sectionType === SectionType.TrendingShows ? await fetchTrendingShows(newPage) :
-                sectionType === SectionType.PopularMovies ? await fetchPopularMovies(newPage) :
-                null
-            if (requestGeneration !== generation.current) return;
-            if (result instanceof Success) {
-                page.current = newPage;
-                ended.current = result.data.length === 0;
-                setMovies((prev) => (newPage === 1 ? result.data : [...prev, ...result.data]));
-            } else if (result !== null) setFailedPage(newPage);
-        } catch (error) {
-            //TODO milhamj: update error handling and also remove the try-catch
-            console.error('Error fetching movies:', error);
-            if (requestGeneration === generation.current) setFailedPage(newPage);
-        } finally {
-          if (requestGeneration !== generation.current) return;
-          setIsLoading(false);
-          setIsLoadingMore(false);
-          isFetchingRef.current = false;
-        }
+        if (!sectionType) return;
+        await load(newPage, async () =>
+            sectionType === SectionType.TrendingMovies ? fetchTrendingMovies(newPage) :
+            sectionType === SectionType.TrendingShows ? fetchTrendingShows(newPage) :
+            sectionType === SectionType.PopularMovies ? fetchPopularMovies(newPage) :
+            null,
+        data => {
+            ended.current = data.length === 0;
+            setMovies((prev) => (newPage === 1 ? data : [...prev, ...data]));
+        });
     };
 
     useEffect(() => {
-        generation.current += 1;
-        page.current = 0;
+        reset(Boolean(sectionType));
         ended.current = false;
-        isFetchingRef.current = false;
-        setFailedPage(null);
         setMovies([]);
         setTitle(sectionType);
-        if (!sectionType) setIsLoading(false);
         void fetchExploreData();
-        return () => { generation.current += 1; };
+        return cancel;
     },[sectionType])
 
     const handleOnEndReached = () => {
-        if (failedPage === null && !ended.current && page.current > 0 && !isFetchingRef.current && page.current < MAX_PAGE) {
+        if (canLoadMore() && !ended.current && page.current < MAX_PAGE) {
             void fetchExploreData(page.current + 1);
         }
     };    
