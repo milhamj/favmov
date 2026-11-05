@@ -1,4 +1,5 @@
 import React from 'react';
+import { Platform } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import ImagePage from '../app/image';
 import { router } from '../navigation/router';
@@ -33,4 +34,26 @@ test('close button goes back', () => {
 test('swipe down goes back', () => {
  fireEvent.press(render(<ImagePage/>).getByText(url));
  expect(router.goBackSafely).toHaveBeenCalledTimes(1);
+});
+
+test('Escape closes on web and removes its listener on unmount', () => {
+ const platform = Platform.OS;
+ const originalDocument = global.document;
+ const addEventListener = jest.fn();
+ const removeEventListener = jest.fn();
+ Platform.OS = 'web';
+ global.document = { addEventListener, removeEventListener } as any;
+ try {
+  const ui = render(<ImagePage/>);
+  const listener = addEventListener.mock.calls.find(([type]) => type === 'keyup')[1];
+  listener({ key: 'Enter' });
+  expect(router.goBackSafely).not.toHaveBeenCalled();
+  listener({ key: 'Escape' });
+  expect(router.goBackSafely).toHaveBeenCalledTimes(1);
+  ui.unmount();
+  expect(removeEventListener).toHaveBeenCalledWith('keyup', listener);
+ } finally {
+  Platform.OS = platform;
+  global.document = originalDocument;
+ }
 });
