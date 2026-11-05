@@ -46,6 +46,8 @@ describe('People', () => {
   test('falls back to the default image', () => {
     expect(new People({ photoPath: '/a.jpg' }).photoUrl()).toBe('small//a.jpg');
     expect(new People({}).photoUrl()).toBe(DEFAULT_MOVIE_POSTER);
+    expect(new People({ photoPath: '/a.jpg' }).bigPhotoUrl()).toBe('big//a.jpg');
+    expect(new People({}).bigPhotoUrl()).toBe(DEFAULT_MOVIE_POSTER);
     expect(new PeopleMovieCredit({ posterPath: '/a.jpg' }).posterUrl()).toBe('small//a.jpg');
     expect(new PeopleMovieCredit({}).posterUrl()).toBe(DEFAULT_MOVIE_POSTER);
   });

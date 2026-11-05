@@ -1,4 +1,4 @@
-import { TMDB_IMAGE_SMALL } from "../services/tmdbClient";
+import { TMDB_IMAGE_SMALL, TMDB_IMAGE_BIG } from "../services/tmdbClient";
 import { DEFAULT_MOVIE_POSTER } from "./movieModel";
 
 export class People {
@@ -29,6 +29,10 @@ export class People {
     photoUrl(): string {
         // TODO milhamj: change default photo url
         return this.photoPath ? TMDB_IMAGE_SMALL + this.photoPath : DEFAULT_MOVIE_POSTER;
+    }
+
+    bigPhotoUrl(): string {
+        return this.photoPath ? TMDB_IMAGE_BIG + this.photoPath : DEFAULT_MOVIE_POSTER;
     }
 
     genderText(): string {

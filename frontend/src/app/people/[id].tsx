@@ -63,7 +63,7 @@ const PeopleDetailPage = () => {
                 people ? (
                     <ScrollView style={styles.cotainer}>
                         <View style={styles.peopleHeaderContainer}>
-                            <ImageViewer style={styles.poster} imageStyle={styles.posterImage} smallImageUrl={people.photoUrl()} />
+                            <ImageViewer style={styles.poster} imageStyle={styles.posterImage} smallImageUrl={people.photoUrl()} fullImageUrl={people.bigPhotoUrl()} />
                             <View style={styles.peopleInfoContainer} >
                                 <Text style={styles.peopleInfoName}>{people.name}</Text>
                                 <View style={styles.peopleInfoItem}>
