@@ -133,6 +133,14 @@ test('unmounting with a pending edit saves it immediately', async () => {
  expect(update).toHaveBeenCalledWith('c', '1', false, 'left in a hurry');
 });
 
+test('a successful save on unmount leaves no stored draft', async () => {
+ const ui = render(<Card collection={collection} movie={movie}/>);
+ fireEvent.changeText(ui.getByPlaceholderText('Write custom notes...'), 'saved late');
+ ui.unmount();
+ await act(async () => {});
+ expect(unsavedNotes.size).toBe(0);
+});
+
 test('a draft that cannot save on unmount is restored and autosaved on return', async () => {
  update.mockResolvedValueOnce(new ApiError('signed out'));
  const first = render(<Card collection={collection} movie={movie}/>);

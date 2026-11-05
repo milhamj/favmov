@@ -177,3 +177,11 @@ test('a stalled save still reaches the way out after the leave timeout', async (
  expect(mockDispatch).toHaveBeenCalledWith({ type: 'GO_BACK' });
  jest.useRealTimers();
 });
+
+test('an invalid URL shows its error without a Retry that cannot help', async () => {
+ mockParams = { movie_id: 'oops', is_tv_show: 'false' };
+ const ui = render(<Editor/>);
+ await act(async () => {});
+ expect(ui.getByText('Invalid title URL')).toBeTruthy();
+ expect(ui.queryByText('Retry')).toBeNull();
+});

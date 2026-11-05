@@ -1,11 +1,12 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-export default function RetryButton({ onPress, disabled = false, message }: { onPress: () => void; disabled?: boolean; message?: string }) {
-    const button = <TouchableOpacity accessibilityRole="button" disabled={disabled} onPress={onPress} style={[styles.button, disabled && styles.disabled]}>
+// Without onPress only the message shows, for errors a retry cannot fix.
+export default function RetryButton({ onPress, disabled = false, message }: { onPress?: () => void; disabled?: boolean; message?: string }) {
+    const button = onPress && <TouchableOpacity accessibilityRole="button" disabled={disabled} onPress={onPress} style={[styles.button, disabled && styles.disabled]}>
         <Text style={styles.label}>Retry</Text>
     </TouchableOpacity>;
-    return message ? <View accessibilityRole="alert" style={styles.message}><Text>{message}</Text>{button}</View> : button;
+    return message ? <View accessibilityRole="alert" style={styles.message}><Text>{message}</Text>{button}</View> : button ?? null;
 }
 
 const styles = StyleSheet.create({

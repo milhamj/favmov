@@ -16,6 +16,8 @@ import PeopleMovieCreditView from '../../components/people/PeopleMovieCreditView
 import { Loadable } from '../../model/uiState';
 import { COLORS } from '../../styles/colors';
 
+const PERSON_NOT_FOUND = 'Person not found';
+
 const PeopleDetailPage = () => {
     const params = useLocalSearchParams();
     const peopleId = parseStrParam(params.id);
@@ -38,7 +40,7 @@ const PeopleDetailPage = () => {
                 if (!current) return;
                 setState(result instanceof Success
                     ? { status: 'success', data: result.data }
-                    : { status: 'error', error: result.errorCode === 404 ? 'Person not found' : result.message });
+                    : { status: 'error', error: result.errorCode === 404 ? PERSON_NOT_FOUND : result.message });
             } catch {
                 if (current) setState({ status: 'error', error: 'Unable to load person' });
             }
@@ -147,7 +149,7 @@ const PeopleDetailPage = () => {
                         </View>
                     </ScrollView>
                 ) : state.status === 'error' ? (
-                    <RetryButton message={state.error} onPress={() => setAttempt(n => n + 1)}/>
+                    <RetryButton message={state.error} onPress={state.error === PERSON_NOT_FOUND ? undefined : () => setAttempt(n => n + 1)}/>
                 ) : (
                     <FullPageLoader/>
                 )

@@ -26,6 +26,7 @@ const AddToCollectionPage = withAuth(() => {
     const rawId = parseStrParam(params.movie_id);
     const movieId = /^\d+$/.test(rawId) ? Number(rawId) : NaN;
     const isTvShow = parseBooleanParam(params.is_tv_show);
+    const validMovieId = Number.isSafeInteger(movieId) && movieId > 0;
     
     const [movie, setMovie] = useState<Movie | null>(null);
     const shortTitle = movie ? (movie.title.length > 20 ? movie.title.substring(0, 20) + '...' : movie.title) : '';
@@ -98,7 +99,7 @@ const AddToCollectionPage = withAuth(() => {
         setError('');
         const load = async () => {
             try {
-                if (!Number.isSafeInteger(movieId) || movieId <= 0) throw new globalThis.Error('Invalid title URL');
+                if (!validMovieId) throw new globalThis.Error('Invalid title URL');
                 const cached = MovieStore.getCachedMovieAndDelete(String(movieId), isTvShow);
                 // Always re-read membership: cached notes can be stale, and saving over them would lose newer text.
                 const [details, membership, collections] = await Promise.all([
@@ -118,7 +119,7 @@ const AddToCollectionPage = withAuth(() => {
         };
         void load();
         return () => { current = false; };
-    }, [movieId, isTvShow, attempt]);
+    }, [movieId, validMovieId, isTvShow, attempt]);
     const refreshCollections = async () => {
         setRefreshingCollections(true);
         const result = await getUserCollections();
@@ -151,7 +152,7 @@ const AddToCollectionPage = withAuth(() => {
                                 <ActivityIndicator style={styles.loadingItem} size="large" color="tomato" />
                             </View>
                         ) : error ? (
-                            <RetryButton message={error} onPress={() => setAttempt(n => n + 1)}/>
+                            <RetryButton message={error} onPress={validMovieId ? () => setAttempt(n => n + 1) : undefined}/>
                         ) : refreshError && collectionCards.length === 0 ? null : collectionCards.length === 0 ? (
                             <View style={styles.emptyState}>
                                 <Image 
@@ -172,7 +173,7 @@ const AddToCollectionPage = withAuth(() => {
 
                         ) : (
                             <View style={styles.listContent}>
-                                {collectionCards.map(item => <CollectionAddCard key={`${movieId}-${isTvShow}-${item.id}`} collection={item} movie={movie!} registerSave={registerSave} onPendingChange={updatePending} disabled={draining || discard} discarding={discard}/>)}
+                                {collectionCards.map(item => <CollectionAddCard key={`${movie!.id}-${movie!.isTvShow}-${item.id}`} collection={item} movie={movie!} registerSave={registerSave} onPendingChange={updatePending} disabled={draining || discard} discarding={discard}/>)}
                             </View>
                         )
                     }

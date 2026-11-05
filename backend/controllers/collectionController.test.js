@@ -66,7 +66,7 @@ const runMembership = (handler, options) => new Promise((resolve, reject) => {
    const isCollection = table.endsWith('_collections') && !isEntry;
    let inserted = false;
    const chain = {
-    select() { return chain; }, eq() { return chain; },
+    select() { return chain; }, eq() { return chain; }, order() { return chain; },
     insert() { inserted = true; writes.push(isEntry ? 'entry' : 'media'); return chain; },
     delete() { writes.push('delete'); return chain; },
     single: async () => ({ data: isCollection || mediaExists ? { id: 'row' } : null, error: null }),

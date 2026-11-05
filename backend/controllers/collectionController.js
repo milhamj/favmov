@@ -199,6 +199,7 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
     .select('*')
     .eq('collection_id', collection_id)
     .eq(is_tv_show ? 'tv_show_id' : 'movie_id', mediaId)
+    .order('created_at', { ascending: false }) // same row getCheckMovieExistInCollection shows
     .limit(1); // older data may hold duplicates, which must not turn an add into an error
 
   // Adding is idempotent, so a retry after a lost response finds its entry
@@ -304,9 +305,9 @@ exports.updateMovieCollectionNotes = asyncHandler(async (req, res) => {
   .eq('collection_id', collection_id)
   .eq('user_id', userId)
   .eq(is_tv_show ? 'tv_show_id' : 'movie_id', movie_id)
-  .single();
+  .limit(1); // older data may hold duplicates, and the update below covers them all
 
-  if (existError || !existData) {
+  if (existError || !existData?.length) {
     return errorResponse(res, `${is_tv_show ? 'TV Show' : 'Movie'} not found in collection.`, 404, existError?.message);
   }
 

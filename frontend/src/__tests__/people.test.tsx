@@ -32,7 +32,7 @@ test('404 shows not found instead of a permanent loader', async () => {
  const ui = render(<Screen/>);
  await act(async () => {});
  expect(ui.getByText('Person not found')).toBeTruthy();
- expect(ui.getByText('Retry')).toBeTruthy();
+ expect(ui.queryByText('Retry')).toBeNull();
 });
 test('a late response cannot replace the next person', async () => {
  let finish: any;
