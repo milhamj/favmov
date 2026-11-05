@@ -145,3 +145,11 @@ test('does not prefetch when the preview and original are the same', () => {
  expect(render(<ImagePage/>).getByText(url)).toBeTruthy();
  expect(prefetch).not.toHaveBeenCalled();
 });
+
+test('switches to the original when web prefetch succeeds without a return value', async () => {
+ (prefetch as jest.Mock).mockResolvedValueOnce(undefined);
+ mockUrl = original; mockPreview = url;
+ const ui = render(<ImagePage/>);
+ await act(async () => {});
+ expect(ui.getByText(original)).toBeTruthy();
+});

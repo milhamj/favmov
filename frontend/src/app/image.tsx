@@ -29,7 +29,8 @@ export default function ImagePage() {
 
     let current = true;
     void Image.prefetch(original).then(loaded => {
-      if (current && loaded) setImageUrl(original);
+      // Web resolves with undefined on success; native resolves with true.
+      if (current && loaded !== false) setImageUrl(original);
     }).catch(() => {}); // Keep the preview when the original cannot load.
     return () => { current = false; };
   }, [params.url, params.preview]);
