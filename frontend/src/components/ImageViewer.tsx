@@ -23,7 +23,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
         <TouchableOpacity 
           accessibilityRole="button"
           accessibilityLabel="View full image"
-          onPress={() => router.navigate(routes.image(bigImageUrl || smallImageUrl))} 
+          onPress={() => router.navigate(routes.image(bigImageUrl || smallImageUrl))}
           style={styles.imageContainer}>
           {
             !isBigImageLoaded ? (
