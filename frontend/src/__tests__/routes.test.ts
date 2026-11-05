@@ -7,4 +7,3 @@ test('encodes a single complete editor destination', () => {
 test.each(['https://evil.test', '//evil.test', '/login', '/login?return_to=/collection', '/unknown', '/collection/../login'])('rejects invalid return destination %s', path => {
  expect(safeReturnTo(path)).toBe('/');
 });
-test('collection tab points to its existing route', () => { expect(routes.collections).toBe('/collection'); });

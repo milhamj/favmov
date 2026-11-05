@@ -1,16 +1,16 @@
 import React from 'react';
 import { render, fireEvent, act, renderHook } from '@testing-library/react-native';
-import Card from '../components/CollectionAddCard';
+import Card, { unsavedNotes } from '../components/CollectionAddCard';
 import { Movie } from '../model/movieModel';
 import { Success, Error as ApiError } from '../model/apiResponse';
-import { updateNotes, deleteMovieFromCollection } from '../services/collectionService';
+import { updateNotes, deleteMovieFromCollection, postAddMovieToCollection, getCheckMovieExistInCollection } from '../services/collectionService';
 import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
-jest.mock('../services/collectionService', () => ({ updateNotes: jest.fn(), deleteMovieFromCollection: jest.fn(), postAddMovieToCollection: jest.fn(() => Promise.resolve(new (require('../model/apiResponse').Success)(true))) }));
+jest.mock('../services/collectionService', () => ({ getCheckMovieExistInCollection: jest.fn(), updateNotes: jest.fn(), deleteMovieFromCollection: jest.fn(), postAddMovieToCollection: jest.fn(() => Promise.resolve(new (require('../model/apiResponse').Success)(true))) }));
 const update = updateNotes as jest.Mock;
 const remove = deleteMovieFromCollection as jest.Mock;
 const movie = new Movie({ id: 1 });
 const collection = { id: 'c', name: 'Watch', isInCollection: true };
-beforeEach(() => { jest.useFakeTimers(); jest.clearAllMocks(); update.mockResolvedValue(new Success(true)); });
+beforeEach(() => { jest.useFakeTimers(); jest.clearAllMocks(); unsavedNotes.clear(); update.mockResolvedValue(new Success(true)); });
 afterEach(() => jest.useRealTimers());
 test('serializes writes and coalesces the latest pending text including empty text', async () => {
  let finish: any;
@@ -122,4 +122,69 @@ test('failed slow removal resumes autosave only after membership is known', asyn
  expect(update).toHaveBeenCalledTimes(1);
  expect(update).toHaveBeenCalledWith('c', '1', false, 'retained draft');
  expect(ui.getByText('Saved')).toBeTruthy();
+});
+
+test('a draft lost to unmount without a save is restored and autosaved on return', async () => {
+ const first = render(<Card collection={collection} movie={movie}/>);
+ fireEvent.changeText(first.getByPlaceholderText('Write custom notes...'), 'kept through login');
+ first.unmount();
+ await act(async () => { jest.advanceTimersByTime(5000); });
+ expect(update).not.toHaveBeenCalled();
+ const second = render(<Card collection={collection} movie={movie}/>);
+ expect(second.getByDisplayValue('kept through login')).toBeTruthy();
+ await act(async () => { jest.advanceTimersByTime(1000); });
+ expect(update).toHaveBeenCalledWith('c', '1', false, 'kept through login');
+});
+
+test('a draft is not restored after discarding or once the title left the collection', async () => {
+ const discarded = render(<Card collection={collection} movie={movie}/>);
+ fireEvent.changeText(discarded.getByPlaceholderText('Write custom notes...'), 'throw away');
+ discarded.rerender(<Card collection={collection} movie={movie} discarding/>);
+ discarded.unmount();
+ expect(unsavedNotes.size).toBe(0);
+ unsavedNotes.set('c:1:false', 'orphan');
+ const removed = render(<Card collection={{ ...collection, isInCollection: false }} movie={movie}/>);
+ await act(async () => { jest.advanceTimersByTime(5000); });
+ expect(update).not.toHaveBeenCalled();
+ expect(unsavedNotes.size).toBe(0);
+ removed.unmount();
+});
+
+test.each([true, false])('membership retry after a lost response does not replay a committed change, adding=%s', async adding => {
+ const Checkbox = require('expo-checkbox').default;
+ const change = (adding ? postAddMovieToCollection : remove) as jest.Mock;
+ change.mockResolvedValueOnce(new ApiError('timeout'));
+ (getCheckMovieExistInCollection as jest.Mock).mockResolvedValueOnce(new Success(adding ? [{ id: 'c' }] : []));
+ const ui = render(<Card collection={{ ...collection, isInCollection: !adding }} movie={movie}/>);
+ await act(async () => { ui.UNSAFE_getByType(Checkbox).props.onValueChange(adding); });
+ await act(async () => { fireEvent.press(ui.getByText('Retry')); });
+ expect(change).toHaveBeenCalledTimes(1);
+ expect(ui.queryByText('Unable to update collection')).toBeNull();
+ expect(ui.queryByPlaceholderText('Write custom notes...') !== null).toBe(adding);
+});
+
+test('membership retry replays the change when the server has not applied it', async () => {
+ const Checkbox = require('expo-checkbox').default;
+ remove.mockResolvedValueOnce(new ApiError('offline')).mockResolvedValueOnce(new Success(true));
+ (getCheckMovieExistInCollection as jest.Mock).mockResolvedValueOnce(new Success([{ id: 'c' }]));
+ const ui = render(<Card collection={collection} movie={movie}/>);
+ await act(async () => { ui.UNSAFE_getByType(Checkbox).props.onValueChange(false); });
+ await act(async () => { fireEvent.press(ui.getByText('Retry')); });
+ expect(remove).toHaveBeenCalledTimes(2);
+ expect(ui.queryByText('Unable to update collection')).toBeNull();
+});
+
+test('leaving again retries a failed membership change and reports its result', async () => {
+ const Checkbox = require('expo-checkbox').default;
+ let drain: any;
+ remove.mockResolvedValueOnce(new ApiError('offline')).mockResolvedValueOnce(new ApiError('offline')).mockResolvedValueOnce(new Success(true));
+ (getCheckMovieExistInCollection as jest.Mock).mockResolvedValue(new ApiError('offline'));
+ const ui = render(<Card collection={collection} movie={movie} registerSave={(_id, save) => { if (save) drain = save; }}/>);
+ await act(async () => { ui.UNSAFE_getByType(Checkbox).props.onValueChange(false); });
+ let result: any;
+ await act(async () => { result = await drain(); });
+ expect(result).toBe(false);
+ await act(async () => { result = await drain(); });
+ expect(result).toBe(true);
+ expect(remove).toHaveBeenCalledTimes(3);
 });

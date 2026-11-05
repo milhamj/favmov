@@ -18,7 +18,7 @@ import { COLORS } from '../../styles/colors';
 
 const PeopleDetailPage = () => {
     const params = useLocalSearchParams();
-    const peopleId = decodeURIComponent(parseStrParam(params.id));
+    const peopleId = parseStrParam(params.id);
 
     const [state, setState] = useState<Loadable<People>>({ status: 'loading' });
     const [attempt, setAttempt] = useState(0);

@@ -1,9 +1,6 @@
 export const routes = {
-    home: '/',
-    collections: '/collection',
     profile: '/profile',
     search: '/search',
-    login: '/login',
     loginWithReturnTo: (path: string) => `/login?return_to=${encodeURIComponent(safeReturnTo(path))}`,
     
     movie: (id: number, isTvShow?: boolean) => 
@@ -25,7 +22,7 @@ export const routes = {
 export function safeReturnTo(value: unknown): string {
     if (typeof value !== 'string' || /[\\\s#]/.test(value)) return '/';
     const path = value.split('?')[0];
-    return /^(?:\/|\/(?:collection|profile|search|explore)|\/(?:movie|people)\/\d+|\/collection\/(?:add|[A-Za-z0-9_-]+))$/.test(path) ? value : '/';
+    return /^(?:\/|\/(?:collection|profile|search|explore)|\/(?:movie|people)\/\d+|\/collection\/[A-Za-z0-9_-]+)$/.test(path) ? value : '/';
 }
 
 export function routeWithParams(pathname: string, params: Record<string, string | string[]>): string {

@@ -93,6 +93,7 @@ const AddToCollectionPage = withAuth(() => {
             try {
                 if (!Number.isSafeInteger(movieId) || movieId <= 0) throw new globalThis.Error('Invalid title URL');
                 const cached = MovieStore.getCachedMovieAndDelete(String(movieId), isTvShow);
+                // Always re-read membership: cached notes can be stale, and saving over them would lose newer text.
                 const [details, membership, collections] = await Promise.all([
                     cached?.title.trim() ? Promise.resolve(new Success(cached)) : fetchMovieDetails(String(movieId), isTvShow),
                     getCheckMovieExistInCollection(String(movieId), isTvShow), getUserCollections()
@@ -164,7 +165,7 @@ const AddToCollectionPage = withAuth(() => {
 
                         ) : (
                             <View style={styles.listContent}>
-                                {collectionCards.map(item => <CollectionAddCard key={`${movieId}-${isTvShow}-${item.id}`} collection={item} movie={movie!} registerSave={registerSave} onPendingChange={updatePending} disabled={draining || discard}/>)}
+                                {collectionCards.map(item => <CollectionAddCard key={`${movieId}-${isTvShow}-${item.id}`} collection={item} movie={movie!} registerSave={registerSave} onPendingChange={updatePending} disabled={draining || discard} discarding={discard}/>)}
                             </View>
                         )
                     }

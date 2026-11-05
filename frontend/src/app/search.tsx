@@ -80,6 +80,7 @@ const SearchPage = () => {
             }
         } catch (error) {
             //TODO milhamj: update error handling and also remove the try-catch
+            console.error('Error fetching search result:', error);
             if (requestGeneration === generation.current) setFailedPage(newPage);
         } finally {
           if (requestGeneration !== generation.current) return;

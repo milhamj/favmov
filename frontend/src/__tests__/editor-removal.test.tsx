@@ -2,6 +2,7 @@ import React from 'react';
 import { render, act, fireEvent } from '@testing-library/react-native';
 import { NavigationContainer, createNavigationContainerRef, createNavigatorFactory, useNavigationBuilder, StackRouter, usePreventRemoveContext } from '@react-navigation/native';
 import Editor from '../app/collection/add';
+import { unsavedNotes } from '../components/CollectionAddCard';
 import { router } from '../navigation/router';
 import { updateNotes, postAddMovieToCollection, deleteMovieFromCollection } from '../services/collectionService';
 import { Success, Error as ApiError } from '../model/apiResponse';
@@ -18,6 +19,7 @@ function Navigator(props: any) {
 }
 const Stack = createNavigatorFactory(Navigator)();
 const Home = () => null;
+beforeEach(() => unsavedNotes.clear());
 test('real prevention context keeps editor mounted during save/failure and permits retry removal', async () => {
  const navigation = createNavigationContainerRef<any>();
  let finish: any;

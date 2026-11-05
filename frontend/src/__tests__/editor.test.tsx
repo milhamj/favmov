@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, fireEvent, act } from '@testing-library/react-native';
 import Editor from '../app/collection/add';
+import { unsavedNotes } from '../components/CollectionAddCard';
 import { CollectionStateStore } from '../stores/collectionStateStore';
 import { MovieStore } from '../stores/movieStore';
 import { Movie } from '../model/movieModel';
@@ -18,6 +19,7 @@ jest.mock('../services/movieService', () => ({ fetchMovieDetails: jest.fn() }));
 jest.mock('../services/collectionService', () => ({ getUserCollections: jest.fn(), getCheckMovieExistInCollection: jest.fn(), updateNotes: jest.fn(), createCollection: jest.fn() }));
 beforeEach(() => {
  jest.clearAllMocks();
+ unsavedNotes.clear();
  mockParams = { movie_id: '7', is_tv_show: 'true' };
  (fetchMovieDetails as jest.Mock).mockResolvedValue(new Success(new Movie({ id: 7, title: 'Arrival', isTvShow: true })));
  (getUserCollections as jest.Mock).mockResolvedValue(new Success([{ id: 'c', name: 'Watch' }]));

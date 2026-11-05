@@ -78,3 +78,10 @@ test('a chip change shows pending loading instead of an empty-result flash', asy
  await act(async () => { jest.advanceTimersByTime(300); });
  expect(searchMovie).toHaveBeenLastCalledWith('batman', 1, true);
 });
+test('a malformed encoded section does not crash rendering', async () => {
+ mockSection = '100%';
+ const ui = render(<Explore/>);
+ await act(async () => {});
+ expect(ui.queryByText('Retry')).toBeNull();
+ mockSection = 'Trending Movies';
+});

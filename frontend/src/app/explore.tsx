@@ -19,7 +19,7 @@ const MAX_PAGE = 500;
 
 const ExplorePage = () => {
     const params = useLocalSearchParams();
-    const sectionType = decodeURIComponent(parseStrParam(params.section_type));
+    const sectionType = parseStrParam(params.section_type);
 
     const [title, setTitle] = useState(''); // query params are unknown when prerendering
     const [movies, setMovies] = useState([] as Movie[]);
@@ -54,6 +54,7 @@ const ExplorePage = () => {
             } else if (result !== null) setFailedPage(newPage);
         } catch (error) {
             //TODO milhamj: update error handling and also remove the try-catch
+            console.error('Error fetching movies:', error);
             if (requestGeneration === generation.current) setFailedPage(newPage);
         } finally {
           if (requestGeneration !== generation.current) return;

@@ -3,29 +3,37 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Text, StyleSheet, View, ActivityIndicator, TextInput } from 'react-native';
 import Checkbox from 'expo-checkbox';
 import { CollectionCard } from '../model/collectionModel';
-import { deleteMovieFromCollection, postAddMovieToCollection, updateNotes } from '../services/collectionService';
+import { deleteMovieFromCollection, getCheckMovieExistInCollection, postAddMovieToCollection, updateNotes } from '../services/collectionService';
 import { Movie } from '../model/movieModel';
-import { Error } from '../model/apiResponse';
+import { Error, Success } from '../model/apiResponse';
 import Toast from 'react-native-toast-message';
 import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
 import { CollectionStateStore } from '../stores/collectionStateStore';
 
+// Losing the session unmounts the editor and no save can succeed, so keep drafts for the return from login.
+export const unsavedNotes = new Map<string, string>();
+
 interface CollectionAddCardProps {
     disabled?: boolean;
+    discarding?: boolean;
     collection: CollectionCard;
     movie: Movie;
     onPendingChange?: (id: string, pending: boolean) => void;
     registerSave?: (id: string, save: (() => Promise<boolean>) | null) => void;
 }
 
-const CollectionAddCard = ({ collection, movie, registerSave, onPendingChange, disabled = false }: CollectionAddCardProps) => {
+const CollectionAddCard = ({ collection, movie, registerSave, onPendingChange, disabled = false, discarding = false }: CollectionAddCardProps) => {
+    const draftKey = `${collection.id}:${movie.id}:${!!movie.isTvShow}`;
+    const serverNotes = movie.notesInCollection(collection.id) || '';
     const [isLoading, setIsLoading] = useState(false);
     const [isSaved, setIsSaved] = useState(collection.isInCollection);
-    const [notes, setNotes] = useState(movie.notesInCollection(collection.id) || '');
+    const [notes, setNotes] = useState(() => (collection.isInCollection ? unsavedNotes.get(draftKey) : undefined) ?? serverNotes);
     const [saveError, setSaveError] = useState(false);
     const [saving, setSaving] = useState(false);
     const draft = useRef(notes);
-    const saved = useRef(notes);
+    const saved = useRef(serverNotes);
+    const discardingRef = useRef(discarding);
+    discardingRef.current = discarding;
     const active = useRef<Promise<boolean> | null>(null);
     const membershipRequest = useRef<Promise<boolean> | null>(null);
     const membershipTarget = useRef<boolean | null>(null);
@@ -58,34 +66,29 @@ const CollectionAddCard = ({ collection, movie, registerSave, onPendingChange, d
         return active.current;
     }, [collection.id, movie.id, movie.isTvShow]);
     const debouncedUpdateNotes = useDebouncedCallback(() => { void save(); }, 1000);
-    const drain = useCallback(async () => {
-        debouncedUpdateNotes.cancel();
-        if (membershipRequest.current && !(await membershipRequest.current)) return false;
-        if (membershipTarget.current !== null) return false;
-        return save();
-    }, [debouncedUpdateNotes, save]);
     useEffect(() => {
-        registerSave?.(collection.id, drain);
-        return () => registerSave?.(collection.id, null);
-    }, [registerSave, collection.id, drain]);
-
-    useEffect(() => {
-        onPendingChange?.(collection.id, notes !== saved.current || saving || isLoading || membershipFailed);
-    }, [collection.id, onPendingChange, notes, saving, isLoading, membershipFailed]);
-    useEffect(() => () => onPendingChange?.(collection.id, false), [collection.id, onPendingChange]);
-
-    const handleAddToCollection = (value: boolean) => {
-        if (disabled || active.current || membershipRequest.current) return;
+        unsavedNotes.delete(draftKey);
+        if (draft.current !== saved.current) debouncedUpdateNotes();
+        return () => {
+            if (!discardingRef.current && draft.current !== saved.current) unsavedNotes.set(draftKey, draft.current);
+        };
+    }, [draftKey, debouncedUpdateNotes]);
+    const changeMembership = useCallback((value: boolean): Promise<boolean> => {
+        const retrying = membershipTarget.current === value;
         membershipTarget.current = value;
         debouncedUpdateNotes.cancel();
         setIsLoading(true);
         setMembershipFailed(false);
-        const changeMembership = async () => {
+        const run = async () => {
             try {
-                const result = value
-                    ? await postAddMovieToCollection(collection.id, movie, !!movie.isTvShow)
-                    : await deleteMovieFromCollection(collection.id, movie.id.toString(), !!movie.isTvShow);
-                if (result instanceof Error) throw result;
+                // The failed attempt may have committed, and replaying it would then return 400 forever.
+                const current = retrying ? await getCheckMovieExistInCollection(movie.id.toString(), !!movie.isTvShow) : null;
+                if (!(current instanceof Success && current.data.some(c => c.id === collection.id) === value)) {
+                    const result = value
+                        ? await postAddMovieToCollection(collection.id, movie, !!movie.isTvShow)
+                        : await deleteMovieFromCollection(collection.id, movie.id.toString(), !!movie.isTvShow);
+                    if (result instanceof Error) throw result;
+                }
                 membershipTarget.current = null;
                 setIsSaved(value);
                 draft.current = saved.current = '';
@@ -103,8 +106,31 @@ const CollectionAddCard = ({ collection, movie, registerSave, onPendingChange, d
                 setIsLoading(false);
             }
         };
-        membershipRequest.current = Promise.resolve().then(changeMembership);
+        membershipRequest.current = Promise.resolve().then(run);
         return membershipRequest.current;
+    }, [collection.id, debouncedUpdateNotes, movie]);
+    const drain = useCallback(async () => {
+        debouncedUpdateNotes.cancel();
+        if (membershipRequest.current && !(await membershipRequest.current)) return false;
+        if (membershipTarget.current !== null) {
+            await active.current;
+            if (!(await changeMembership(membershipTarget.current))) return false;
+        }
+        return save();
+    }, [changeMembership, debouncedUpdateNotes, save]);
+    useEffect(() => {
+        registerSave?.(collection.id, drain);
+        return () => registerSave?.(collection.id, null);
+    }, [registerSave, collection.id, drain]);
+
+    useEffect(() => {
+        onPendingChange?.(collection.id, notes !== saved.current || saving || isLoading || membershipFailed);
+    }, [collection.id, onPendingChange, notes, saving, isLoading, membershipFailed]);
+    useEffect(() => () => onPendingChange?.(collection.id, false), [collection.id, onPendingChange]);
+
+    const handleAddToCollection = (value: boolean) => {
+        if (disabled || active.current || membershipRequest.current) return;
+        return changeMembership(value);
     };
     const handleNotesUpdate = (value: string) => {
         if (disabled || membershipRequest.current) return;
