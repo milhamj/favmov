@@ -13,6 +13,7 @@ import { supabase } from '../../services/supabaseClient';
 import Toast from 'react-native-toast-message';
 import withAuth from '../../components/withAuth';
 import { router } from '../../navigation/router';
+import { unsavedNotes } from '../../stores/unsavedNotesStore';
 
 const ProfilePage = withAuth(() => {
   const { user } = useAuth();
@@ -24,6 +25,7 @@ const ProfilePage = withAuth(() => {
             throw new Error(result.error.message);
         }
 
+        unsavedNotes.clear();
         Toast.show({
             type: 'success',
             text1: 'Logout successful',

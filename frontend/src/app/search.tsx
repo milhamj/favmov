@@ -1,9 +1,9 @@
+import RetryButton from '../components/RetryButton';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Platform, TextInput, FlatList, Image, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Platform, TextInput, FlatList, Image, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import PageContainer  from '../components/PageContainer';
 import { Movie } from '../model/movieModel';
 import { searchMovie } from '../services/movieService';
-import { Success } from '../model/apiResponse';
 import TopBar from '../components/TopBar';
 import MovieCard from '../components/MovieCard';
 import SelectableChip from '../components/SelectableChip';
@@ -14,6 +14,7 @@ import FullPageLoader from '../components/FullPageLoader';
 import { People } from '../model/peopleModel';
 import PeopleCardHorizontal from '../components/PeopleCardHorizontal';
 import { searchPeople } from '../services/peopleService';
+import { usePagedFetch } from '../hooks/usePagedFetch';
 
 const CHIP_MOVIE = 'Movie';
 const CHIP_TV_SHOW = 'TV Show';
@@ -25,16 +26,11 @@ const SearchPage = () => {
     const [searchQuery, setSearchQuery]  = useState('');
     const [movies, setMovies] = useState([] as Movie[]);
     const [people, setPeople] = useState([] as People[]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [isLoadingMore, setIsLoadingMore] = useState(false);
-    const [totalPages, setTotalPages] = useState(1);
+    const { page, failedPage, isLoading, isLoadingMore, load, reset, canLoadMore } = usePagedFetch(false);
     const [showFilter, setShowFilter] = useState(true);
     const [selectedChip, setSelectedChip] = useState(CHIP_MOVIE);
-    const page = useRef(1);
     const inputRef = useRef<TextInput>(null);
-    const isFetchingRef = useRef(false);
 
-    const isMovielected = selectedChip === CHIP_MOVIE;
     const isTvShowSelected = selectedChip === CHIP_TV_SHOW;
     const isPeopleSelected = selectedChip === CHIP_PEOPLE;
 
@@ -48,64 +44,38 @@ const SearchPage = () => {
     }, []);
 
     // Fetch movies when searchQuery, selectedFilter, or page changes
-    const fetchSearchResult = useCallback(async (newPage: number = 1, reset: boolean = false) => {
-        if (isFetchingRef.current || !searchQuery) return;
-    
-        isFetchingRef.current = true;
-        setIsLoading(newPage === 1);
-        setIsLoadingMore(newPage > 1);
-    
-        try {
-            if (isMovielected || isTvShowSelected) {
-                const result = await searchMovie(searchQuery, newPage, isTvShowSelected);
-                if (result instanceof Success) {
-                    setMovies((prev) => (newPage === 1 || reset ? result.data.movies : [...prev, ...result.data.movies]));
-                    setTotalPages(result.data.totalPages || 1);
-                }
-            } else if (isPeopleSelected) {
-                const result = await searchPeople(searchQuery, newPage);
-                if (result instanceof Success) {
-                    setPeople((prev) => (newPage === 1 || reset ? result.data.people : [...prev, ...result.data.people]));
-                    setTotalPages(result.data.totalPages || 1);
-                }
-            }
-        } catch (error) {
-            //TODO milhamj: update error handling and also remove the try-catch
-            console.error('Error fetching search result:', error);
-        } finally {
-          setIsLoading(false);
-          setIsLoadingMore(false);
-          setShowFilter(true);
-          isFetchingRef.current = false;
+    const fetchSearchResult = useCallback(async (newPage: number = 1) => {
+        if (!searchQuery) return;
+        const settled = () => setShowFilter(true);
+        const hasMore = (count: number, totalPages: number) => count > 0 && newPage < (totalPages || 1);
+        if (isPeopleSelected) {
+            await load(newPage, () => searchPeople(searchQuery, newPage), data => {
+                setPeople((prev) => (newPage === 1 ? data.people : [...prev, ...data.people]));
+                return hasMore(data.people.length, data.totalPages);
+            }, settled);
+        } else {
+            await load(newPage, () => searchMovie(searchQuery, newPage, isTvShowSelected), data => {
+                setMovies((prev) => (newPage === 1 ? data.movies : [...prev, ...data.movies]));
+                return hasMore(data.movies.length, data.totalPages);
+            }, settled);
         }
-      }, [searchQuery, selectedChip]
+      }, [searchQuery, selectedChip, load]
     );
 
+    const invalidate = (query: string) => {
+        reset(Boolean(query));
+        setMovies([]);
+        setPeople([]);
+    };
     useEffect(() => {
         const debounceFetch = setTimeout(() => {
-            if (searchQuery) {
-                page.current = 1; // Reset to first page on new search or filter
-                fetchSearchResult(page.current, true);
-            }
-
-            // Clear previous result
-            if (movies.length > 0) {
-                setMovies([]);
-            }
-            if (people.length > 0) {
-                setPeople([]);
-            }
+            if (searchQuery) void fetchSearchResult(1);
         }, 300);
-
         return () => clearTimeout(debounceFetch);
     }, [searchQuery, selectedChip, fetchSearchResult]);
-
     const handleOnEndReached = () => {
-        if (!isFetchingRef.current && page.current < totalPages && !isLoadingMore) {
-            page.current += 1;
-            fetchSearchResult(page.current);
-        }
-    };    
+        if (canLoadMore()) void fetchSearchResult(page.current + 1);
+    };
 
     const renderMovieItem = ({ item, index }: { item: Movie, index: number }) => (
         <View style={{
@@ -140,6 +110,7 @@ const SearchPage = () => {
     );
 
     const renderFooter = () => {
+        if (failedPage !== null) return <RetryButton onPress={() => void fetchSearchResult(failedPage)}/>;
         if (!isLoadingMore) return null;
         return (
         <View style={styles.footerLoader}>
@@ -148,7 +119,7 @@ const SearchPage = () => {
         );
     };
 
-    const isEmptyResult = searchQuery.length > 0 && !isLoading && movies.length === 0 && people.length === 0;
+    const isEmptyResult = searchQuery.length > 0 && failedPage === null && !isLoading && movies.length === 0 && people.length === 0;
     const isEmptyQuery = searchQuery.length === 0;
     const placeholderText = isPeopleSelected 
         ? "Type any name..." 
@@ -172,8 +143,9 @@ const SearchPage = () => {
                 placeholderTextColor="#666666"
                 value={searchQuery}
                 onChangeText={(newQuery) => {
+                    if (newQuery === searchQuery) return;
+                    invalidate(newQuery);
                     setSearchQuery(newQuery);
-                    setMovies([]);
                     setShowFilter(newQuery ? false : true);
                 }}
                 autoFocus={Platform.OS === 'web'}
@@ -188,7 +160,7 @@ const SearchPage = () => {
                                     key={chip}
                                     selected={selectedChip === chip}
                                     onSelect={(isSelected) => {
-                                        if (isSelected) setSelectedChip(chip)}
+                                        if (isSelected) { invalidate(searchQuery); setSelectedChip(chip); }}
                                     } 
                                 />
                             ))
@@ -200,6 +172,8 @@ const SearchPage = () => {
                 {
                     isLoading ? (
                         <FullPageLoader />
+                    ) : failedPage === 1 ? (
+                        <RetryButton message="Unable to load results" onPress={() => void fetchSearchResult(1)}/>
                     ) : isEmptyQuery || isEmptyResult ? (
                         <View style={styles.emptyState}>
                             <Image source={require('../../assets/empty_search.png')} style={styles.emptyImage} />

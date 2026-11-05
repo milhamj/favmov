@@ -1,85 +1,155 @@
+import RetryButton from './RetryButton';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Text, StyleSheet, View, ActivityIndicator, TextInput } from 'react-native';
 import Checkbox from 'expo-checkbox';
 import { CollectionCard } from '../model/collectionModel';
 import { deleteMovieFromCollection, postAddMovieToCollection, updateNotes } from '../services/collectionService';
 import { Movie } from '../model/movieModel';
-import { Error, Success } from '../model/apiResponse';
+import { Error } from '../model/apiResponse';
 import Toast from 'react-native-toast-message';
 import { useDebouncedCallback } from '../hooks/useDebouncedCallback';
 import { CollectionStateStore } from '../stores/collectionStateStore';
+import { unsavedNotes } from '../stores/unsavedNotesStore';
 
 interface CollectionAddCardProps {
+    disabled?: boolean;
+    discarding?: boolean;
     collection: CollectionCard;
     movie: Movie;
+    onPendingChange?: (id: string, pending: boolean) => void;
+    registerSave?: (id: string, save: (() => Promise<boolean>) | null) => void;
 }
 
-const CollectionAddCard = ({ collection, movie }: CollectionAddCardProps) => {
+const CollectionAddCard = ({ collection, movie, registerSave, onPendingChange, disabled = false, discarding = false }: CollectionAddCardProps) => {
+    const draftKey = `${collection.id}:${movie.id}:${!!movie.isTvShow}`;
+    const serverNotes = movie.notesInCollection(collection.id) || '';
     const [isLoading, setIsLoading] = useState(false);
     const [isSaved, setIsSaved] = useState(collection.isInCollection);
-    const [notes, setNotes]  = useState(movie.notesInCollection(collection.id) || '');
+    const [notes, setNotes] = useState(() => {
+        const unsaved = collection.isInCollection ? unsavedNotes.get(draftKey) : undefined;
+        return unsaved?.base.current.trim() === serverNotes.trim() ? unsaved.draft : serverNotes;
+    });
+    const [saveError, setSaveError] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const draft = useRef(notes);
+    const saved = useRef(serverNotes);
+    const discardingRef = useRef(discarding);
+    discardingRef.current = discarding;
+    const active = useRef<Promise<boolean> | null>(null);
+    const membershipRequest = useRef<Promise<boolean> | null>(null);
+    const [membershipFailed, setMembershipFailed] = useState(false);
 
-    const handleAddToCollection = async (value: boolean) => {
-        setIsLoading(true);
-        if (value) {
-            const response = await postAddMovieToCollection(collection.id, movie, movie.isTvShow || false);
-            if (response instanceof Error) {
-                Toast.show({
-                    type: 'error',
-                    text1: 'Error',
-                    text2: response.message,
-                    position: 'bottom'
-                  });
-            } else {
-                setIsSaved(!isSaved);
-                CollectionStateStore.setLastUpdated(Date.now());
-            }
-            setIsLoading(false);
-        } else {
-            const response = await deleteMovieFromCollection(collection.id, movie.id.toString(), movie.isTvShow || false);
-            if (response instanceof Error) {
-                Toast.show({
-                    type: 'error',
-                    text1: 'Error',
-                    text2: response.message,
-                    position: 'bottom'
-                  });
-            } else {
-                setIsSaved(!isSaved);
-                CollectionStateStore.setLastUpdated(Date.now());
-            }
-            setIsLoading(false);
+    const save = useCallback((): Promise<boolean> => {
+        if (active.current) return active.current;
+        if (draft.current === saved.current) {
+            setSaveError(false);
+            return Promise.resolve(true);
         }
-    }
-
-    const handleNotesUpdate = async (newNotes: string) => {
-        setNotes(newNotes);
-        debouncedUpdateNotes(newNotes);
-    }
-
-    const debouncedUpdateNotes = useDebouncedCallback(async (newNotes: string) => {
-        setIsLoading(true);
-
-        newNotes = newNotes.trim();
-        const result = await updateNotes(
-            collection.id, 
-            movie.id.toString(), 
-            movie.isTvShow || false, newNotes
-        );
-
-        if (result instanceof Error) {
-            Toast.show({
-                type: 'error',
-                text1: 'Error',
-                text2: result.message,
-                position: 'bottom',
-            });
-        } else {
-            CollectionStateStore.setLastUpdated(Date.now());
+        const run = async () => {
+            setSaving(true);
+            setSaveError(false);
+            try {
+                while (!discardingRef.current && draft.current !== saved.current) {
+                    const value = draft.current;
+                    const result = await updateNotes(collection.id, movie.id.toString(), !!movie.isTvShow, value);
+                    if (result instanceof Error) throw result;
+                    saved.current = value;
+                    CollectionStateStore.setLastUpdated(Date.now());
+                }
+                return true;
+            } catch (failure: any) {
+                setSaveError(true);
+                Toast.show({ type: 'error', text1: 'Error', text2: failure.message || 'Unable to save notes', position: 'bottom' });
+                return false;
+            } finally {
+                active.current = null;
+                setSaving(false);
+            }
+        };
+        active.current = run();
+        return active.current;
+    }, [collection.id, movie.id, movie.isTvShow]);
+    const debouncedUpdateNotes = useDebouncedCallback(() => { void save(); }, 1000);
+    useEffect(() => {
+        const unsaved = unsavedNotes.get(draftKey);
+        if (unsaved && unsaved.draft !== draft.current) {
+            Toast.show({ type: 'info', text1: 'Unsaved note not restored', text2: 'This note changed since your draft.', position: 'bottom' });
         }
+        unsavedNotes.delete(draftKey);
+        if (draft.current !== saved.current) debouncedUpdateNotes();
+        return () => {
+            if (!discardingRef.current && !membershipRequest.current && draft.current !== saved.current) {
+                // Some exits skip the leave guard, so save now; the stored draft covers a save that cannot succeed.
+                const unsaved = { draft: draft.current, base: saved };
+                unsavedNotes.set(draftKey, unsaved);
+                void save().then(ok => { if (ok && unsavedNotes.get(draftKey) === unsaved) unsavedNotes.delete(draftKey); });
+            }
+        };
+    }, [draftKey, debouncedUpdateNotes, save]);
+    const changeMembership = useCallback((value: boolean): Promise<boolean> => {
+        debouncedUpdateNotes.cancel();
+        setIsLoading(true);
+        setMembershipFailed(false);
+        const run = async () => {
+            try {
+                let serverText = '';
+                if (value) {
+                    const result = await postAddMovieToCollection(collection.id, movie, !!movie.isTvShow);
+                    if (result instanceof Error) throw result;
+                    // The row may already exist, for example after a lost response, with notes of its own.
+                    serverText = result.data.notes ?? '';
+                } else {
+                    const result = await deleteMovieFromCollection(collection.id, movie.id.toString(), !!movie.isTvShow);
+                    if (result instanceof Error) throw result;
+                }
+                setIsSaved(value);
+                draft.current = saved.current = serverText;
+                setNotes(serverText);
+                setSaveError(false);
+                CollectionStateStore.setLastUpdated(Date.now());
+                return true;
+            } catch (failure: any) {
+                setMembershipFailed(true);
+                Toast.show({ type: 'error', text1: 'Error', text2: failure.message || 'Unable to update collection', position: 'bottom' });
+                if (!value && draft.current !== saved.current) debouncedUpdateNotes();
+                return false;
+            } finally {
+                membershipRequest.current = null;
+                setIsLoading(false);
+            }
+        };
+        membershipRequest.current = Promise.resolve().then(run);
+        return membershipRequest.current;
+    }, [collection.id, debouncedUpdateNotes, movie]);
+    const drain = useCallback(async () => {
+        debouncedUpdateNotes.cancel();
+        // Only a change failing during this leave blocks it: an earlier failure is already on screen, and is never replayed.
+        const membershipSaved = membershipRequest.current ? await membershipRequest.current : true;
+        const notesSaved = await save();
+        return membershipSaved && notesSaved;
+    }, [debouncedUpdateNotes, save]);
+    useEffect(() => {
+        registerSave?.(collection.id, drain);
+        return () => registerSave?.(collection.id, null);
+    }, [registerSave, collection.id, drain]);
 
-        setIsLoading(false);
-    }, 1000);
+    useEffect(() => {
+        onPendingChange?.(collection.id, notes !== saved.current || saving || isLoading);
+    }, [collection.id, onPendingChange, notes, saving, isLoading]);
+    useEffect(() => () => onPendingChange?.(collection.id, false), [collection.id, onPendingChange]);
+
+    const handleAddToCollection = (value: boolean) => {
+        if (disabled || active.current || membershipRequest.current) return;
+        return changeMembership(value);
+    };
+    const handleNotesUpdate = (value: string) => {
+        if (disabled || membershipRequest.current) return;
+        draft.current = value;
+        setNotes(value);
+        setSaveError(false);
+        setMembershipFailed(false); // editing after a failed removal means the entry stays, so Retry must not delete it
+        debouncedUpdateNotes();
+    };
 
     return (
         <View>
@@ -87,10 +157,10 @@ const CollectionAddCard = ({ collection, movie }: CollectionAddCardProps) => {
                 <Text style={styles.collectionName}>{collection.name}</Text>
                 <View style={styles.checkboxContainer}>
                     {
-                        isLoading ? (
+                        isLoading || saving ? (
                             <ActivityIndicator style={styles.checkbox} color="tomato"/>
                         ) : (
-                            <Checkbox style={styles.checkbox} value={isSaved} onValueChange={handleAddToCollection} color='tomato'/>
+                            <Checkbox disabled={disabled} style={styles.checkbox} value={isSaved} onValueChange={handleAddToCollection} color='tomato'/>
                         )
                     }
                 </View>
@@ -98,6 +168,7 @@ const CollectionAddCard = ({ collection, movie }: CollectionAddCardProps) => {
             {   
                     isSaved ? (
                         <TextInput
+                            editable={!disabled && !isLoading}
                             style={styles.notesInput}
                             placeholder="Write custom notes..."
                             placeholderTextColor="#898989"
@@ -106,6 +177,9 @@ const CollectionAddCard = ({ collection, movie }: CollectionAddCardProps) => {
                         />
                     ) : null
             }
+            {isSaved && <Text>{saving ? 'Saving' : saveError ? 'Unable to save notes' : draft.current === saved.current ? 'Saved' : 'Unsaved'}</Text>}
+            {membershipFailed && <Text>Unable to update collection</Text>}
+            {membershipFailed ? <RetryButton disabled={disabled || saving} onPress={() => void handleAddToCollection(!isSaved)}/> : saveError && <RetryButton disabled={disabled} onPress={() => void drain()}/>}
             <View style={styles.separator}/>
         </View>
     )

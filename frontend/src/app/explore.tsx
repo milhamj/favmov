@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import RetryButton from '../components/RetryButton';
+import { useEffect, useState } from "react";
 import { Movie } from "../model/movieModel";
 import { ActivityIndicator, View, StyleSheet, FlatList, Image, Text } from "react-native";
 import { useLocalSearchParams } from 'expo-router';
 import { router } from '../navigation/router';
 import { routes } from '../navigation/routes';
 import { parseStrParam } from "../utils/util";
-import { Success } from "../model/apiResponse";
 import { SectionType } from "../components/HomeSection";
 import { fetchPopularMovies, fetchTrendingMovies, fetchTrendingShows } from "../services/movieService";
 import PageContainer from "../components/PageContainer";
@@ -13,57 +13,39 @@ import TopBar from "../components/TopBar";
 import FullPageLoader from "../components/FullPageLoader";
 import MovieCard from "../components/MovieCard";
 import { MovieStore } from "../stores/movieStore";
-
-const MAX_PAGE = 500;
+import { usePagedFetch } from "../hooks/usePagedFetch";
 
 const ExplorePage = () => {
     const params = useLocalSearchParams();
-    const sectionType = decodeURIComponent(parseStrParam(params.section_type));
+    const sectionType = parseStrParam(params.section_type);
 
     const [title, setTitle] = useState(''); // query params are unknown when prerendering
     const [movies, setMovies] = useState([] as Movie[]);
-    const [isLoading, setIsLoading] = useState(true); // the prerender should show a loader, not "No results"
-    const [isLoadingMore, setIsLoadingMore] = useState(false);
-    const page = useRef(1);
-    const isFetchingRef = useRef(false);
+    // Start loading: the prerender should show a loader, not "No results"
+    const { page, failedPage, isLoading, isLoadingMore, load, reset, canLoadMore } = usePagedFetch(true);
 
     const fetchExploreData = async (newPage: number = 1) => {
-        if (isFetchingRef.current || !sectionType) return;
-    
-        isFetchingRef.current = true;
-        setIsLoading(newPage === 1);
-        setIsLoadingMore(newPage > 1);
-    
-        try {
-            const result =
-                sectionType === SectionType.TrendingMovies ? await fetchTrendingMovies(newPage) :
-                sectionType === SectionType.TrendingShows ? await fetchTrendingShows(newPage) :
-                sectionType === SectionType.PopularMovies ? await fetchPopularMovies(newPage) :
-                null
-            if (result instanceof Success) {
-                setMovies((prev) => (newPage === 1 ? result.data : [...prev, ...result.data]));
-            }
-        } catch (error) {
-            //TODO milhamj: update error handling and also remove the try-catch
-            console.error('Error fetching movies:', error);
-        } finally {
-          setIsLoading(false);
-          setIsLoadingMore(false);
-          isFetchingRef.current = false;
-        }
+        if (!sectionType) return;
+        await load(newPage, async () =>
+            sectionType === SectionType.TrendingMovies ? fetchTrendingMovies(newPage) :
+            sectionType === SectionType.TrendingShows ? fetchTrendingShows(newPage) :
+            sectionType === SectionType.PopularMovies ? fetchPopularMovies(newPage) :
+            null,
+        data => {
+            setMovies((prev) => (newPage === 1 ? data : [...prev, ...data]));
+            return data.length > 0;
+        });
     };
 
     useEffect(() => {
+        reset(Boolean(sectionType));
+        setMovies([]);
         setTitle(sectionType);
-        if (!sectionType) setIsLoading(false);
-        fetchExploreData();
+        void fetchExploreData();
     },[sectionType])
 
     const handleOnEndReached = () => {
-        if (!isFetchingRef.current && page.current < MAX_PAGE && !isLoadingMore) {
-            page.current += 1;
-            fetchExploreData(page.current);
-        }
+        if (canLoadMore()) void fetchExploreData(page.current + 1);
     };    
 
     const renderMovieItem = ({ item, index }: { item: Movie, index: number }) => (
@@ -85,6 +67,7 @@ const ExplorePage = () => {
     );
 
     const renderFooter = () => {
+        if (failedPage !== null) return <RetryButton onPress={() => void fetchExploreData(failedPage)}/>;
         if (!isLoadingMore) return null;
         return (
         <View style={styles.footerLoader}>
@@ -108,6 +91,8 @@ const ExplorePage = () => {
                 {
                     isLoading ? (
                         <FullPageLoader />
+                    ) : failedPage === 1 ? (
+                        <RetryButton message="Unable to load results" onPress={() => void fetchExploreData(1)}/>
                     ) : isEmptyResult ? (
                         <View style={styles.emptyState}>
                             <Image source={require('../../assets/empty_search.png')} style={styles.emptyImage} />

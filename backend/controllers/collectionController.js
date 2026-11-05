@@ -19,7 +19,9 @@ exports.validateCollection = [
 exports.validateMovieToCollection = [
   body('is_tv_show').isBoolean().withMessage('is_tv_show is requires and must be boolean.'),
   body('title').trim().notEmpty().withMessage('title is required.'),
-  body('poster_path').trim().notEmpty().withMessage('poster path is required.')
+  body('poster_path')
+    .custom(value => value == null || typeof value === 'string').withMessage('poster path must be a string.')
+    .customSanitizer(value => typeof value === 'string' ? value.trim() || null : value == null ? null : value)
 ];
 
 exports.validateMovieCollectionNotes = [
@@ -190,88 +192,56 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
     return errorResponse(res, moviesCollectionsTableError, 500);
   }
 
-  if (is_tv_show) {
-    // Check if tv show already exists in the collection
-    const { data: existingTvShowInCollection } = await req.supabase
+  const mediaId = is_tv_show ? tv_show_id : movie_id;
+  const mediaLabel = is_tv_show ? 'TV show' : 'movie';
+  const findEntry = () => req.supabase
     .from(moviesCollectionsTable)
     .select('*')
     .eq('collection_id', collection_id)
-    .eq('tv_show_id', tv_show_id)
-    .single();
+    .eq(is_tv_show ? 'tv_show_id' : 'movie_id', mediaId)
+    .order('created_at', { ascending: false }) // same row getCheckMovieExistInCollection shows
+    .limit(1); // older data may hold duplicates, which must not turn an add into an error
 
-    if (existingTvShowInCollection) {
-      return errorResponse(res, 'TV Show already exists in this collection', 400);
-    }
+  // Adding is idempotent, so a retry after a lost response finds its entry
+  const { data: existingEntries, error: existingEntryError } = await findEntry();
 
-    // Check if the TV show already exists in the tv shows table, if not then add
-    const { tableName: tvShowsTable, error: tvShowsTableError } = getTableName(TV_SHOWS);
-    if (tvShowsTableError) {
-      console.error('Environment error:', tvShowsTableError);
-      return errorResponse(res, tvShowsTableError, 500);
-    }
+  if (existingEntryError) {
+    console.error(`Error checking collection ${mediaLabel}:`, existingEntryError);
+    return errorResponse(res, `Error adding ${mediaLabel} to collection.`, 500, existingEntryError.message);
+  }
 
-    const { data: existingTvShow } = await req.supabase
-    .from(tvShowsTable)
-    .select('*')
-    .eq('id', tv_show_id)
-    .single();
+  if (existingEntries.length > 0) {
+    return successResponse(res, existingEntries[0], 'Already in this collection');
+  }
 
-    if (!existingTvShow) {
-      const { error: insertTvShowError } = await req.supabase.from(tvShowsTable).insert([{
-        id: tv_show_id,
-        title,
-        poster_path,
-        rating,
-        rating_count,
-        release_date
-      }])
+  // Check if the movie/tv show already exists in its table, if not then add
+  const { tableName: mediaTable, error: mediaTableError } = getTableName(is_tv_show ? TV_SHOWS : MOVIES);
+  if (mediaTableError) {
+    console.error('Environment error:', mediaTableError);
+    return errorResponse(res, mediaTableError, 500);
+  }
 
-      if (insertTvShowError) {
-        console.error('Error inserting tv show:', insertTvShowError);
-        const debugMessage = insertTvShowError?.message
-        return errorResponse(res, 'Error adding TV show to collection.', 500, debugMessage);
-      }
-    }
-  } else {
-    const { data: existingMovieInCollection } = await req.supabase
-    .from(moviesCollectionsTable)
-    .select('*')
-    .eq('collection_id', collection_id)
-    .eq('movie_id', movie_id)
-    .single();
+  const { data: existingMedia } = await req.supabase
+  .from(mediaTable)
+  .select('*')
+  .eq('id', mediaId)
+  .single();
 
-    if (existingMovieInCollection) {
-      return errorResponse(res, 'Movie already exists in this collection', 400);
-    }
+  if (!existingMedia) {
+    const { error: insertMediaError } = await req.supabase.from(mediaTable).insert([{
+      id: mediaId,
+      title,
+      poster_path,
+      rating,
+      rating_count,
+      release_date
+    }])
 
-    // Check if the movie already exists in the movies table, if not then add
-    const { tableName: moviesTable, error: moviesTableError } = getTableName(MOVIES);
-    if (moviesTableError) {
-      console.error('Environment error:', moviesTableError);
-      return errorResponse(res, moviesTableError, 500);
-    }
-
-    const { data: existingMovie } = await req.supabase
-    .from(moviesTable)
-    .select('*')
-    .eq('id', movie_id)
-    .single();
-
-    if (!existingMovie) {
-      const { error: insertMovieError } = await req.supabase.from(moviesTable).insert([{
-        id: movie_id,
-        title,
-        poster_path,
-        rating,
-        rating_count,
-        release_date
-      }])
-
-      if (insertMovieError) {
-        console.error('Error inserting movie:', insertMovieError);
-        const debugMessage = insertMovieError?.message
-        return errorResponse(res, 'Error adding movie to collection.', 500, debugMessage);
-      }
+    // 23505: a concurrent add stored this title first, which is all this step needs.
+    if (insertMediaError && insertMediaError.code !== '23505') {
+      console.error(`Error inserting ${mediaLabel}:`, insertMediaError);
+      const debugMessage = insertMediaError?.message
+      return errorResponse(res, `Error adding ${mediaLabel} to collection.`, 500, debugMessage);
     }
   }
 
@@ -286,6 +256,13 @@ exports.addMovieToCollection = asyncHandler(async (req, res) => {
     notes,
   }])
   .select();
+
+  if (error?.code === '23505') {
+    // A concurrent add won the unique index, so the entry the caller asked for exists.
+    const { data: existing } = await findEntry();
+
+    if (existing?.[0]) return successResponse(res, existing[0], 'Already in this collection');
+  }
 
   if (error) {
     console.error('Error adding movie to collection:', error);
@@ -321,19 +298,6 @@ exports.updateMovieCollectionNotes = asyncHandler(async (req, res) => {
     return errorResponse(res, moviesCollectionsTableError, 500);
   }
 
-  // Check if the movie/tv show exists in the collection
-  const { data: existData, error: existError } = await req.supabase
-  .from(moviesCollectionsTable)
-  .select('*')
-  .eq('collection_id', collection_id)
-  .eq('user_id', userId)
-  .eq(is_tv_show ? 'tv_show_id' : 'movie_id', movie_id)
-  .single();
-
-  if (existError || !existData) {
-    return errorResponse(res, `${is_tv_show ? 'TV Show' : 'Movie'} not found in collection.`, 404, existError?.message);
-  }
-
   // Update movie/tv show notes in collection
   const { data, error } = await req.supabase
   .from(moviesCollectionsTable)
@@ -347,6 +311,10 @@ exports.updateMovieCollectionNotes = asyncHandler(async (req, res) => {
     console.error('Error updating movie/tv show\'s collection notes:', error);
     const debugMessage = error?.message
     return errorResponse(res, 'Failed to update notes', 500, debugMessage);
+  }
+
+  if (data.length === 0) {
+    return errorResponse(res, `${is_tv_show ? 'TV Show' : 'Movie'} not found in collection.`, 404);
   }
 
   return successResponse(res, data[0], 'Collection notes updated successfully', 201);
@@ -520,30 +488,6 @@ exports.removeMovieFromCollection = asyncHandler(async (req, res) => {
     return errorResponse(res, moviesCollectionsTableError, 500);
   }
 
-  // Check whether the movie exists in the collection
-  const selectQuery = req.supabase.from(moviesCollectionsTable)
-    .select('*')
-    .eq('collection_id', collection_id)
-    .eq('user_id', userId);
-
-  if (is_tv_show) {
-    selectQuery.eq('tv_show_id', movie_id);
-  } else {
-    selectQuery.eq('movie_id', movie_id);
-  }
-
-  const { data: selectData, error: selectError } = await selectQuery
-
-  if (selectError) {
-    console.error('Error fetching collection movies:', selectError);
-    const debugMessage = selectError?.message
-    return errorResponse(res, 'Failed to fetch collection movies', 500, debugMessage);
-  }
-
-  if (selectData.length === 0) {
-    return errorResponse(res, is_tv_show ? 'TV Show' : 'Movie' + ' not found in collection.', 400);
-  }
-
   // Remove movie from collection
   const query = req.supabase.from(moviesCollectionsTable)
   .delete()
@@ -594,25 +538,7 @@ exports.deleteCollection = asyncHandler(async (req, res) => {
     return errorResponse(res, 'Collection not found or access denied', 404, collectionError?.message);
   }
 
-  const { tableName: moviesCollectionsTable, error: moviesCollectionsTableError } = getTableName(MOVIES_COLLECTIONS);
-  if (moviesCollectionsTableError) {
-    console.error('Environment error:', moviesCollectionsTableError);
-    return errorResponse(res, moviesCollectionsTableError, 500);
-  }
-
-  // First delete all movies in the collection
-  const { error: moviesDeleteError } = await req.supabase
-    .from(moviesCollectionsTable)
-    .delete()
-    .eq('collection_id', collection_id)
-    .eq('user_id', userId);
-
-  if (moviesDeleteError) {
-    console.error('Error deleting collection movies:', moviesDeleteError);
-    return errorResponse(res, 'Failed to delete collection movies', 500);
-  }
-
-  // Then delete the collection
+  // The collection foreign key cascades entries in the same database statement.
   const { error } = await req.supabase
     .from(collectionsTable)
     .delete()

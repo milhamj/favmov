@@ -10,6 +10,11 @@ test('returns null when nothing changed', () => {
   assert.strictEqual(getChanges(row, tmdbMovie, false), null);
 });
 
+test('keeps the stored poster when TMDB has none', () => {
+  assert.strictEqual(getChanges(row, { ...tmdbMovie, poster_path: null }, false), null);
+  assert.strictEqual(getChanges(row, { ...tmdbMovie, poster_path: null, vote_average: 9 }, false).poster_path, '/up.jpg');
+});
+
 test('returns the TMDB values when a field changed', () => {
   assert.deepStrictEqual(getChanges(row, { ...tmdbMovie, vote_average: 8.5 }, false), {
     title: 'Up', poster_path: '/up.jpg', rating: 8.5, rating_count: 10, release_date: '2009-05-28',

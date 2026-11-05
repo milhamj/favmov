@@ -1,7 +1,8 @@
 import { COLORS } from "../styles/colors";
 
 export const parseStrParam = (param: string | string[]): string => {
-  return Array.isArray(param) ? decodeURIComponent(param[0]) : decodeURIComponent(param);
+  // useLocalSearchParams has already decoded the value.
+  return (Array.isArray(param) ? param[0] : param) ?? '';
 }
 
 export const parseIntParam = (param: string | string[]): number => {
