@@ -26,18 +26,21 @@ test('reads name and first_air_date for TV shows', () => {
   assert.strictEqual(getChanges(row, tmdbShow, true), null);
 });
 
-test('updates stale rows only and carries on past a title TMDB no longer has', async (t) => {
+test('updates stale rows only, skips titles TMDB no longer has and carries on past failures', async (t) => {
   const rows = [
     { ...row, id: 1, uuid: 'fresh' },
     { ...row, id: 2, uuid: 'gone' },
     { ...row, id: 3, uuid: 'stale' },
+    { ...row, id: 4, uuid: 'broken' },
   ];
   t.mock.method(global, 'fetch', async (url) => {
     if (url.endsWith('/2')) return { ok: false, status: 404 };
+    if (url.endsWith('/4')) return { ok: false, status: 500 };
     const body = url.endsWith('/3') ? { ...tmdbMovie, vote_count: 11 } : tmdbMovie;
     return { ok: true, json: async () => body };
   });
   t.mock.method(console, 'error', () => {});
+  t.mock.method(console, 'warn', () => {});
   t.mock.method(console, 'log', () => {});
 
   const updates = [];
@@ -55,7 +58,7 @@ test('updates stale rows only and carries on past a title TMDB no longer has', a
 
   const result = await syncTable(supabase, 'dev_movies', false);
 
-  assert.deepStrictEqual(result, { checked: 3, updated: 1, failed: 1 });
+  assert.deepStrictEqual(result, { checked: 4, updated: 1, skipped: 1, failed: 1 });
   assert.deepStrictEqual(updates.map((update) => update.uuid), ['stale']);
   assert.strictEqual(updates[0].values.rating_count, 11);
   assert.ok(updates[0].values.updated_at);
@@ -107,14 +110,14 @@ const syncEnv = {
   FAVMOV_TMDB_API_KEY: 'test-tmdb-key',
 };
 
-const createSyncFetch = ({ failTmdb = false, failWrites = false } = {}) => {
+const createSyncFetch = ({ failTmdb = false, missingTmdb = false, failWrites = false } = {}) => {
   const requests = [];
   const fetch = async (input, options = {}) => {
     const url = new URL(input);
     const method = options.method || 'GET';
     requests.push({ url: url.href, method });
     if (url.hostname === 'api.themoviedb.org') {
-      return Response.json({ title: 'Updated', name: 'Updated', vote_count: 11 }, { status: failTmdb ? 500 : 200 });
+      return Response.json({ title: 'Updated', name: 'Updated', vote_count: 11 }, { status: failTmdb ? 500 : missingTmdb ? 404 : 200 });
     }
     if (url.hostname !== 'supabase.example') throw new Error(`Unexpected request: ${url.href}`);
     if (method === 'PATCH') {
@@ -139,6 +142,7 @@ const prepareSync = (t, options) => {
   const mock = createSyncFetch(options);
   t.mock.method(global, 'fetch', mock.fetch);
   t.mock.method(console, 'error', () => {});
+  t.mock.method(console, 'warn', () => {});
   t.mock.method(console, 'log', () => {});
   return mock.requests;
 };
@@ -162,6 +166,14 @@ test('reports TMDB failures after attempting both tables', async (t) => {
   assert.strictEqual(requests.filter(({ method }) => method === 'PATCH').length, 0);
 });
 
+test('succeeds when TMDB no longer has a title, so the run is not retried', async (t) => {
+  const requests = prepareSync(t, { missingTmdb: true });
+
+  await syncMedia();
+
+  assert.strictEqual(requests.filter(({ method }) => method === 'PATCH').length, 0);
+});
+
 test('succeeds when both tables refresh without row failures', async (t) => {
   const requests = prepareSync(t);
 
@@ -180,6 +192,6 @@ test('manual sync exits nonzero when database writes fail', () => {
   assert.ifError(result.error);
   assert.strictEqual(result.status, 1, result.stdout + result.stderr);
   assert.match(result.stderr, /2.*failed/);
-  assert.match(result.stdout, /dev_movies: checked 1, updated 0, failed 1/);
-  assert.match(result.stdout, /dev_tv_shows: checked 1, updated 0, failed 1/);
+  assert.match(result.stdout, /dev_movies: checked 1, updated 0, skipped 0, failed 1/);
+  assert.match(result.stdout, /dev_tv_shows: checked 1, updated 0, skipped 0, failed 1/);
 });

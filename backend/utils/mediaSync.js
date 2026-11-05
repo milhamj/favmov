@@ -21,10 +21,19 @@ const syncTable = async (supabase, tableName, isTvShow) => {
   if (error) throw new Error(`Failed to fetch ${tableName}: ${error.message}`);
 
   let updated = 0;
+  let skipped = 0;
   let failed = 0;
   for (const item of media) {
     try {
-      const changes = getChanges(item, await requestMovie(item.id, isTvShow), isTvShow);
+      const tmdb = await requestMovie(item.id, isTvShow);
+      // A title TMDB doesn't have stays missing on a retry, so it can't count as a failed run
+      if (!tmdb) {
+        skipped++;
+        console.warn(`Media sync skipped ${tableName} id ${item.id}: not on TMDB`);
+        continue;
+      }
+
+      const changes = getChanges(item, tmdb, isTvShow);
       if (!changes) continue;
 
       const { error: updateError } = await supabase
@@ -34,14 +43,14 @@ const syncTable = async (supabase, tableName, isTvShow) => {
       if (updateError) throw new Error(updateError.message);
       updated++;
     } catch (itemError) {
-      // One bad title (e.g. removed from TMDB) must not stop the rest of the sync
+      // One bad title must not stop the rest of the sync
       failed++;
-      console.error(`Media sync skipped ${tableName} id ${item.id}:`, itemError.message);
+      console.error(`Media sync failed ${tableName} id ${item.id}:`, itemError.message);
     }
   }
 
-  console.log(`Media sync ${tableName}: checked ${media.length}, updated ${updated}, failed ${failed}`);
-  return { checked: media.length, updated, failed };
+  console.log(`Media sync ${tableName}: checked ${media.length}, updated ${updated}, skipped ${skipped}, failed ${failed}`);
+  return { checked: media.length, updated, skipped, failed };
 };
 
 const syncMedia = async () => {
