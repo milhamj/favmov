@@ -23,7 +23,7 @@ FAVMOV_NODE_ENV=
 FAVMOV_TMDB_API_KEY=
 FAVMOV_SUPABASE_URL=
 FAVMOV_SUPABASE_ANON_KEY=
-FAVMOV_API_BASE_URL_LOCAL=http://localhost:3030/api
+FAVMOV_API_BASE_URL_LOCAL=http://localhost:3080/api
 FAVMOV_API_BASE_URL_PROD=
 ```
 ```
@@ -31,7 +31,7 @@ pnpm run web
 ```
 #### Export
 ```
-pnpm exec expo export -p web
+pnpm exec expo export --clear -p web
 ```
 #### Clear build cache
 ```
