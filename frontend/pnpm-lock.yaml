@@ -6,6 +6,7 @@ settings:
 
 patchedDependencies:
   expo-font@13.0.4: 9266a62d52b0a28ed0fd69ce2483b299feb5a50b3c3f1b789026c75c8093940a
+  expo-router@4.0.21: 420f611e591f5820851a39e57154f1788433a45ab74b85de06f66c8eb18e8a71
   react-native-safe-area-context@4.12.0: 009bb81a420e946791e7a7daecf0aaec36104bbf3a421025fef0fa860040131c
 
 importers:
@@ -44,7 +45,7 @@ importers:
         version: 7.0.5(af0d0a3e6e93b6cd70253b118e977c65)
       expo-router:
         specifier: ~4.0.21
-        version: 4.0.21(3bdad77c31a2c244c998eca5d30ca427)
+        version: 4.0.21(patch_hash=420f611e591f5820851a39e57154f1788433a45ab74b85de06f66c8eb18e8a71)(3bdad77c31a2c244c998eca5d30ca427)
       expo-status-bar:
         specifier: ~2.0.1
         version: 2.0.1(react-native@0.76.9(@babel/core@7.27.1(supports-color@8.1.1))(@babel/preset-env@7.27.2(@babel/core@7.27.1(supports-color@8.1.1))(supports-color@8.1.1))(@react-native-community/cli@18.0.0(supports-color@8.1.1)(typescript@5.8.3))(@types/react@18.3.22)(react@18.3.1)(supports-color@8.1.1))(react@18.3.1)
@@ -7990,7 +7991,7 @@ snapshots:
     dependencies:
       invariant: 2.2.4
 
-  expo-router@4.0.21(3bdad77c31a2c244c998eca5d30ca427):
+  expo-router@4.0.21(patch_hash=420f611e591f5820851a39e57154f1788433a45ab74b85de06f66c8eb18e8a71)(3bdad77c31a2c244c998eca5d30ca427):
     dependencies:
       '@expo/metro-runtime': 4.0.1(react-native@0.76.9(@babel/core@7.27.1(supports-color@8.1.1))(@babel/preset-env@7.27.2(@babel/core@7.27.1(supports-color@8.1.1))(supports-color@8.1.1))(@react-native-community/cli@18.0.0(supports-color@8.1.1)(typescript@5.8.3))(@types/react@18.3.22)(react@18.3.1)(supports-color@8.1.1))
       '@expo/server': 0.5.3(supports-color@8.1.1)
