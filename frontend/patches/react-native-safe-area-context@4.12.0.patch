@@ -1,0 +1,60 @@
+diff --git a/lib/commonjs/NativeSafeAreaProvider.web.js b/lib/commonjs/NativeSafeAreaProvider.web.js
+index 38a2835c57e75e6afd31b4d03bcd72ea443a7b05..38734005b9e5a4dd6973b6379090cea5b7eb1032 100644
+--- a/lib/commonjs/NativeSafeAreaProvider.web.js
++++ b/lib/commonjs/NativeSafeAreaProvider.web.js
+@@ -56,12 +56,10 @@ function NativeSafeAreaProvider({
+         width: document.documentElement.offsetWidth,
+         height: document.documentElement.offsetHeight
+       };
+-      // @ts-ignore: missing properties
+-      onInsetsChange({
+-        nativeEvent: {
+-          insets,
+-          frame
+-        }
++      // A transition, because an urgent context update makes React drop Suspense boundaries still hydrating (#421).
++      React.startTransition(() => {
++        // @ts-ignore: missing properties
++        onInsetsChange({ nativeEvent: { insets, frame } });
+       });
+     };
+     element.addEventListener(getSupportedTransitionEvent(), onEnd);
+diff --git a/lib/module/NativeSafeAreaProvider.web.js b/lib/module/NativeSafeAreaProvider.web.js
+index 7f75c72e1e20b9887305ef68980a71a7b1aad095..17d6904a94f62aed73bcfe72fa1ec6b74f70b7e3 100644
+--- a/lib/module/NativeSafeAreaProvider.web.js
++++ b/lib/module/NativeSafeAreaProvider.web.js
+@@ -48,12 +48,10 @@ export function NativeSafeAreaProvider({
+         width: document.documentElement.offsetWidth,
+         height: document.documentElement.offsetHeight
+       };
+-      // @ts-ignore: missing properties
+-      onInsetsChange({
+-        nativeEvent: {
+-          insets,
+-          frame
+-        }
++      // A transition, because an urgent context update makes React drop Suspense boundaries still hydrating (#421).
++      React.startTransition(() => {
++        // @ts-ignore: missing properties
++        onInsetsChange({ nativeEvent: { insets, frame } });
+       });
+     };
+     element.addEventListener(getSupportedTransitionEvent(), onEnd);
+diff --git a/src/NativeSafeAreaProvider.web.tsx b/src/NativeSafeAreaProvider.web.tsx
+index d3eceed24589e3dcf0d84b3377aa35d8b1d9d03e..9f6742bfd657109335f30a63af1683f85f26d77f 100644
+--- a/src/NativeSafeAreaProvider.web.tsx
++++ b/src/NativeSafeAreaProvider.web.tsx
+@@ -49,8 +49,11 @@ export function NativeSafeAreaProvider({
+         width: document.documentElement.offsetWidth,
+         height: document.documentElement.offsetHeight,
+       };
+-      // @ts-ignore: missing properties
+-      onInsetsChange({ nativeEvent: { insets, frame } });
++      // A transition, because an urgent context update makes React drop Suspense boundaries still hydrating (#421).
++      React.startTransition(() => {
++        // @ts-ignore: missing properties
++        onInsetsChange({ nativeEvent: { insets, frame } });
++      });
+     };
+     element.addEventListener(getSupportedTransitionEvent(), onEnd);
+     onEnd();
