@@ -1,40 +1,34 @@
 import React, { useState } from 'react';
 import { View, Image, StyleSheet, TouchableOpacity, StyleProp, ViewStyle, ImageStyle } from 'react-native';
-import FullImageViewer from './FullImageViewer';
+import { router } from '../navigation/router';
+import { routes } from '../navigation/routes';
 
 interface ImageViewerProps {
   smallImageUrl: string;
   bigImageUrl?: string;
+  fullImageUrl?: string;
   style?: StyleProp<ViewStyle>;
   imageStyle?: ImageStyle;
+  accessibilityLabel?: string;
 }
 
 const ImageViewer: React.FC<ImageViewerProps> = ({ 
   smallImageUrl,
-  bigImageUrl, 
+  bigImageUrl,
+  fullImageUrl,
   style, 
-  imageStyle 
+  imageStyle,
+  accessibilityLabel = 'View full image'
 }) => {
-  const [isImageViewerVisible, setImageViewerVisible] = useState(false);
-  const [selectedImageUrl, setSelectedImageUrl] = useState('');
-  const [isBigImageLoaded, setIsBigImageLoaded] = useState(false);
-
-  const handleImagePress = () => {
-    const imageUrl = bigImageUrl || smallImageUrl;
-    setSelectedImageUrl(imageUrl);
-    setImageViewerVisible(true);
-  };
+  const [loadedImageUrl, setLoadedImageUrl] = useState<string>();
+  const isBigImageLoaded = !!bigImageUrl && loadedImageUrl === bigImageUrl;
 
   return (
-    <>
       <View style={style}>
-        <FullImageViewer
-          visible={isImageViewerVisible}
-          imageUrl={selectedImageUrl}
-          onClose={() => setImageViewerVisible(false)}
-        />
         <TouchableOpacity 
-          onPress={() => handleImagePress()} 
+          accessibilityRole="button"
+          accessibilityLabel={accessibilityLabel}
+          onPress={() => router.navigate(routes.image(fullImageUrl || bigImageUrl || smallImageUrl, smallImageUrl))}
           style={styles.imageContainer}>
           {
             !isBigImageLoaded ? (
@@ -45,14 +39,13 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
             bigImageUrl ? (
               <Image
                 source={{ uri: bigImageUrl }}
-                style={[styles.image, !isBigImageLoaded ? styles.imageBig : null]}
-                onLoadEnd={() => setIsBigImageLoaded(true)}
+                style={[styles.image, imageStyle, !isBigImageLoaded ? styles.imageBig : null]}
+                onLoad={() => setLoadedImageUrl(bigImageUrl)}
               />
             ) : null
           }
         </TouchableOpacity>
       </View>
-    </>
   );
 };
 

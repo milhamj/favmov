@@ -7,13 +7,15 @@ const path = require('path');
 const createPageRoutes = require('./pageRoutes');
 
 const exportedFiles = [
-  'index.html', 'login.html', 'search.html', 'explore.html', 'profile.html', 'collection.html', '+not-found.html',
+  'image.html', 'index.html', 'login.html', 'search.html', 'explore.html', 'profile.html', 'collection.html', '+not-found.html',
   'collection/add.html', 'collection/[id].html', 'movie/[id].html', 'people/[id].html',
   'assets/node_modules/.pnpm/expo-router/unmatched.png', '.env',
 ];
 
 const cases = [
   ['/', 200, 'index.html'],
+  ['/image', 200, 'image.html'],
+  ['/image/?url=x', 200, 'image.html'],
   ['/login', 200, 'login.html'],
   ['/login/', 200, 'login.html'],
   ['/search/', 200, 'search.html'],

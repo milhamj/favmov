@@ -23,6 +23,7 @@ const RootLayout = () => {
         <Stack.Screen name="collection/[id]" />
         <Stack.Screen name="collection/add" />
         <Stack.Screen name="login" />
+        <Stack.Screen name="image" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
       </Stack>
       <Toast />
     </>

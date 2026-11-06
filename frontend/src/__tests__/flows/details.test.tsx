@@ -1,3 +1,4 @@
+import { Image } from 'react-native';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import Toast from 'react-native-toast-message';
 import ProfilePage from '../../app/(tabs)/profile';
@@ -67,6 +68,18 @@ describe('movie detail', () => {
     render(<MovieDetailPage />);
     expect(await screen.findByText(/• TV Show/)).toBeTruthy();
     expect(details).toHaveBeenCalledWith('7', true);
+  });
+
+  test.each([false, true])('keeps the detail poster small, loads the backdrop progressively and opens originals (TV: %s)', async (isTvShow) => {
+    searchParams.current = { id: '7', ...(isTvShow ? { is_tv_show: 'true' } : {}) };
+    details.mockResolvedValue(new Success(new Movie({ id: 7, title: 'Up', posterPath: '/poster.jpg', backdropPath: '/backdrop.jpg', isTvShow })));
+    render(<MovieDetailPage />);
+    const backdrop = await screen.findByLabelText('View full backdrop');
+    expect(screen.UNSAFE_getAllByType(Image).map(image => image.props.source.uri)).toEqual(['small//backdrop.jpg', 'big//backdrop.jpg', 'small//poster.jpg']);
+    fireEvent.press(backdrop);
+    expect(router.navigate).toHaveBeenLastCalledWith('/image?url=' + encodeURIComponent('big//backdrop.jpg') + '&preview=' + encodeURIComponent('small//backdrop.jpg'));
+    fireEvent.press(screen.getByLabelText('View full poster'));
+    expect(router.navigate).toHaveBeenLastCalledWith('/image?url=' + encodeURIComponent('big//poster.jpg') + '&preview=' + encodeURIComponent('small//poster.jpg'));
   });
 
   test('cast and crew link to their pages', async () => {

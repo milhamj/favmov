@@ -1,6 +1,7 @@
+import ImageViewer from '../../components/ImageViewer';
 import RetryButton from '../../components/RetryButton';
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { router } from '../../navigation/router';
 import { routes } from '../../navigation/routes';
 import PageContainer from '../../components/PageContainer';
@@ -62,7 +63,7 @@ const PeopleDetailPage = () => {
                 people ? (
                     <ScrollView style={styles.cotainer}>
                         <View style={styles.peopleHeaderContainer}>
-                            <Image source={{ uri: people?.photoUrl() }} style={[styles.poster]} />
+                            <ImageViewer style={styles.poster} imageStyle={styles.posterImage} smallImageUrl={people.photoUrl()} fullImageUrl={people.bigPhotoUrl()} />
                             <View style={styles.peopleInfoContainer} >
                                 <Text style={styles.peopleInfoName}>{people.name}</Text>
                                 <View style={styles.peopleInfoItem}>
@@ -213,10 +214,10 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '300'
     },
+    posterImage: { borderRadius: 8 },
     poster: {
         height: 150,
         aspectRatio: 2 / 3,
-        borderRadius: 8,
     },
 })
 

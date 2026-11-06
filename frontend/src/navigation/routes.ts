@@ -1,5 +1,7 @@
 export const routes = {
     profile: '/profile',
+    image: (url: string, preview?: string) =>
+        `/image?url=${encodeURIComponent(url)}${preview && preview !== url ? `&preview=${encodeURIComponent(preview)}` : ''}`,
     search: '/search',
     loginWithReturnTo: (path: string) => `/login?return_to=${encodeURIComponent(safeReturnTo(path))}`,
     
@@ -18,6 +20,10 @@ export const routes = {
     people: (id: string) => 
         `/people/${encodeURIComponent(id)}`,
 };
+
+export function safeImageUrl(value: unknown): string | null {
+    return typeof value === 'string' && /^https:\/\/(?:image\.tmdb\.org|gdlqv951tx\.ufs\.sh)\//.test(value) ? value : null;
+}
 
 export function safeReturnTo(value: unknown): string {
     if (typeof value !== 'string' || /[\\\s#]/.test(value)) return '/';
