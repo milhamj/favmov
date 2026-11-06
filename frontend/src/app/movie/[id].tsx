@@ -195,7 +195,7 @@ const MovieDetailPage = () => {
             imageStyle={styles.posterImage}
             accessibilityLabel="View full poster"
             smallImageUrl={movie.smallPosterUrl()}
-            bigImageUrl={movie.bigPosterUrl()} />
+            fullImageUrl={movie.bigPosterUrl()} />
           <AddToCollectionButton/>
         </View>
         <View style={styles.detailsContainer}>
