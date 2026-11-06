@@ -71,7 +71,7 @@ export default function ImagePage() {
       </TouchableOpacity>
       {image ? (
         <ZoomImageViewer
-          key={`${image.url}:${viewport.width}:${viewport.height}`} // The viewer only re-measures on mount or index changes.
+          key={`${params.url}:${params.preview}:${viewport.width}:${viewport.height}`} // Keep zoom and opacity when only resolution changes.
           imageUrls={[{ url: image.url, width: image.width * fitScale, height: image.height * fitScale }]}
           enableSwipeDown={true}
           saveToLocalByLongPress={false}

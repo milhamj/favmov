@@ -7,6 +7,7 @@ import { router } from '../navigation/router';
 
 let mockUrl: unknown;
 let mockPreview: unknown;
+const mockViewerMount = jest.fn();
 const prefetch = jest.spyOn(Image, 'prefetch');
 const getSize = jest.spyOn(Image, 'getSize');
 let mockWindow = { width: 1280, height: 800, scale: 1, fontScale: 1 };
@@ -16,9 +17,10 @@ jest.mock('../navigation/router', () => ({ router: { goBackSafely: jest.fn() } }
 jest.mock('react-native-safe-area-context', () => ({ useSafeAreaInsets: () => ({ top: 0 }) }));
 jest.mock('react-native-image-zoom-viewer', () => jest.fn(({ imageUrls, onSwipeDown }: any) => {
  const { Text } = require('react-native');
- // Keeps its first url, like the real viewer keeps the first image's measurements.
- const [shown] = require('react').useState(imageUrls[0].url);
- return <Text onPress={onSwipeDown}>{shown}</Text>;
+ // The real viewer retains its first dimensions but renders updated image sources.
+ const [size] = require('react').useState(imageUrls[0]);
+ require('react').useEffect(() => { mockViewerMount(); }, []);
+ return <Text testID="zoom-viewer" accessibilityValue={{ text: JSON.stringify({ width: size.width, height: size.height }) }} onPress={onSwipeDown}>{imageUrls[0].url}</Text>;
 }));
 const url = 'https://image.tmdb.org/t/p/w500/a.jpg';
 beforeEach(() => {
@@ -56,6 +58,7 @@ test('a new url remounts the zoom viewer', () => {
  mockUrl = 'https://image.tmdb.org/t/p/w500/b.jpg';
  ui.rerender(<ImagePage/>);
  expect(ui.getByText(mockUrl as string)).toBeTruthy();
+ expect(mockViewerMount).toHaveBeenCalledTimes(2);
 });
 test('swipe down goes back', () => {
  fireEvent.press(render(<ImagePage/>).getByText(url));
@@ -207,4 +210,18 @@ test('keeps the preview if original dimensions cannot be read', async () => {
  const ui = render(<ImagePage/>);
  await act(async () => {});
  expect(ui.getByText(url)).toBeTruthy();
+});
+
+test('upgrades resolution without remounting the viewer or resetting its geometry', async () => {
+ getSize.mockImplementation((uri, success) => uri === original ? success(2560, 1440) : success(500, 281));
+ let finish!: (value: boolean) => void;
+ prefetch.mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
+ mockUrl = original; mockPreview = url;
+ const ui = render(<ImagePage/>);
+ const geometry = ui.getByTestId('zoom-viewer').props.accessibilityValue.text;
+ expect(mockViewerMount).toHaveBeenCalledTimes(1);
+ await act(async () => { finish(true); });
+ expect(ui.getByText(original)).toBeTruthy();
+ expect(mockViewerMount).toHaveBeenCalledTimes(1);
+ expect(ui.getByTestId('zoom-viewer').props.accessibilityValue.text).toBe(geometry);
 });
