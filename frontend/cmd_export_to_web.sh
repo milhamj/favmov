@@ -3,6 +3,7 @@ mkdir -p ./dist
 rm -rf ./dist
 
 echo '[1] Building web version'
+pnpm install --frozen-lockfile || exit 1 # applies patches/, which an existing node_modules may lack
 pnpm exec expo export --clear -p web
 
 echo '[2] Clearing our BE public folder'
