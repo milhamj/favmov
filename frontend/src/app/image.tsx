@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Image, Platform, StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import { Image, Platform, StyleSheet, View, Text, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { Icon } from 'react-native-elements';
 import ZoomImageViewer from 'react-native-image-zoom-viewer';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,7 +10,9 @@ import { safeImageUrl } from '../navigation/routes';
 export default function ImagePage() {
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
-  const [imageUrl, setImageUrl] = useState<string | null | undefined>(undefined);
+  const viewport = useWindowDimensions();
+  const [image, setImage] = useState<{ url: string; width: number; height: number } | null>();
+  const fitScale = image ? Math.min(viewport.width / image.width, viewport.height / image.height) : 1;
   const closing = useRef(false);
   const closeButton = useRef<React.ElementRef<typeof TouchableOpacity>>(null);
 
@@ -24,14 +26,25 @@ export default function ImagePage() {
   useEffect(() => {
     const original = safeImageUrl(params.url);
     const preview = safeImageUrl(params.preview);
-    setImageUrl(original ? preview || original : null);
-    if (!original || !preview || original === preview) return;
+    setImage(original ? undefined : null);
+    if (!original) return;
 
     let current = true;
-    void Image.prefetch(original).then(loaded => {
-      // Web resolves with undefined on success; native resolves with true.
-      if (current && loaded !== false) setImageUrl(original);
-    }).catch(() => {}); // Keep the preview when the original cannot load.
+    let originalShown = false;
+    const showImage = (url: string) => {
+      Image.getSize(url, (width, height) => {
+        if (!current || (originalShown && url !== original) || width <= 0 || height <= 0) return;
+        if (url === original) originalShown = true;
+        setImage({ url, width, height });
+      }, () => {}); // Keep the preview if the original cannot be measured.
+    };
+    showImage(preview || original);
+    if (preview && preview !== original) {
+      void Image.prefetch(original).then(loaded => {
+        // Web resolves with undefined on success; native resolves with true.
+        if (current && loaded !== false) showImage(original);
+      }).catch(() => {}); // Keep the preview when the original cannot load.
+    }
     return () => { current = false; };
   }, [params.url, params.preview]);
 
@@ -56,15 +69,15 @@ export default function ImagePage() {
         onPress={close}>
         <Icon name="close" size={24} color="#fff" />
       </TouchableOpacity>
-      {imageUrl ? (
+      {image ? (
         <ZoomImageViewer
-          key={imageUrl} // it only re-measures when `index` changes, so a new url needs a remount
-          imageUrls={[{ url: imageUrl }]}
+          key={`${image.url}:${viewport.width}:${viewport.height}`} // The viewer only re-measures on mount or index changes.
+          imageUrls={[{ url: image.url, width: image.width * fitScale, height: image.height * fitScale }]}
           enableSwipeDown={true}
           saveToLocalByLongPress={false}
           onSwipeDown={close}
         />
-      ) : imageUrl === null ? (
+      ) : image === null ? (
         <Text style={styles.unavailable}>Image unavailable</Text>
       ) : null}
     </View>
