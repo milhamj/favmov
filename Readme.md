@@ -48,9 +48,9 @@ What the app does, and its known issues, are written up in [docs/flows.md](docs/
 ```
 cd backend && pnpm install && pnpm test    # unit tests, plus the real server against a fake Supabase
 cd frontend && pnpm install && pnpm test   # unit tests and screen behavior
-cd e2e && pnpm install && pnpm test        # the whole app in Chromium; needs backend and frontend installed
+cd e2e && pnpm install && pnpm test        # the whole app in Chromium, hydration also in Firefox; needs backend and frontend installed
 ```
-None of these need credentials or a network. The browser suite builds the web export first, so allow a few minutes. Its first run needs `pnpm exec playwright install chromium`.
+None of these need credentials or a network. The browser suite builds the web export first, so allow a few minutes. Its first run needs `pnpm exec playwright install chromium firefox`.
 
 Tests named `KNOWN ISSUE` pin behavior that looks wrong. When you fix one, update its test.
 

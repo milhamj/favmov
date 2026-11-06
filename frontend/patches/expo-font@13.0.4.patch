@@ -1,0 +1,24 @@
+diff --git a/build/ExpoFontLoader.web.js b/build/ExpoFontLoader.web.js
+index 58168d3855c43597edb21cb6c1822fa3f79fd7b8..7ce5ba03da3b6d7f64641b7a8c91266b8ff6f8d7 100644
+--- a/build/ExpoFontLoader.web.js
++++ b/build/ExpoFontLoader.web.js
+@@ -27,8 +27,8 @@ function getFontFaceRules() {
+ function getFontFaceRulesMatchingResource(fontFamilyName, options) {
+     const rules = getFontFaceRules();
+     return rules.filter(({ rule }) => {
+-        return (rule.style.fontFamily === fontFamilyName &&
+-            (options && options.display ? options.display === rule.style.fontDisplay : true));
++        return (rule.style.getPropertyValue('font-family') === fontFamilyName &&
++            (options && options.display ? options.display === rule.style.getPropertyValue('font-display') : true));
+     });
+ }
+ const serverContext = new Set();
+@@ -97,7 +97,7 @@ export default {
+             return [...serverContext.values()].map(({ name }) => name);
+         }
+         const rules = getFontFaceRules();
+-        return rules.map(({ rule }) => rule.style.fontFamily);
++        return rules.map(({ rule }) => rule.style.getPropertyValue('font-family'));
+     },
+     isLoaded(fontFamilyName, resource = {}) {
+         if (typeof window === 'undefined') {

@@ -3,3 +3,5 @@ onlyBuiltDependencies:
 minimumReleaseAge: 10080 # 7 days
 allowBuilds:
   react-native-elements: true
+patchedDependencies:
+  expo-font@13.0.4: patches/expo-font@13.0.4.patch
