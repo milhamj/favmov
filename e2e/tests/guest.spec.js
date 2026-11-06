@@ -30,6 +30,7 @@ test('a TV show keeps its type through a reload', async ({ page }) => {
 
 test('View All opens the full list', async ({ page }) => {
   await page.goto('/');
+  await expect(page.getByText('Popular Film')).toBeVisible(); // sections load independently, so last() could be an earlier one
   await page.getByText('View All').last().click();
   await expect(page).toHaveURL('/explore?section_type=Popular%20Movies');
   await expect(page.getByText('Popular Film').last()).toBeVisible(); // home stays mounted underneath

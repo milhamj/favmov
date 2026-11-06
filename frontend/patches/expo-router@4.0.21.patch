@@ -1,0 +1,43 @@
+diff --git a/build/fork/NavigationContainer.js b/build/fork/NavigationContainer.js
+index 5e8ae73ad25989adb0aef89c9dac534e94f77f94..01f40bdb7f8d72b190fde5d272958ffd99ff5237 100644
+--- a/build/fork/NavigationContainer.js
++++ b/build/fork/NavigationContainer.js
+@@ -48,22 +48,28 @@ function NavigationContainerInner({ direction = react_native_1.I18nManager.getCo
+     const onReadyForLinkingHandling = (0, use_latest_callback_1.default)(() => {
+         // If the screen path matches lastUnhandledLink, we do not track it
+         const path = refContainer.current?.getCurrentRoute()?.path;
+-        setLastUnhandledLink((previousLastUnhandledLink) => {
+-            if (previousLastUnhandledLink === path) {
+-                return undefined;
+-            }
+-            return previousLastUnhandledLink;
++        // A transition, because an urgent context update can make React drop Suspense boundaries still hydrating (#421).
++        react_1.default.startTransition(() => {
++            setLastUnhandledLink((previousLastUnhandledLink) => {
++                if (previousLastUnhandledLink === path) {
++                    return undefined;
++                }
++                return previousLastUnhandledLink;
++            });
+         });
+         onReady?.();
+     });
+     const onStateChangeForLinkingHandling = (0, use_latest_callback_1.default)((state) => {
+         // If the screen path matches lastUnhandledLink, we do not track it
+         const path = refContainer.current?.getCurrentRoute()?.path;
+-        setLastUnhandledLink((previousLastUnhandledLink) => {
+-            if (previousLastUnhandledLink === path) {
+-                return undefined;
+-            }
+-            return previousLastUnhandledLink;
++        // A transition, because an urgent context update can make React drop Suspense boundaries still hydrating (#421).
++        react_1.default.startTransition(() => {
++            setLastUnhandledLink((previousLastUnhandledLink) => {
++                if (previousLastUnhandledLink === path) {
++                    return undefined;
++                }
++                return previousLastUnhandledLink;
++            });
+         });
+         onStateChange?.(state);
+     });
