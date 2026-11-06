@@ -39,3 +39,6 @@ yarn-error.*
 
 # local docs
 docs/superpowers/
+
+# VS Code
+.vscode
