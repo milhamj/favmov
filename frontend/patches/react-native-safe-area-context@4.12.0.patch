@@ -12,7 +12,7 @@ index 38a2835c57e75e6afd31b4d03bcd72ea443a7b05..38734005b9e5a4dd6973b6379090cea5
 -          insets,
 -          frame
 -        }
-+      // A transition, because an urgent context update makes React drop Suspense boundaries still hydrating (#421).
++      // A transition, because an urgent context update can make React drop Suspense boundaries still hydrating (#421).
 +      React.startTransition(() => {
 +        // @ts-ignore: missing properties
 +        onInsetsChange({ nativeEvent: { insets, frame } });
@@ -33,7 +33,7 @@ index 7f75c72e1e20b9887305ef68980a71a7b1aad095..17d6904a94f62aed73bcfe72fa1ec6b7
 -          insets,
 -          frame
 -        }
-+      // A transition, because an urgent context update makes React drop Suspense boundaries still hydrating (#421).
++      // A transition, because an urgent context update can make React drop Suspense boundaries still hydrating (#421).
 +      React.startTransition(() => {
 +        // @ts-ignore: missing properties
 +        onInsetsChange({ nativeEvent: { insets, frame } });
@@ -50,7 +50,7 @@ index d3eceed24589e3dcf0d84b3377aa35d8b1d9d03e..9f6742bfd657109335f30a63af1683f8
        };
 -      // @ts-ignore: missing properties
 -      onInsetsChange({ nativeEvent: { insets, frame } });
-+      // A transition, because an urgent context update makes React drop Suspense boundaries still hydrating (#421).
++      // A transition, because an urgent context update can make React drop Suspense boundaries still hydrating (#421).
 +      React.startTransition(() => {
 +        // @ts-ignore: missing properties
 +        onInsetsChange({ nativeEvent: { insets, frame } });

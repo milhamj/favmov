@@ -11,7 +11,7 @@ index 5e8ae73ad25989adb0aef89c9dac534e94f77f94..01f40bdb7f8d72b190fde5d272958ffd
 -                return undefined;
 -            }
 -            return previousLastUnhandledLink;
-+        // A transition, because an urgent context update makes React drop Suspense boundaries still hydrating (#421).
++        // A transition, because an urgent context update can make React drop Suspense boundaries still hydrating (#421).
 +        react_1.default.startTransition(() => {
 +            setLastUnhandledLink((previousLastUnhandledLink) => {
 +                if (previousLastUnhandledLink === path) {
@@ -30,7 +30,7 @@ index 5e8ae73ad25989adb0aef89c9dac534e94f77f94..01f40bdb7f8d72b190fde5d272958ffd
 -                return undefined;
 -            }
 -            return previousLastUnhandledLink;
-+        // A transition, because an urgent context update makes React drop Suspense boundaries still hydrating (#421).
++        // A transition, because an urgent context update can make React drop Suspense boundaries still hydrating (#421).
 +        react_1.default.startTransition(() => {
 +            setLastUnhandledLink((previousLastUnhandledLink) => {
 +                if (previousLastUnhandledLink === path) {
