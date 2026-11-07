@@ -17,7 +17,7 @@ describe('TopBar', () => {
     const back = jest.fn();
     const search = jest.fn();
     render(<TopBar title="Home" backButton={{ isShow: true, onClick: back }} icons={[{ name: 'search', onClick: search }]} />);
-    fireEvent.press(screen.getByText('arrow-back'));
+    fireEvent.press(screen.getByRole('button', { name: 'Go back' }));
     fireEvent.press(screen.getByText('search'));
     expect(screen.getByText('Home')).toBeTruthy();
     expect(back).toHaveBeenCalled();

@@ -82,8 +82,28 @@ test('the favorite button asks a guest to log in', async ({ page }) => {
   await expect(page).toHaveURL('/login?return_to=%2Fmovie%2F101');
 });
 
-test('an unknown page answers 404', async ({ page }) => {
-  expect((await page.goto('/no-such-page')).status()).toBe(404);
+test('an unknown page answers 404 and offers recovery', async ({ page }) => {
+  const errors = [];
+  page.on('console', message => {
+    if (message.type() === 'error' && /hydrat|did not match/i.test(message.text())) errors.push(message.text());
+  });
+  for (const path of ['/no-such-page', '/movie/5/extra']) {
+    expect((await page.goto(path)).status()).toBe(404);
+    await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible();
+    const illustration = page.locator('img[src*="not_found_cinema"]');
+    await expect(illustration).toHaveJSProperty('naturalWidth', 720);
+    expect(await illustration.evaluate(image => {
+      const bounds = image.getBoundingClientRect();
+      return bounds.width / bounds.height;
+    })).toBeCloseTo(1.5);
+    await expect(page).toHaveTitle('Page not found | FavMov');
+    expect((await page.reload()).status()).toBe(404);
+    await page.getByRole('button', { name: 'Go home' }).click();
+    await expect(page).toHaveURL('/');
+    await expect(page.getByText('Trending Movies')).toBeVisible();
+    await expect(page).toHaveTitle('FavMov: Your Movie Companion');
+  }
+  expect(errors).toEqual([]);
 });
 
 test('pages hydrate without React errors', async ({ page }) => {

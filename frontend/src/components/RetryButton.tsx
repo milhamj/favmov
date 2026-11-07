@@ -11,7 +11,7 @@ export default function RetryButton({ onPress, disabled = false, message }: { on
 
 const styles = StyleSheet.create({
     message: { padding: 16 },
-    button: { minWidth: 44, minHeight: 44, paddingHorizontal: 16, paddingVertical: 12, alignSelf: 'flex-start', justifyContent: 'center', alignItems: 'center', backgroundColor: '#b8321c', borderRadius: 6, marginVertical: 8 },
-    label: { color: '#ffffff', fontWeight: '600' },
+    button: { minWidth: 44, minHeight: 44, paddingHorizontal: 16, paddingVertical: 12, alignSelf: 'flex-start', justifyContent: 'center', alignItems: 'center', backgroundColor: 'tomato', borderRadius: 6, marginVertical: 8 },
+    label: { color: '#222', fontWeight: '600' },
     disabled: { opacity: 0.5 },
 });

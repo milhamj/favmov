@@ -26,7 +26,9 @@ const TopBar: React.FC<TopBarProps> = ({ title, icons, backButton }) => {
     <View style={styles.container}>
       <View style={styles.leftContainer}>
         { showBackButton ? (
-            <Icon name='arrow-back' size={24} onPress={backButton?.onClick}/>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" onPress={backButton?.onClick} style={styles.backButton}>
+              <Icon name='arrow-back' size={24} />
+            </TouchableOpacity>
           ) : null
         }
         <Text 
@@ -69,6 +71,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flexShrink: 1,
+  },
+  backButton: {
+    minWidth: 44,
+    minHeight: 44,
+    marginHorizontal: -10, // Keep the original 24px icon slot while enlarging its touch target.
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
     fontSize: 24,

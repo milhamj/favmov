@@ -1,17 +1,21 @@
-import { Stack } from 'expo-router';
+import { Stack, useSegments } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import { SeoHead } from '../components/SeoHead';
 import React from 'react';
 import { getIconType } from 'react-native-elements';
 
 const RootLayout = () => {
+  const isNotFound = useSegments().includes('+not-found');
   // Ships @font-face in the prerendered HTML so icons hydrate as glyphs instead of mismatching.
   // Must run per render: expo-router resets its font list before rendering each page.
   if (typeof window === 'undefined') (getIconType('material') as any).loadFont();
 
   return (
     <>
-      <SeoHead/>
+      <SeoHead
+        title={isNotFound ? 'Page not found | FavMov' : undefined}
+        description={isNotFound ? "This page doesn't exist or may have moved." : undefined}
+      />
       <Stack
         screenOptions={{
           headerShown: false,
