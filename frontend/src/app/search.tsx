@@ -1,6 +1,10 @@
+import EmptyState from '../components/EmptyState';
+import { SPACING } from '../styles/colors';
+import { useGridLayout } from '../hooks/useGridLayout';
+import { FIELD_STYLES } from '../styles/fields';
 import RetryButton from '../components/RetryButton';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Platform, TextInput, FlatList, Image, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Platform, TextInput, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
 import PageContainer  from '../components/PageContainer';
 import { Movie } from '../model/movieModel';
 import { searchMovie } from '../services/movieService';
@@ -24,6 +28,7 @@ const CHIP_PEOPLE = 'People';
 const SelectableChips = [CHIP_MOVIE, CHIP_TV_SHOW, CHIP_PEOPLE];
 
 const SearchPage = () => {
+    const { itemWidth, onContentSizeChange } = useGridLayout();
     const [searchQuery, setSearchQuery]  = useState('');
     const [movies, setMovies] = useState([] as Movie[]);
     const [people, setPeople] = useState([] as People[]);
@@ -40,7 +45,7 @@ const SearchPage = () => {
         const focusTimeout = setTimeout(() => {
             inputRef.current?.focus();
         }, 100);
-        
+
         return () => clearTimeout(focusTimeout);
     }, []);
 
@@ -80,14 +85,13 @@ const SearchPage = () => {
 
     const renderMovieItem = ({ item, index }: { item: Movie, index: number }) => (
         <View style={{
-            width: '48%', 
-            marginRight: index % 2 === 0 ? 16 : 0,
-            marginBottom: 16, 
+            width: itemWidth,
+            marginBottom: 16,
             alignContent: 'center'
         }}>
-            <MovieCard 
+            <MovieCard
                 movie={item}
-                onClick={() => { 
+                onClick={() => {
                     MovieStore.cacheMovie(item);
                     router.navigate(routes.movie(item.id, item.isTvShow))
                 }}
@@ -98,12 +102,12 @@ const SearchPage = () => {
     const renderPeopleItem = ({ item, index }: { item: People, index: number }) => (
         <View style={{
             width: '100%',
-            marginBottom: 8, 
+            marginBottom: 8,
             alignContent: 'center'
         }}>
-            <PeopleCardHorizontal 
+            <PeopleCardHorizontal
                 people={item}
-                onClick={() => { 
+                onClick={() => {
                     router.navigate(routes.people(item.id.toString()))
                 }}
             />
@@ -122,10 +126,10 @@ const SearchPage = () => {
 
     const isEmptyResult = searchQuery.length > 0 && failedPage === null && !isLoading && movies.length === 0 && people.length === 0;
     const isEmptyQuery = searchQuery.length === 0;
-    const placeholderText = isPeopleSelected 
-        ? "Type any name..." 
-        : isTvShowSelected 
-        ? "Type any TV Show title..." 
+    const placeholderText = isPeopleSelected
+        ? "Type any name..."
+        : isTvShowSelected
+        ? "Type any TV Show title..."
         : "Type any Movie title..."
 
     return (
@@ -137,9 +141,10 @@ const SearchPage = () => {
                 onClick: () => router.goBackSafely()
                 }}
             />
-            <TextInput 
+            <TextInput
                 ref={inputRef}
-                style={styles.searchBox}
+                accessibilityLabel="Search"
+                style={[FIELD_STYLES.input, FIELD_STYLES.surface, styles.searchBox]}
                 placeholder={placeholderText}
                 placeholderTextColor="#666666"
                 value={searchQuery}
@@ -156,13 +161,13 @@ const SearchPage = () => {
                     <View style={{flexDirection: 'row', marginBottom: 8, marginHorizontal: 16}}>
                         {
                             SelectableChips.map((chip) => (
-                                <SelectableChip 
+                                <SelectableChip
                                     text={chip}
                                     key={chip}
                                     selected={selectedChip === chip}
                                     onSelect={(isSelected) => {
                                         if (isSelected) { invalidate(searchQuery); setSelectedChip(chip); }}
-                                    } 
+                                    }
                                 />
                             ))
                         }
@@ -176,16 +181,7 @@ const SearchPage = () => {
                     ) : failedPage === 1 ? (
                         <RetryButton message="Unable to load results" onPress={() => void fetchSearchResult(1)}/>
                     ) : isEmptyQuery || isEmptyResult ? (
-                        <View style={styles.emptyState}>
-                            <Image source={require('../../assets/empty_search.png')} style={styles.emptyImage} />
-                            <Text style={styles.emptyText}>
-                                {
-                                    isEmptyQuery ? placeholderText :
-                                    isEmptyResult ? ('No results found.') :
-                                    null
-                                }
-                            </Text>
-                        </View>
+                        <EmptyState title={isEmptyQuery ? placeholderText : 'No results found.'} illustration={require('../../assets/empty_search.png')} />
                     ) : (
                         isPeopleSelected ? (
                             <FlatList
@@ -200,6 +196,8 @@ const SearchPage = () => {
                             />
                         ) : (
                             <FlatList
+                                onContentSizeChange={onContentSizeChange}
+                                extraData={itemWidth}
                                 data={movies}
                                 key="movies"
                                 renderItem={renderMovieItem}
@@ -220,7 +218,6 @@ const SearchPage = () => {
 
 const styles = StyleSheet.create({
   searchBox: {
-    minHeight: 40,
     borderColor: '#e0e0e0',
     borderWidth: 1,
     borderRadius: 8,
@@ -231,29 +228,11 @@ const styles = StyleSheet.create({
   },
   row: {
     justifyContent: 'flex-start',
+    gap: SPACING.medium,
   },
   scrollContainer: {
     flex: 1,
     paddingHorizontal: 16
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  emptyImage: {
-    width: 120,
-    height: 120,
-    marginBottom: 20,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    textAlign: 'center',
-    marginBottom: 8,
-    paddingHorizontal: 20,
   },
   footerLoader: {
     paddingVertical: 20,

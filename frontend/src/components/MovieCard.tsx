@@ -1,7 +1,7 @@
 import React from 'react';
-import { StyleSheet, Dimensions, TouchableOpacity, View, Image, Text } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, Image, Text } from 'react-native';
 import { Movie } from '../model/movieModel';
-import { COLORS } from '../styles/colors'; 
+import { COLORS, RADIUS, TYPOGRAPHY } from '../styles/colors';
 import { getRatingColor } from '../utils/util';
 
 interface MovieCardProps {
@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
   },
   poster: {
     aspectRatio: 2 / 3,
-    borderRadius: 8,
+    borderRadius: RADIUS.control,
     marginBottom: 2,
   },
   posterTitle: {
@@ -55,11 +55,11 @@ const styles = StyleSheet.create({
   },
   posterRating: {
     marginTop: 2,
-    fontSize: 14,
+    ...TYPOGRAPHY.caption,
     textAlign: 'left',
   },
   posterRatingCount: {
-    color: COLORS.text_gray,
+    color: COLORS.secondaryText,
     fontWeight: 'normal',
   },
 });

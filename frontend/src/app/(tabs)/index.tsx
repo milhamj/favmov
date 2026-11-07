@@ -22,7 +22,7 @@ const HomePage = () => {
       <TopBar
         title="FavMov"
         icons={[
-          { name: 'search', onClick: () => router.navigate(routes.search) }
+          { name: 'search', label: 'Search', onClick: () => router.navigate(routes.search) }
         ]}
       />
       <ScrollView>

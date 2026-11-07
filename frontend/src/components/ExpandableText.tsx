@@ -1,5 +1,6 @@
+import { COLORS } from '../styles/colors';
 import { useState, useRef, useEffect } from 'react';
-import { StyleSheet, Text, View, Platform, TextLayoutEventData, NativeSyntheticEvent, StyleProp, ViewStyle } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, Platform, TextLayoutEventData, NativeSyntheticEvent, StyleProp, ViewStyle } from 'react-native';
 
 interface ExpandableTextProps {
   text: string;
@@ -42,14 +43,14 @@ const ExpandableText = ({ text, viewStyle, textStyle, maxLines = 2 }: Expandable
         {text}
       </Text>
       { isTruncated && !isExpanded && (
-        <Text onPress={() => setIsExpanded(true)} style={styles.seeMoreText}>
-          {'See More'}
-        </Text>
+        <TouchableOpacity accessibilityRole="button" accessibilityState={{ expanded: false }} onPress={() => setIsExpanded(true)} style={styles.action}>
+          <Text style={styles.seeMoreText}>See More</Text>
+        </TouchableOpacity>
       )}
       { isTruncated && isExpanded && (
-        <Text onPress={() => setIsExpanded(false)} style={styles.seeMoreText}>
-          {'See Less'}
-        </Text>
+        <TouchableOpacity accessibilityRole="button" accessibilityState={{ expanded: true }} onPress={() => setIsExpanded(false)} style={styles.action}>
+          <Text style={styles.seeMoreText}>See Less</Text>
+        </TouchableOpacity>
       )}
     </View>
   );
@@ -60,8 +61,9 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'column',
   },
+  action: { minHeight: 48, minWidth: 48, justifyContent: 'center', alignSelf: 'flex-start' },
   seeMoreText: {
-    color: 'tomato',
+    color: COLORS.accentText,
   }
 });
 

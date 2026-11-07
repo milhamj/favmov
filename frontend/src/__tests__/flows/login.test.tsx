@@ -18,9 +18,9 @@ const checkOtp = verifyOtp as jest.Mock;
 
 const requestCode = async () => {
   render(<LoginPage />);
-  fireEvent.changeText(screen.getByPlaceholderText('Email'), 'a@b.c');
+  fireEvent.changeText(screen.getByLabelText('Email'), 'a@b.c');
   fireEvent.press(screen.getByText('Send OTP'));
-  await screen.findByPlaceholderText('Input your OTP here...');
+  await screen.findByLabelText('OTP');
 };
 
 beforeEach(() => {

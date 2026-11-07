@@ -1,9 +1,11 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { COLORS, TYPOGRAPHY } from '../styles/colors';
 import { Icon } from 'react-native-elements';
 
 interface IconProps {
     name: string;
+    label: string;
     onClick: () => void;
 }
 
@@ -43,13 +45,9 @@ const TopBar: React.FC<TopBarProps> = ({ title, icons, backButton }) => {
         showIcon ? (
           <View style={styles.rightContainer}>
             {icons?.map((icon, index) => (
-              <Icon
-                key={index}
-                name={icon.name}
-                size={24}
-                onPress={icon.onClick}
-                style={styles.icon}
-              />
+              <TouchableOpacity key={index} accessibilityRole="button" accessibilityLabel={icon.label} onPress={icon.onClick} style={styles.icon}>
+                <Icon name={icon.name} size={24} />
+              </TouchableOpacity>
             ))}
           </View>
         ) : null
@@ -65,7 +63,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     height: 56,
-    backgroundColor: '#f8f8f8',
+    backgroundColor: COLORS.header,
   },
   leftContainer: {
     flexDirection: 'row',
@@ -73,15 +71,13 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   backButton: {
-    minWidth: 44,
-    minHeight: 44,
-    marginHorizontal: -10, // Keep the original 24px icon slot while enlarging its touch target.
+    minWidth: 48,
+    minHeight: 48,
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    ...TYPOGRAPHY.pageTitle,
     flexShrink: 1,
   },
   rightContainer: {
@@ -89,7 +85,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   icon: {
-    marginLeft: 10,
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 

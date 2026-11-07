@@ -1,7 +1,9 @@
 import RetryButton from './RetryButton';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Text, StyleSheet, View, ActivityIndicator, TextInput } from 'react-native';
-import Checkbox from 'expo-checkbox';
+import { Text, StyleSheet, View, ActivityIndicator, TextInput, TouchableOpacity, Platform } from 'react-native';
+import { Icon } from 'react-native-elements';
+import { FIELD_STYLES } from '../styles/fields';
+import { COLORS, TYPOGRAPHY } from '../styles/colors';
 import { CollectionCard } from '../model/collectionModel';
 import { deleteMovieFromCollection, postAddMovieToCollection, updateNotes } from '../services/collectionService';
 import { Movie } from '../model/movieModel';
@@ -153,32 +155,42 @@ const CollectionAddCard = ({ collection, movie, registerSave, onPendingChange, d
 
     return (
         <View>
-            <View style={styles.selectionContainer}>
+            <TouchableOpacity accessibilityRole="checkbox" accessibilityLabel={collection.name}
+                {...(Platform.OS === 'web' ? { onKeyDownCapture: (event: React.KeyboardEvent) => {
+                    // RN Web only supplies Space activation for button roles.
+                    if (event.key !== ' ' && event.key !== 'Spacebar') return;
+                    event.preventDefault();
+                    if (!event.repeat && !disabled && !isLoading && !saving) void handleAddToCollection(!isSaved);
+                } } : {})}
+                accessibilityState={{ checked: isSaved, disabled: disabled || isLoading || saving, busy: isLoading || saving }}
+                disabled={disabled || isLoading || saving} onPress={() => void handleAddToCollection(!isSaved)} style={styles.selectionContainer}>
                 <Text style={styles.collectionName}>{collection.name}</Text>
-                <View style={styles.checkboxContainer}>
+                <View style={styles.checkboxContainer} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
                     {
                         isLoading || saving ? (
-                            <ActivityIndicator style={styles.checkbox} color="tomato"/>
+                            <ActivityIndicator color={COLORS.accent}/>
                         ) : (
-                            <Checkbox disabled={disabled} style={styles.checkbox} value={isSaved} onValueChange={handleAddToCollection} color='tomato'/>
+                            <View style={[styles.checkbox, isSaved && styles.checked]}>{isSaved && <Icon name="check" size={14} color={COLORS.onAccent} />}</View>
                         )
                     }
                 </View>
-            </View>
+            </TouchableOpacity>
             {   
                     isSaved ? (
                         <TextInput
                             editable={!disabled && !isLoading}
-                            style={styles.notesInput}
+                            accessibilityLabel={`Notes for ${collection.name}`}
+                            accessibilityState={{ disabled: disabled || isLoading }}
+                            style={[FIELD_STYLES.input, FIELD_STYLES.surface, styles.notesInput]}
                             placeholder="Write custom notes..."
-                            placeholderTextColor="#898989"
+                            placeholderTextColor={COLORS.secondaryText}
                             value={notes}
                             onChangeText={handleNotesUpdate}
                         />
                     ) : null
             }
-            {isSaved && <Text>{saving ? 'Saving' : saveError ? 'Unable to save notes' : draft.current === saved.current ? 'Saved' : 'Unsaved'}</Text>}
-            {membershipFailed && <Text>Unable to update collection</Text>}
+            {isSaved && <Text accessibilityLiveRegion="polite" style={[styles.status, saveError && styles.error]}>{saving ? 'Saving' : saveError ? 'Unable to save notes' : draft.current === saved.current ? 'Saved' : 'Unsaved'}</Text>}
+            {membershipFailed && <Text accessibilityRole="alert" style={[styles.status, styles.error]}>Unable to update collection</Text>}
             {membershipFailed ? <RetryButton disabled={disabled || saving} onPress={() => void handleAddToCollection(!isSaved)}/> : saveError && <RetryButton disabled={disabled} onPress={() => void drain()}/>}
             <View style={styles.separator}/>
         </View>
@@ -186,32 +198,35 @@ const CollectionAddCard = ({ collection, movie, registerSave, onPendingChange, d
 }
 
 const styles = StyleSheet.create({
+    status: { ...TYPOGRAPHY.caption, color: COLORS.secondaryText, marginTop: 4 },
+    error: { color: COLORS.rating_red },
     selectionContainer: {
-        flex: 1,
+        minHeight: 48,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center'
     },
     collectionName: {
-        width: '90%',
+        flex: 1,
         fontSize: 16,
         fontWeight: '700'
     },
     checkboxContainer: {
-        flex: 1,
-        width: '10%',
+        width: 48,
         alignItems: 'flex-end'
     },
     checkbox: {
         width: 18,
-        height: 18
+        height: 18,
+        borderWidth: 2,
+        borderRadius: 2,
+        borderColor: COLORS.accent,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
+    checked: { backgroundColor: COLORS.accent },
     notesInput: {
-        minHeight: 32,
         borderColor: '#e0e0e0',
-        borderWidth: 0.5,
-        borderRadius: 4,
-        paddingHorizontal: 4,
         marginTop: 6,
         marginBottom: 2,
     },

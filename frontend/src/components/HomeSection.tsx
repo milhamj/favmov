@@ -1,8 +1,11 @@
+import { COLORS, TYPOGRAPHY } from '../styles/colors';
 import React, { useEffect, useRef } from 'react';
-import { Text, StyleSheet, View, ActivityIndicator, FlatList, Pressable } from 'react-native';
+import { Text, StyleSheet, View, FlatList, Pressable } from 'react-native';
 import { fetchTrendingMovies, fetchPopularMovies, fetchFavoriteMovies, fetchTrendingShows } from '../services/movieService';
-import { Result, Success } from '../model/apiResponse';
+import { Success } from '../model/apiResponse';
 import MovieCard from '../components/MovieCard';
+import RetryButton from './RetryButton';
+import FullPageLoader from './FullPageLoader';
 import { Movie } from '../model/movieModel';
 import { useAuth } from '../hooks/useAuth';
 import { Loadable } from '../model/uiState';
@@ -92,7 +95,7 @@ const HomeSection: React.FC<{
               <Text style={[styles.headerTitle]}>{section}</Text>
             </View>
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="tomato" />
+              <FullPageLoader />
             </View>
           </View>
         case 'success':
@@ -112,7 +115,12 @@ const HomeSection: React.FC<{
               contentContainerStyle={styles.flatListContent}
             /> 
           </View>;
-        default: // 'error' | 'empty' | 'idle'
+        case 'error':
+          return <View style={styles.section}>
+            <View style={styles.header}><Text style={styles.headerTitle}>{section}</Text></View>
+            <RetryButton message={movieState.error} onPress={() => void fetchMovies()} />
+          </View>;
+        default: // 'empty' | 'idle'
           return null; // 'idle'
     }
 }
@@ -129,13 +137,12 @@ const styles = StyleSheet.create({
       paddingHorizontal: 16,
     },
     headerTitle: { 
-      fontSize: 24,
-      fontWeight: 'bold',
+      ...TYPOGRAPHY.sectionTitle,
     },
     headerAction: { 
       fontSize: 14,
       fontWeight: '500',
-      color: 'tomato',
+      color: COLORS.accentText,
     },
     flatListContent: {
         paddingHorizontal: 16,

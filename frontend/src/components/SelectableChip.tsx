@@ -35,6 +35,8 @@ const SelectableChip: React.FC<SelectableChipProps> = ({
 
   return (
     <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
       onPress={handlePress}
       style={[
         styles.chip,
@@ -61,6 +63,9 @@ const SelectableChip: React.FC<SelectableChipProps> = ({
 // Styles
 const styles = StyleSheet.create({
   chip: {
+    minHeight: 48,
+    minWidth: 48,
+    justifyContent: 'center',
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 6,

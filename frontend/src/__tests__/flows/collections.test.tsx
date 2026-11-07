@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
-import Checkbox from 'expo-checkbox';
+import { Modal, Platform, FlatList } from 'react-native';
 import Toast from 'react-native-toast-message';
 import CollectionPage from '../../app/(tabs)/collection';
 import CollectionDetailPage from '../../app/collection/[id]';
@@ -66,10 +66,15 @@ describe('collections tab', () => {
     await waitFor(() => expect(Toast.show).toHaveBeenCalledWith(expect.objectContaining({ type: 'error', text2: 'Failed to fetch collections' })));
   });
 
-  test('KNOWN ISSUE: a failed load also claims the user has no collections', async () => {
+  test('a failed load shows a persistent error and retries without claiming empty', async () => {
     listCollections.mockResolvedValue(new ApiError('Failed to fetch collections'));
     render(<CollectionPage />);
-    expect(await screen.findByText("You don't have any collections yet.")).toBeTruthy();
+    expect(await screen.findByText('Failed to fetch collections')).toBeTruthy();
+    expect(screen.queryByText("You don't have any collections yet.")).toBeNull();
+    listCollections.mockResolvedValue(collections('Recovered'));
+    fireEvent.press(screen.getByRole('button', { name: 'Retry' }));
+    expect(await screen.findByText('Recovered')).toBeTruthy();
+    expect(screen.queryByText('Failed to fetch collections')).toBeNull();
   });
 
   test('creating a collection confirms and reloads the list', async () => {
@@ -96,6 +101,22 @@ describe('collections tab', () => {
 
     expect(await screen.findByText(/already have a collection/)).toBeTruthy();
     expect(screen.getByText('Create New Collection')).toBeTruthy();
+  });
+
+  test('keeps a saving sheet open and blocks duplicate saves', async () => {
+    let finish!: (result: Success<Collection>) => void;
+    create.mockReturnValue(new Promise(resolve => { finish = resolve; }));
+    render(<CollectionPage />);
+    await screen.findByText(/Sci-Fi/);
+    fireEvent.press(screen.getByText('add-circle'));
+    fireEvent.changeText(screen.getByPlaceholderText('Type collection name here...'), '  Drama  ');
+    fireEvent.press(screen.getByRole('button', { name: 'Save' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Save' }), { stopPropagation: jest.fn() });
+    act(() => screen.UNSAFE_getByType(Modal).props.onRequestClose());
+    expect(screen.getByText('Create New Collection')).toBeTruthy();
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(create).toHaveBeenCalledWith('Drama');
+    await act(async () => { finish(new Success(new Collection('new', 'Drama'))); });
   });
 
   test('will not save a blank name', async () => {
@@ -153,6 +174,17 @@ describe('collection detail', () => {
     render(<CollectionDetailPage />);
     await waitFor(() => expect(Toast.show).toHaveBeenCalledWith(expect.objectContaining({ type: 'error', text2: 'Collection not found or access denied' })));
     expect(screen.getByText('Collection')).toBeTruthy();
+  });
+
+  test('failed detail retries to a legitimate empty collection', async () => {
+    getDetail.mockResolvedValue(new ApiError('Unable to read collection'));
+    render(<CollectionDetailPage />);
+    expect(await screen.findByText('Unable to read collection')).toBeTruthy();
+    expect(screen.queryByText('No movies or TV show in this collection.')).toBeNull();
+    getDetail.mockResolvedValue(detail([]));
+    fireEvent.press(screen.getByRole('button', { name: 'Retry' }));
+    expect(await screen.findByText('No movies or TV show in this collection.')).toBeTruthy();
+    expect(screen.queryByText('Unable to read collection')).toBeNull();
   });
 
   test('reloads on return after a change', async () => {
@@ -220,7 +252,7 @@ describe('add to collection page', () => {
     create.mockResolvedValue(new Success(new Collection('id-Drama', 'Drama')));
     render(<AddToCollectionPage />);
     fireEvent.press(await screen.findByText('Create Collection'));
-    fireEvent.changeText(screen.getByPlaceholderText('Type collection name here...'), 'Drama');
+    fireEvent.changeText(screen.getByLabelText('Name'), 'Drama');
     listCollections.mockResolvedValue(collections('Drama'));
     fireEvent.press(screen.getByText('Save'));
 
@@ -232,7 +264,7 @@ describe('add to collection page', () => {
 describe('collection checkbox and notes', () => {
   const movie = new Movie({ id: 1, title: 'Up', isTvShow: true });
   const notesBox = 'Write custom notes...';
-  const toggle = (value: boolean) => act(async () => { screen.UNSAFE_getByType(Checkbox).props.onValueChange(value); });
+  const toggle = (value: boolean) => act(async () => { fireEvent.press(screen.getByRole('checkbox')); });
   const card = (isInCollection: boolean) => render(<CollectionAddCard collection={new CollectionCard('c1', 'Sci-Fi', isInCollection)} movie={movie} />);
 
   beforeEach(() => {
@@ -240,6 +272,48 @@ describe('collection checkbox and notes', () => {
     unsavedNotes.clear();
   });
   afterEach(() => jest.useRealTimers());
+
+  test('Space toggles the web checkbox once without scrolling, including busy and disabled states', async () => {
+    const platform = Platform.OS;
+    Platform.OS = 'web';
+    let finish!: (result: Success<any>) => void;
+    add.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    try {
+      const ui = card(false);
+      const preventDefault = jest.fn();
+      const space = { key: ' ', repeat: false, preventDefault };
+      await act(async () => { fireEvent(screen.getByRole('checkbox'), 'keyDownCapture', space); });
+      expect(preventDefault).toHaveBeenCalledTimes(1);
+      expect(add).toHaveBeenCalledTimes(1);
+      await act(async () => {
+        fireEvent(screen.getByRole('checkbox'), 'keyDownCapture', space);
+        fireEvent(screen.getByRole('checkbox'), 'keyDownCapture', { ...space, repeat: true });
+      });
+      expect(add).toHaveBeenCalledTimes(1);
+      await act(async () => { finish(new Success({})); });
+      ui.rerender(<CollectionAddCard disabled collection={new CollectionCard('c1', 'Sci-Fi', true)} movie={movie} />);
+      fireEvent(screen.getByRole('checkbox'), 'keyDownCapture', space);
+      expect(remove).not.toHaveBeenCalled();
+    } finally {
+      Platform.OS = platform;
+    }
+  });
+
+  test('checkbox names its selection and prevents duplicate and disabled presses', async () => {
+    let finish!: (result: Success<any>) => void;
+    add.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    const ui = card(false);
+    const checkbox = screen.getByRole('checkbox', { name: 'Sci-Fi', checked: false });
+    await act(async () => { fireEvent.press(checkbox); });
+    expect(screen.getByRole('checkbox', { name: 'Sci-Fi', busy: true, disabled: true })).toBeTruthy();
+    await act(async () => { fireEvent.press(screen.getByRole('checkbox')); });
+    expect(add).toHaveBeenCalledTimes(1);
+    await act(async () => { finish(new Success({})); });
+    expect(screen.getByLabelText('Notes for Sci-Fi')).toBeTruthy();
+    ui.rerender(<CollectionAddCard disabled collection={new CollectionCard('c1', 'Sci-Fi', true)} movie={movie} />);
+    fireEvent.press(screen.getByRole('checkbox', { name: 'Sci-Fi', checked: true, disabled: true }));
+    expect(remove).not.toHaveBeenCalled();
+  });
 
   test('adding saves the title, records the change, and reveals notes', async () => {
     card(false);
@@ -316,4 +390,15 @@ describe('collection checkbox and notes', () => {
     await act(async () => { fireEvent.press(screen.getByText('Retry')); });
     expect(screen.getByText('Saved')).toBeTruthy();
   });
+});
+
+ test('collection cells retain half-width for an odd last row after resizing', async () => {
+  listCollections.mockResolvedValue(collections('One', 'Two', 'Three'));
+  render(<CollectionPage />);
+  await screen.findByText('Three');
+  const grid = () => screen.UNSAFE_getByType(FlatList);
+  fireEvent(grid(), 'contentSizeChange', 288, 1200);
+  expect(grid().props.renderItem({ item: grid().props.data[2] }).props.style.width).toBe(136);
+  fireEvent(grid(), 'contentSizeChange', 608, 1200);
+  expect(grid().props.renderItem({ item: grid().props.data[2] }).props.style.width).toBe(296);
 });

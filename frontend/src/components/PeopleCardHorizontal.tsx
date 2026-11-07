@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View, Image, Text } from 'react-native';
-import { COLORS } from '../styles/colors'; 
+import { COLORS, RADIUS, ROW_ELEVATION, SPACING, TYPOGRAPHY } from '../styles/colors';
 import { People } from '../model/peopleModel';
 
 interface PeopleCardHorizontalProps {
@@ -20,6 +20,7 @@ const PeopleCardHorizontal: React.FC<PeopleCardHorizontalProps> = ({ people, onC
                 </Text>
                 { people.knownForDepartment && (
                     <Text
+                      style={styles.department}
                       numberOfLines={1}
                       ellipsizeMode="tail"
                     >
@@ -34,20 +35,17 @@ const PeopleCardHorizontal: React.FC<PeopleCardHorizontalProps> = ({ people, onC
 const styles = StyleSheet.create({
   posterContainer: {
     width: '100%',
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    borderRadius: RADIUS.control,
+    ...ROW_ELEVATION,
+    backgroundColor: COLORS.page,
     flex: 1,
     flexDirection: 'row',
   },
   poster: {
     width: 80,
     aspectRatio: 3 / 4,
-    borderTopLeftRadius: 8,
-    borderBottomLeftRadius: 8,
+    borderTopLeftRadius: RADIUS.control,
+    borderBottomLeftRadius: RADIUS.control,
     borderTopRightRadius: 0,
     borderBottomRightRadius: 0,
   },
@@ -55,13 +53,14 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'column',
     justifyContent: 'center',
-    padding: 8,
+    padding: SPACING.small,
   },
+  department: { ...TYPOGRAPHY.caption, color: COLORS.secondaryText },
   posterTitle: {
     marginTop: 2,
-    fontSize: 16,
-    textAlign: 'left',
-    fontWeight: '700'
+    ...TYPOGRAPHY.rowTitle,
+    color: COLORS.text,
+    textAlign: 'left'
   },
 });
 

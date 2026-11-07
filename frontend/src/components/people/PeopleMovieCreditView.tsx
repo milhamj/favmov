@@ -3,7 +3,7 @@ import { routes } from '../../navigation/routes';
 import { router } from '../../navigation/router';
 import { PeopleMovieCredit } from "../../model/peopleModel";
 import React from "react";
-import { COLORS } from "../../styles/colors";
+import { COLORS, RADIUS, TYPOGRAPHY } from "../../styles/colors";
 import { getRatingColor } from "../../utils/util";
 import { Icon } from "react-native-elements";
 import { Movie } from "../../model/movieModel";
@@ -32,7 +32,7 @@ const PeopleMovieCreditView = ({ credit }: PeopleMovieCreditProps) => {
 
     const rating = credit.rating ? parseFloat(credit.rating.toFixed(2)) : undefined;
 
-    return <TouchableOpacity 
+    return <TouchableOpacity
         style={styles.container}
         key={`${credit.id}_${credit.character}`}
         onPress={() => handleCreditPress()}>
@@ -41,11 +41,11 @@ const PeopleMovieCreditView = ({ credit }: PeopleMovieCreditProps) => {
             <View style={styles.creditTitleContainer}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                     <Icon name={credit.isTvShow ? "tv" : "movie"} size={12} />
-                    <Text style={{flex: 1}} numberOfLines={1} ellipsizeMode="tail">{`${credit.title}`}</Text>
+                    <Text style={{flex: 1, ...TYPOGRAPHY.rowTitle, color: COLORS.text}} numberOfLines={1} ellipsizeMode="tail">{`${credit.title}`}</Text>
                 </View>
                 { credit.character && (
-                    <Text 
-                    numberOfLines={1} 
+                    <Text
+                    numberOfLines={1}
                     ellipsizeMode="tail"
                     style={styles.creditCharacter}>
                         {`as ${credit.character}`}
@@ -59,7 +59,7 @@ const PeopleMovieCreditView = ({ credit }: PeopleMovieCreditProps) => {
                                 fontWeight: 'bold',
                             }}>
                                 {` ${rating} `}
-                            </Text> 
+                            </Text>
                             <Text style={styles.creditRatingCount}>({credit.ratingCount})</Text>
                         </Text>
                     )
@@ -70,35 +70,36 @@ const PeopleMovieCreditView = ({ credit }: PeopleMovieCreditProps) => {
 
 const styles = StyleSheet.create({
     container: {
-        marginBottom: 16, 
-        flex:1, 
-        flexDirection: 'row', 
-        alignItems: 'center', 
+        marginBottom: 16,
+        flex:1,
+        flexDirection: 'row',
+        alignItems: 'center',
         gap: 12
     },
     creditYear: {
         width: 38,
     },
     creditPoster: {
-        borderRadius: 8, 
-        width:40, 
-        aspectRatio: 3/4
+        borderRadius: RADIUS.control,
+        width:40,
+        aspectRatio: 2/3
     },
     creditRating: {
-        fontSize: 12,
+        ...TYPOGRAPHY.caption,
     },
     creditRatingCount: {
-        color: COLORS.text_gray,
+        color: COLORS.secondaryText,
         fontWeight: 'normal',
     },
     creditTitleContainer: {
         flex: 1,
-        flexDirection: 'column', 
+        flexDirection: 'column',
         justifyContent: 'center'
     },
     creditCharacter: {
-        fontStyle: 'italic', 
-        color: COLORS.text_gray
+        ...TYPOGRAPHY.caption,
+        fontStyle: 'italic',
+        color: COLORS.secondaryText
     }
 });
 

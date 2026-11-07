@@ -96,11 +96,15 @@ describe('home', () => {
     await waitFor(() => expect(screen.queryByText('Trending Movies')).toBeNull());
   });
 
-  test('KNOWN ISSUE: a failed section disappears with no error', async () => {
+  test('a failed section retains its heading and retries successfully', async () => {
     trending.mockResolvedValue(new ApiError('Failed'));
     render(<HomeSection section={SectionType.TrendingMovies} />);
-    await waitFor(() => expect(screen.queryByText('Trending Movies')).toBeNull());
-    expect(screen.queryByText(/Failed/)).toBeNull();
+    expect(await screen.findByText('Failed')).toBeTruthy();
+    expect(screen.getByText('Trending Movies')).toBeTruthy();
+    trending.mockResolvedValue(list('Recovered'));
+    fireEvent.press(screen.getByRole('button', { name: 'Retry' }));
+    expect(await screen.findByText('Recovered')).toBeTruthy();
+    expect(screen.queryByText('Failed')).toBeNull();
   });
 });
 
@@ -183,4 +187,16 @@ test('the collection change store feeds the home page', async () => {
   CollectionStateStore.setLastUpdated(Date.now() + 60_000);
   await act(async () => refocus());
   expect(await screen.findByText('After')).toBeTruthy();
+});
+
+ test('explore recalculates equal movie cell widths on layout changes', async () => {
+  searchParams.current = { section_type: SectionType.TrendingMovies };
+  trending.mockResolvedValue(list('One', 'Two', 'Three'));
+  render(<ExplorePage />);
+  await screen.findByText('Three');
+  const grid = () => screen.UNSAFE_getByType(FlatList);
+  fireEvent(grid(), 'contentSizeChange', 288, 1200);
+  expect(grid().props.renderItem({ item: grid().props.data[2], index: 2 }).props.style.width).toBe(136);
+  fireEvent(grid(), 'contentSizeChange', 608, 1200);
+  expect(grid().props.renderItem({ item: grid().props.data[0], index: 0 }).props.style.width).toBe(296);
 });

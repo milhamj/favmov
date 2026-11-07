@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   ratingCount: {
-    color: COLORS.text_gray,
+    color: COLORS.secondaryText,
     fontWeight: 'normal',
   },
   info: {

@@ -53,18 +53,17 @@ test('debounce coalesces calls, uses the latest callback and cancels pending wor
 });
 
 test.each([true, false])('removal success=%s clears drafts only after confirmation', async succeeds => {
- const Checkbox = require('expo-checkbox').default;
  const { postAddMovieToCollection } = require('../services/collectionService');
  const notedMovie = new Movie({ id: 1, collections: [{ id: 'c', moviesCollectionNotes: 'old' } as any] });
  remove.mockResolvedValue(succeeds ? new Success(true) : new ApiError('offline'));
  const ui = render(<Card collection={collection} movie={notedMovie}/>);
  fireEvent.changeText(ui.getByPlaceholderText('Write custom notes...'), 'pending');
- await act(async () => { ui.UNSAFE_getByType(Checkbox).props.onValueChange(false); });
+ await act(async () => { fireEvent.press(ui.getByRole('checkbox')); });
  await act(async () => { jest.advanceTimersByTime(1000); });
  if (succeeds) {
   expect(update).not.toHaveBeenCalled();
   expect(ui.queryByPlaceholderText('Write custom notes...')).toBeNull();
-  await act(async () => { ui.UNSAFE_getByType(Checkbox).props.onValueChange(true); });
+  await act(async () => { fireEvent.press(ui.getByRole('checkbox')); });
   expect(postAddMovieToCollection).toHaveBeenCalled();
   expect(ui.getByPlaceholderText('Write custom notes...').props.value).toBe('');
  } else {
@@ -81,11 +80,10 @@ test('unmount cancels a debounced callback', () => {
  expect(cb).not.toHaveBeenCalled();
 });
 test('a pending removal prevents typing from scheduling another note write', async () => {
- const Checkbox = require('expo-checkbox').default;
  let finish: any;
  remove.mockImplementation(() => new Promise(resolve => finish = resolve));
  const ui = render(<Card collection={collection} movie={movie}/>);
- await act(async () => { ui.UNSAFE_getByType(Checkbox).props.onValueChange(false); });
+ await act(async () => { fireEvent.press(ui.getByRole('checkbox')); });
  expect(ui.getByPlaceholderText('Write custom notes...').props.editable).toBe(false);
  fireEvent.changeText(ui.getByPlaceholderText('Write custom notes...'), 'during deletion');
  await act(async () => { jest.advanceTimersByTime(1000); });
@@ -93,12 +91,11 @@ test('a pending removal prevents typing from scheduling another note write', asy
  await act(async () => { finish(new Success(true)); });
 });
 test('navigation waits for membership removal before draining notes', async () => {
- const Checkbox = require('expo-checkbox').default;
  let finish: any, drain: any;
  remove.mockImplementation(() => new Promise(resolve => finish = resolve));
  const ui = render(<Card collection={collection} movie={movie} registerSave={(_id, save) => { if (save) drain = save; }}/>);
  fireEvent.changeText(ui.getByPlaceholderText('Write custom notes...'), 'pending');
- await act(async () => { ui.UNSAFE_getByType(Checkbox).props.onValueChange(false); });
+ await act(async () => { fireEvent.press(ui.getByRole('checkbox')); });
  let drained = false;
  let navigation: any;
  await act(async () => { navigation = drain().then(() => { drained = true; }); });
@@ -110,12 +107,11 @@ test('navigation waits for membership removal before draining notes', async () =
 });
 
 test('failed slow removal resumes autosave only after membership is known', async () => {
- const Checkbox = require('expo-checkbox').default;
  let finish: any;
  remove.mockImplementationOnce(() => new Promise(resolve => finish = resolve));
  const ui = render(<Card collection={collection} movie={movie}/>);
  fireEvent.changeText(ui.getByPlaceholderText('Write custom notes...'), 'retained draft');
- await act(async () => { ui.UNSAFE_getByType(Checkbox).props.onValueChange(false); });
+ await act(async () => { fireEvent.press(ui.getByRole('checkbox')); });
  await act(async () => { jest.advanceTimersByTime(5000); });
  expect(update).not.toHaveBeenCalled();
  await act(async () => { finish(new ApiError('offline')); });
@@ -169,21 +165,19 @@ test('a draft is not restored after discarding or once the title left the collec
 });
 
 test('membership Retry repeats the request and clears the failure', async () => {
- const Checkbox = require('expo-checkbox').default;
  remove.mockResolvedValueOnce(new ApiError('offline')).mockResolvedValueOnce(new Success(true));
  const ui = render(<Card collection={collection} movie={movie}/>);
- await act(async () => { ui.UNSAFE_getByType(Checkbox).props.onValueChange(false); });
+ await act(async () => { fireEvent.press(ui.getByRole('checkbox')); });
  await act(async () => { fireEvent.press(ui.getByText('Retry')); });
  expect(remove).toHaveBeenCalledTimes(2);
  expect(ui.queryByText('Unable to update collection')).toBeNull();
 });
 
 test('leaving saves notes and never replays or blocks on an already visible membership failure', async () => {
- const Checkbox = require('expo-checkbox').default;
  let drain: any;
  remove.mockResolvedValueOnce(new ApiError('offline'));
  const ui = render(<Card collection={collection} movie={movie} registerSave={(_id, save) => { if (save) drain = save; }}/>);
- await act(async () => { ui.UNSAFE_getByType(Checkbox).props.onValueChange(false); });
+ await act(async () => { fireEvent.press(ui.getByRole('checkbox')); });
  fireEvent.changeText(ui.getByPlaceholderText('Write custom notes...'), 'keeping this');
  let result: any;
  await act(async () => { result = await drain(); });
@@ -194,11 +188,10 @@ test('leaving saves notes and never replays or blocks on an already visible memb
 });
 
 test('a membership change failing during leave blocks that leave', async () => {
- const Checkbox = require('expo-checkbox').default;
  let drain: any, finish: any;
  remove.mockImplementationOnce(() => new Promise(resolve => finish = resolve));
  const ui = render(<Card collection={collection} movie={movie} registerSave={(_id, save) => { if (save) drain = save; }}/>);
- await act(async () => { ui.UNSAFE_getByType(Checkbox).props.onValueChange(false); });
+ await act(async () => { fireEvent.press(ui.getByRole('checkbox')); });
  let leaving: any;
  await act(async () => { leaving = drain(); });
  await act(async () => { finish(new ApiError('offline')); });
@@ -219,10 +212,9 @@ test('discarding stops a running save from sending newer text', async () => {
 });
 
 test('an add that finds the row keeps the notes already on the server', async () => {
- const Checkbox = require('expo-checkbox').default;
  (postAddMovieToCollection as jest.Mock).mockResolvedValueOnce(new Success({ notes: 'from elsewhere' }));
  const ui = render(<Card collection={{ ...collection, isInCollection: false }} movie={movie}/>);
- await act(async () => { ui.UNSAFE_getByType(Checkbox).props.onValueChange(true); });
+ await act(async () => { fireEvent.press(ui.getByRole('checkbox')); });
  expect(ui.getByDisplayValue('from elsewhere')).toBeTruthy();
  expect(ui.getByText('Saved')).toBeTruthy();
 });
@@ -305,11 +297,10 @@ test('a slow unmount save cannot delete a newer stored draft', async () => {
 });
 
 test('unmounting during a removal neither saves nor stores the draft', async () => {
- const Checkbox = require('expo-checkbox').default;
  remove.mockImplementationOnce(() => new Promise(() => {}));
  const ui = render(<Card collection={collection} movie={movie}/>);
  fireEvent.changeText(ui.getByPlaceholderText('Write custom notes...'), 'being removed');
- await act(async () => { ui.UNSAFE_getByType(Checkbox).props.onValueChange(false); });
+ await act(async () => { fireEvent.press(ui.getByRole('checkbox')); });
  ui.unmount();
  await act(async () => {});
  expect(update).not.toHaveBeenCalled();
@@ -317,10 +308,9 @@ test('unmounting during a removal neither saves nor stores the draft', async () 
 });
 
 test('editing after a failed removal removes the Retry that would delete the entry', async () => {
- const Checkbox = require('expo-checkbox').default;
  remove.mockResolvedValueOnce(new ApiError('offline'));
  const ui = render(<Card collection={collection} movie={movie}/>);
- await act(async () => { ui.UNSAFE_getByType(Checkbox).props.onValueChange(false); });
+ await act(async () => { fireEvent.press(ui.getByRole('checkbox')); });
  expect(ui.getByText('Retry')).toBeTruthy();
  fireEvent.changeText(ui.getByPlaceholderText('Write custom notes...'), 'keeping it');
  expect(ui.queryByText('Retry')).toBeNull();

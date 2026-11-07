@@ -4,10 +4,11 @@ import {
   Text,
   StyleSheet,
   Platform,
-  TouchableOpacity,
 } from 'react-native';
 import PageContainer from '../../components/PageContainer';
 import TopBar from '../../components/TopBar';
+import AppButton from '../../components/AppButton';
+import { COLORS } from '../../styles/colors';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../services/supabaseClient';
 import Toast from 'react-native-toast-message';
@@ -71,12 +72,7 @@ const ProfilePage = withAuth(() => {
                 })}
           </Text>
 
-          <TouchableOpacity 
-            style={styles.logoutButton}
-            onPress={handleLogout}
-          >
-            <Text style={styles.logoutText}>Logout</Text>
-          </TouchableOpacity>
+          <AppButton label="Logout" style={styles.logoutButton} onPress={handleLogout} destructive />
         </View>
       </View>
     </PageContainer>
@@ -87,7 +83,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: 'rgba(243, 143, 77, 0.1)',
+    backgroundColor: COLORS.warmSurface,
   },
   profileBox: {
     width: '100%',
@@ -127,19 +123,7 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 24,
   },
-  logoutButton: {
-    backgroundColor: '#FF6B6B',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    width: '100%',
-    alignItems: 'center',
-  },
-  logoutText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
+  logoutButton: { width: '100%' },
 });
 
 export default ProfilePage;

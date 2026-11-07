@@ -4,14 +4,15 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
   StyleSheet,
   Platform,
   Pressable,
-  ActivityIndicator,
 } from 'react-native';
 import { createCollection } from '../services/collectionService';
 import { Success } from '../model/apiResponse';
+import { FIELD_STYLES } from '../styles/fields';
+import { COLORS } from '../styles/colors';
+import AppButton from './AppButton';
 
 interface CreateCollectionSheetProps {
   visible: boolean;
@@ -78,7 +79,9 @@ const CreateCollectionSheet: React.FC<CreateCollectionSheetProps> = ({
             <Text style={styles.label}>Name</Text>
             <View style={styles.inputContainer}>
               <TextInput
-                style={styles.input}
+                style={[FIELD_STYLES.input, styles.input]}
+                accessibilityLabel="Name"
+                placeholderTextColor={COLORS.secondaryText}
                 placeholder="Type collection name here..."
                 value={collectionName}
                 onChangeText={setCollectionName}
@@ -90,18 +93,7 @@ const CreateCollectionSheet: React.FC<CreateCollectionSheetProps> = ({
                 && <Text style={styles.errorMessage}> {errorMessage} </Text>
             }
             
-            <TouchableOpacity 
-              style={styles.saveButton} 
-              onPress={handleSave}
-              disabled={!collectionName.trim() || isSaving}
-              activeOpacity={0.7}
-            >
-                {
-                    isSaving ?
-                        <ActivityIndicator size="small" color="#ffffff" /> : 
-                        <Text style={styles.saveButtonText}>Save</Text> 
-                }
-            </TouchableOpacity>
+            <AppButton label="Save" onPress={handleSave} disabled={!collectionName.trim()} loading={isSaving} />
           </View>
         </Pressable>
       </Pressable>
@@ -149,14 +141,12 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
+    ...FIELD_STYLES.surface,
     marginBottom: 24,
     paddingHorizontal: 12,
   },
   input: {
     flex: 1,
-    height: 45,
     fontSize: 16,
   },
   errorMessage: {
@@ -164,17 +154,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 24,
     color: 'red',
-  },
-  saveButton: {
-    backgroundColor: 'tomato',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center'
-  },
-  saveButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
 });
 

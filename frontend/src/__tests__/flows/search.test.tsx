@@ -37,6 +37,7 @@ afterEach(() => jest.useRealTimers());
 test('starts with a prompt and no request', async () => {
   await settle();
   expect(screen.getByText('Type any Movie title...')).toBeTruthy();
+  expect(screen.getByLabelText('Search')).toBeTruthy();
   expect(findMovies).not.toHaveBeenCalled();
 });
 
@@ -159,4 +160,18 @@ test('text typed during a running search replaces it', async () => {
   expect(findMovies).toHaveBeenLastCalledWith('second', 1, false);
   expect(screen.getByText('Second result')).toBeTruthy();
   expect(screen.queryByText('First result')).toBeNull();
+});
+
+ test('keeps odd movie cells half-width when the list resizes', async () => {
+  findMovies.mockResolvedValue(results(['One', 'Two', 'Three']));
+  await type('one');
+  const list = () => screen.UNSAFE_getByType(FlatList);
+  // The outer width includes a 15px classic scrollbar; content width does not.
+  fireEvent(list(), 'layout', { nativeEvent: { layout: { width: 303 } } });
+  fireEvent(list(), 'contentSizeChange', 288, 1200);
+  for (let index = 0; index < 3; index++) {
+    expect(list().props.renderItem({ item: list().props.data[index], index }).props.style.width).toBe(136);
+  }
+  fireEvent(list(), 'contentSizeChange', 608, 1200);
+  expect(list().props.renderItem({ item: list().props.data[2], index: 2 }).props.style.width).toBe(296);
 });

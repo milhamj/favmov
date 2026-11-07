@@ -16,9 +16,9 @@ describe('TopBar', () => {
   test('shows the title, and only the buttons it was given', () => {
     const back = jest.fn();
     const search = jest.fn();
-    render(<TopBar title="Home" backButton={{ isShow: true, onClick: back }} icons={[{ name: 'search', onClick: search }]} />);
+    render(<TopBar title="Home" backButton={{ isShow: true, onClick: back }} icons={[{ name: 'search', label: 'Search', onClick: search }]} />);
     fireEvent.press(screen.getByRole('button', { name: 'Go back' }));
-    fireEvent.press(screen.getByText('search'));
+    fireEvent.press(screen.getByRole('button', { name: 'Search' }));
     expect(screen.getByText('Home')).toBeTruthy();
     expect(back).toHaveBeenCalled();
     expect(search).toHaveBeenCalled();
@@ -34,6 +34,7 @@ describe('SelectableChip', () => {
   test('reports the toggled state', () => {
     const onSelect = jest.fn();
     render(<SelectableChip text="Movie" selected onSelect={onSelect} />);
+    expect(screen.getByRole('button', { name: 'Movie', selected: true })).toBeTruthy();
     fireEvent.press(screen.getByText('Movie'));
     expect(onSelect).toHaveBeenCalledWith(false);
   });
@@ -92,8 +93,10 @@ describe('ExpandableText', () => {
 
     fireEvent(screen.getByText('Long text'), 'textLayout', layout(3));
     expect(screen.getByText('Long text').props.numberOfLines).toBe(1); // room for "See More"
+    expect(screen.getByRole('button', { name: 'See More', expanded: false })).toBeTruthy();
     fireEvent.press(screen.getByText('See More'));
     expect(screen.getByText('Long text').props.numberOfLines).toBeUndefined();
+    expect(screen.getByRole('button', { name: 'See Less', expanded: true })).toBeTruthy();
     fireEvent.press(screen.getByText('See Less'));
     expect(screen.getByText('See More')).toBeTruthy();
   });

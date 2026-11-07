@@ -1,15 +1,18 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, Text, ActivityIndicator, Image, TouchableOpacity, FlatList } from 'react-native';
+import { View, StyleSheet, FlatList } from 'react-native';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import PageContainer from '../../components/PageContainer';
 import TopBar from '../../components/TopBar';
+import AppButton from '../../components/AppButton';
+import EmptyState from '../../components/EmptyState';
+import RetryButton from '../../components/RetryButton';
+import FullPageLoader from '../../components/FullPageLoader';
 import withAuth from '../../components/withAuth';
 import { Success } from '../../model/apiResponse';
 import { Movie } from '../../model/movieModel';
 import { getCollectionDetail } from '../../services/collectionService';
 import { Collection } from '../../model/collectionModel';
-import { COLORS } from '../../styles/colors';
 import { parseStrParam } from '../../utils/util';
 import { router } from '../../navigation/router';
 import { routes } from '../../navigation/routes';
@@ -21,16 +24,19 @@ const CollectionDetailPage = withAuth(() => {
     const params = useLocalSearchParams();
     const collectionId = parseStrParam(params.id);
     const [collection, setCollection] = useState(null as Collection | null);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState('');
     const lastFetchedTimestamp = useRef<number | null>(null);
 
     const fetchCollectionDetail = async () => {
         setIsLoading(true);
+        setError('');
         const result = await getCollectionDetail(collectionId);
         if (result instanceof Success) {
             setCollection(result.data);
             lastFetchedTimestamp.current = Date.now();
         } else {
+            setError(result.message);
             Toast.show({
                 type: 'error',
                 text1: 'Error',
@@ -93,28 +99,13 @@ const CollectionDetailPage = withAuth(() => {
             />
             <View style={styles.container}>
                 { isLoading ? (
-                    <View style={styles.loadingContainer}>
-                        <ActivityIndicator size="large" color="tomato" />
-                    </View>
+                    <FullPageLoader />
+                ) : error ? (
+                    <RetryButton message={error} onPress={() => void fetchCollectionDetail()} />
                 ) : collection?.movies?.length === 0 ? (
-                    <View style={styles.emptyState}>
-                        <Image 
-                            source={require('../../../assets/empty_search.png')} 
-                            style={styles.emptyImage} 
-                        />
-                        <Text style={styles.emptyText}>
-                            No movies or TV show in this collection.
-                        </Text>
-                        <Text style={styles.emptySubText}>
-                            Browse movies and TV shows to add them to this collection.
-                        </Text>
-                        <TouchableOpacity 
-                          style={styles.createButton}
-                          onPress={handleEmptyButton}
-                        >
-                            <Text style={styles.createButtonText}>Search Movies or TV Shows</Text>
-                        </TouchableOpacity>
-                    </View>
+                    <EmptyState title="No movies or TV show in this collection." description="Browse movies and TV shows to add them to this collection." illustration={require('../../../assets/empty_search.png')}>
+                        <AppButton label="Search Movies or TV Shows" style={styles.createButton} onPress={handleEmptyButton} />
+                    </EmptyState>
                 ) : (
                     <FlatList
                         data={collection?.movies}
@@ -134,62 +125,14 @@ const styles = StyleSheet.create({
       flex: 1,
       paddingHorizontal: 16,
     },
-    loadingContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    emptyState: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      paddingHorizontal: 20,
-    },
-    emptyImage: {
-      width: 120,
-      height: 120,
-      marginBottom: 20,
-      opacity: 0.8,
-    },
-    emptyText: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: '#333',
-      textAlign: 'center',
-      marginBottom: 8,
-    },
-    emptySubText: {
-      fontSize: 16,
-      color: COLORS.text_gray,
-      textAlign: 'center',
-      marginBottom: 32,
-    },
-    createButton: {
-      backgroundColor: 'tomato',
-      paddingVertical: 12,
-      paddingHorizontal: 24,
-      borderRadius: 8,
-      width: '80%',
-      alignItems: 'center',
-      marginTop: 16,
-    },
-    createButtonText: {
-      color: 'white',
-      fontSize: 16,
-      fontWeight: 'bold',
-    },
+    createButton: { width: '80%', marginTop: 16 },
     movieCard: {
         width: '100%',
         marginBottom: 8,
         paddingHorizontal: 2,
         alignContent: 'center'
     },
-    collectionNote: {
-        marginTop: 4,
-        fontSize: 12,
-        textAlign: 'left',
-        fontWeight: '300'
-    }
+
 })
 
 export default CollectionDetailPage;
