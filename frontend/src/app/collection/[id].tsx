@@ -51,6 +51,9 @@ const CollectionDetailPage = withAuth(() => {
         setIsLoading(false);
     }
 
+    // Leaving the screen retires any request still in flight, so a late failure can't toast on another screen
+    useEffect(() => () => { latestRequest.current++; }, []);
+
     useEffect(() => {
         lastFetchedTimestamp.current = null; // a different collection has no data to fall back to
         setCollection(null);

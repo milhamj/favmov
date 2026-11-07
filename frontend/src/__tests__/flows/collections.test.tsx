@@ -227,6 +227,17 @@ describe('collection detail', () => {
     expect(screen.queryByText('From A')).toBeNull();
   });
 
+  test('a response arriving after leaving the screen is ignored', async () => {
+    let finish!: (value: ApiError) => void;
+    getDetail.mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
+    const { unmount } = render(<CollectionDetailPage />);
+    await waitFor(() => expect(getDetail).toHaveBeenCalledTimes(1));
+
+    unmount();
+    await act(async () => finish(new ApiError('Unable to read collection')));
+    expect(Toast.show).not.toHaveBeenCalled();
+  });
+
   test('a failed reload keeps the loaded movies and only toasts', async () => {
     getDetail.mockResolvedValue(detail([new Movie({ id: 1, title: 'Old' })]));
     render(<CollectionDetailPage />);
