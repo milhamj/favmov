@@ -91,11 +91,29 @@ describe('searchMovie', () => {
 describe('fetchFavoriteMovies', () => {
   test('maps the backend rows', async () => {
     backend.mockResolvedValue({ data: { data: [
-      { id: 1, title: 'Up', poster_path: '/up.jpg', is_tv_show: false, rating: 8, rating_count: 10, notes: 'n', last_added_at: '2026-01-01T00:00:00Z' },
+      { id: 1, title: 'Up', poster_path: '/up.jpg', is_tv_show: false, rating: 7.123, rating_count: 10, notes: 'n', last_added_at: '2026-01-01T00:00:00Z' },
     ] } });
     const { data } = await fetchFavoriteMovies() as Success<any>;
     expect(backend).toHaveBeenCalledWith('/collections/latest_movies');
-    expect(data[0]).toMatchObject({ id: 1, posterPath: '/up.jpg', rating: 8, ratingCount: 10, collectionNotes: 'n', collectionAddTime: Date.parse('2026-01-01T00:00:00Z') });
+    expect(data[0]).toMatchObject({ id: 1, posterPath: '/up.jpg', rating: '7.12', ratingCount: 10, collectionNotes: 'n', collectionAddTime: Date.parse('2026-01-01T00:00:00Z') });
+  });
+
+  test('keeps an unrated title with its zero rating and count', async () => {
+    backend.mockResolvedValue({ data: { data: [{ id: 2, title: 'New', poster_path: '/n.jpg', is_tv_show: false, rating: 0, rating_count: 0 }] } });
+    const { data } = await fetchFavoriteMovies() as Success<any>;
+    expect(data[0]).toMatchObject({ rating: '0.00', ratingCount: 0 });
+  });
+
+  test('ignores a rating that is not a number', async () => {
+    backend.mockResolvedValue({ data: { data: [{ id: 4, title: 'Odd', poster_path: '/o.jpg', is_tv_show: false, rating: 'abc', rating_count: 1 }] } });
+    const { data } = await fetchFavoriteMovies() as Success<any>;
+    expect(data[0].rating).toBeUndefined();
+  });
+
+  test('leaves a title with no stored rating unrated', async () => {
+    backend.mockResolvedValue({ data: { data: [{ id: 3, title: 'None', poster_path: '/n.jpg', is_tv_show: false, rating: null, rating_count: null }] } });
+    const { data } = await fetchFavoriteMovies() as Success<any>;
+    expect(data[0].rating).toBeUndefined();
   });
 
   test('surfaces the backend message', async () => {

@@ -19,10 +19,16 @@ export const parseBooleanParam = (param: string | string[]): boolean => {
   return parseStrParam(param) == "true";
 };
 
-export const getRatingColor = (rating: number): string => {
-  if (rating >= 7.0) {
+// TMDB reports 0 for titles nobody has rated yet; show those neutrally instead of as a bad score
+export const displayRating = (rating: number | string): string => Number(rating) === 0 ? '–' : Number(rating).toFixed(2);
+
+export const getRatingColor = (rating: number | string): string => {
+  const value = Number(Number(rating).toFixed(2)); // same rounding as displayRating, so text and color agree
+  if (value === 0) {
+    return COLORS.secondaryText;
+  } else if (value >= 7.0) {
     return COLORS.rating_green;
-  } else if (rating >= 5.0) {
+  } else if (value >= 5.0) {
     return COLORS.rating_yellow;
   } else {
     return COLORS.rating_red;

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { StyleSheet, ActivityIndicator, Image, TouchableOpacity, View, Text, ScrollView } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, Text, ScrollView } from 'react-native';
 import { Movie } from '../../model/movieModel';
 import { getUserCollections, getCheckMovieExistInCollection } from '../../services/collectionService';
 import { CollectionCard } from '../../model/collectionModel';
@@ -9,6 +9,9 @@ import CollectionAddCard from '../../components/CollectionAddCard';
 import { Success } from '../../model/apiResponse';
 import PageContainer from '../../components/PageContainer';
 import TopBar from '../../components/TopBar';
+import AppButton from '../../components/AppButton';
+import EmptyState from '../../components/EmptyState';
+import FullPageLoader from '../../components/FullPageLoader';
 import withAuth from '../../components/withAuth';
 import { router } from '../../navigation/router';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
@@ -144,33 +147,20 @@ const AddToCollectionPage = withAuth(() => {
                 {leaveFailed && pendingCards.size > 0 && <View accessibilityRole="alert" style={styles.leaveError}>
                     <Text>Your latest edits could not be saved.</Text>
                     <Text>Try again, or leave and discard your unsaved edits.</Text>
-                    <TouchableOpacity accessibilityRole="button" style={styles.discardButton} onPress={() => setDiscard(true)}><Text>Leave without saving</Text></TouchableOpacity>
+                    <TouchableOpacity accessibilityRole="button" accessibilityLabel="Leave without saving" style={styles.discardButton} onPress={() => setDiscard(true)}><Text>Leave without saving</Text></TouchableOpacity>
                 </View>}
                 <ScrollView style={styles.content}>
                     {
                         isLoading ? (
                             <View style={styles.loadingContainer}>
-                                <ActivityIndicator style={styles.loadingItem} size="large" color="tomato" />
+                                <FullPageLoader />
                             </View>
                         ) : error ? (
                             <RetryButton message={error} onPress={validMovieId ? () => setAttempt(n => n + 1) : undefined}/>
                         ) : refreshError && collectionCards.length === 0 ? null : collectionCards.length === 0 ? (
-                            <View style={styles.emptyState}>
-                                <Image 
-                                    source={require('../../../assets/empty_search.png')} 
-                                    style={styles.emptyImage} 
-                                />
-                                <Text style={styles.emptyText}>
-                                    You don't have any collections yet.
-                                </Text>
-                                <TouchableOpacity 
-                                    style={styles.createButton}
-                                    disabled={draining}
-                                    onPress={handleCreateCollection}
-                                >
-                                    <Text style={styles.createButtonText}>Create Collection</Text>
-                                </TouchableOpacity>
-                            </View>
+                            <EmptyState title="You don't have any collections yet." illustration={require('../../../assets/empty_search.png')}>
+                                <AppButton label="Create Collection" style={styles.createButton} onPress={handleCreateCollection} disabled={draining} />
+                            </EmptyState>
 
                         ) : (
                             <View style={styles.listContent}>
@@ -194,51 +184,17 @@ const AddToCollectionPage = withAuth(() => {
 
 const styles = StyleSheet.create({
     leaveError: { padding: 16, backgroundColor: '#fff0ec' },
-    discardButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 12, marginTop: 8, borderWidth: 1, borderColor: '#b8321c', borderRadius: 6, alignSelf: 'flex-start' },
+    discardButton: { minHeight: 48, justifyContent: 'center', paddingHorizontal: 12, marginTop: 8, borderWidth: 1, borderColor: '#b8321c', borderRadius: 6, alignSelf: 'flex-start' },
     content: {
         padding: 16,
     },
     loadingContainer: {
+      minHeight: 100,
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
     },
-    loadingItem: {
-      height: 100
-    },
-    emptyState: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      paddingHorizontal: 20,
-    },
-    emptyImage: {
-      width: 120,
-      height: 120,
-      marginBottom: 20,
-      opacity: 0.8,
-    },
-    emptyText: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: '#333',
-      textAlign: 'center',
-      marginBottom: 8,
-    },
-    createButton: {
-      backgroundColor: 'tomato',
-      paddingVertical: 12,
-      paddingHorizontal: 24,
-      borderRadius: 8,
-      width: '80%',
-      alignItems: 'center',
-      marginTop: 16,
-    },
-    createButtonText: {
-      color: 'white',
-      fontSize: 16,
-      fontWeight: 'bold',
-    },
+    createButton: { width: '80%', marginTop: 16 },
     listContent: {
         paddingBottom: 16,
     },

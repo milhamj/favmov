@@ -103,7 +103,7 @@ const PeopleDetailPage = () => {
                                 {
                                     actingCreditExist ? (
                                         <TouchableOpacity onPress={() => setIsActingHidden(!isActingHidden)}>
-                                            <Text style={{color:'tomato'}}>{ isActingHidden ? 'Show' : 'Hide' }</Text>
+                                            <Text style={{color:COLORS.accentText}}>{ isActingHidden ? 'Show' : 'Hide' }</Text>
                                          </TouchableOpacity>
                                     ) : null
                                 }
@@ -131,7 +131,7 @@ const PeopleDetailPage = () => {
                                 {
                                     crewCreditExist ? (
                                         <TouchableOpacity onPress={() => setIsCrewHidden(!isCrewHidden)}>
-                                            <Text style={{color:'tomato'}}>{ isCrewHidden ? 'Show' : 'Hide' }</Text>
+                                            <Text style={{color:COLORS.accentText}}>{ isCrewHidden ? 'Show' : 'Hide' }</Text>
                                         </TouchableOpacity>
                                     ) : null
                                 }
@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
     },
     peopleCreditNumber: {
         marginLeft: 8, 
-        color: COLORS.text_gray
+        color: COLORS.secondaryText
     },
     peopleBioValue: {
         fontSize: 16,

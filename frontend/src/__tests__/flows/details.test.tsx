@@ -1,4 +1,4 @@
-import { Image } from 'react-native';
+import { ActivityIndicator, Image } from 'react-native';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import Toast from 'react-native-toast-message';
 import ProfilePage from '../../app/(tabs)/profile';
@@ -120,6 +120,40 @@ describe('movie detail', () => {
     expect(router.navigate).toHaveBeenCalledWith('/collection/add?movie_id=7');
   });
 
+  test('the heart shows a spinner, not an empty heart, while the saved state is loading', async () => {
+    signedIn(true);
+    let finish!: (value: Success<Collection[]>) => void;
+    savedIn.mockReturnValue(new Promise(resolve => { finish = resolve; }));
+    render(<MovieDetailPage />);
+    await screen.findByText('Balloons');
+    expect(screen.UNSAFE_getAllByType(ActivityIndicator).length).toBeGreaterThan(0);
+    expect(screen.queryByText('favorite-outline')).toBeNull();
+
+    fireEvent.press(screen.UNSAFE_getAllByType(ActivityIndicator)[0]);
+    expect(router.navigate).not.toHaveBeenCalled();
+
+    await act(async () => finish(new Success([new Collection('c1', 'Sci-Fi')])));
+    expect(await screen.findByText('favorite')).toBeTruthy();
+  });
+
+  test('the heart waits for a fresh lookup when the user signs in again', async () => {
+    signedIn(true);
+    const { rerender } = render(<MovieDetailPage />);
+    await screen.findByText('favorite-outline');
+
+    signedIn(false);
+    rerender(<MovieDetailPage {...({ session: 1 } as any)} />);
+    let finish!: (value: Success<Collection[]>) => void;
+    savedIn.mockReturnValue(new Promise(resolve => { finish = resolve; }));
+    signedIn(true);
+    rerender(<MovieDetailPage {...({ session: 2 } as any)} />);
+
+    await waitFor(() => expect(savedIn).toHaveBeenCalledTimes(2));
+    expect(screen.queryByText('favorite-outline')).toBeNull();
+    await act(async () => finish(new Success([new Collection('c1', 'Sci-Fi')])));
+    expect(await screen.findByText('favorite')).toBeTruthy();
+  });
+
   test('re-checks saved state on return from the editor', async () => {
     signedIn(true);
     render(<MovieDetailPage />);
@@ -172,6 +206,14 @@ describe('people detail', () => {
     expect(screen.getByText('Directed')).toBeTruthy();
     fireEvent.press(screen.getByText('Show'));
     expect(screen.getByText('Acted')).toBeTruthy();
+  });
+
+  test('an unrated credit shows a dash and its zero count, like the cards', async () => {
+    person.mockResolvedValue(new Success(new People({ id: 3, name: 'Ann', actingCredits: [credit(1, 'Upcoming', { rating: 0, ratingCount: 0 })] })));
+    render(<PeopleDetailPage />);
+    await screen.findByText('Upcoming');
+    expect(screen.getByText(' – ')).toBeTruthy();
+    expect(screen.getAllByText('(0)')).toHaveLength(2); // the credit's count plus the empty crew section header
   });
 
   test('a credit shows its year and role, and opens with data cached', async () => {

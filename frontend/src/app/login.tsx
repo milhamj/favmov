@@ -6,11 +6,13 @@ import {
   Text,
   StyleSheet,
   Platform,
-  ActivityIndicator,
 } from 'react-native';
 import { Icon } from 'react-native-elements';
 import PageContainer from '../components/PageContainer';
 import TopBar from '../components/TopBar';
+import AppButton from '../components/AppButton';
+import { FIELD_STYLES } from '../styles/fields';
+import { COLORS } from '../styles/colors';
 import { signInWithOtp, verifyOtp } from '../services/authService';
 import Toast from 'react-native-toast-message';
 import { Success } from '../model/apiResponse';
@@ -176,16 +178,19 @@ const LoginPage = () => {
                     <View style={styles.inputContainer}>
                         <Icon name="email" size={20} color="gray" style={styles.inputIcon} />
                         <TextInput
-                        style={styles.input}
+                        style={[FIELD_STYLES.input, styles.input, (isWaitingForOtp || isLoading) && FIELD_STYLES.disabled]}
+                        accessibilityLabel="Email"
+                        placeholderTextColor={COLORS.secondaryText}
                         placeholder="Email"
                         value={email}
                         onChangeText={setEmail}
                         keyboardType="email-address"
                         autoCapitalize="none"
-                        aria-disabled={isWaitingForOtp || isLoading}
+                        editable={!isWaitingForOtp && !isLoading}
+                        accessibilityState={{ disabled: isWaitingForOtp || isLoading }}
                         />
                         { isWaitingForOtp &&
-                        <TouchableOpacity style={styles.inputAction} onPress={handleChangeEmail}>  
+                        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Change email" accessibilityState={{ disabled: isLoading }} disabled={isLoading} style={styles.inputAction} onPress={handleChangeEmail}>
                             <Text>Change</Text>
                         </TouchableOpacity>
                         }
@@ -195,11 +200,14 @@ const LoginPage = () => {
                         <View style={styles.inputContainer}>
                             <Icon name="lock" size={20} color="gray" style={styles.inputIcon} />
                             <TextInput
-                            style={styles.input}
+                            style={[FIELD_STYLES.input, styles.input, isLoading && FIELD_STYLES.disabled]}
+                            accessibilityLabel="OTP"
+                            placeholderTextColor={COLORS.secondaryText}
                             placeholder="Input your OTP here..."
                             value={otp}
                             onChangeText={setOtp}
-                            aria-disabled={isLoading}
+                            editable={!isLoading}
+                            accessibilityState={{ disabled: isLoading }}
                             />
                         </View>
                     }
@@ -208,7 +216,10 @@ const LoginPage = () => {
                     {isWaitingForOtp && (
                     <TouchableOpacity 
                         onPress={handleResendOtp}
-                        disabled={!canResend}
+                        accessibilityRole="button"
+                        accessibilityLabel="Resend OTP"
+                        accessibilityState={{ disabled: !canResend || isLoading, busy: isLoading }}
+                        disabled={!canResend || isLoading}
                         style={styles.resendContainer}
                     >
                         <Text style={[styles.resendText, !canResend && styles.resendTextDisabled]}>
@@ -219,28 +230,7 @@ const LoginPage = () => {
 
                     <View style={{height: 8}} />
 
-                    { !isWaitingForOtp &&
-                    <TouchableOpacity style={styles.loginButton} onPress={handleSendOtp} disabled={isLoading}>
-                        {
-                        isLoading ? (
-                            <ActivityIndicator size="small" color="#ffffff" />
-                        ) : (
-                            <Text style={styles.loginButtonText}>Send OTP</Text>
-                        )
-                        }
-                    </TouchableOpacity>
-                    }
-
-                    { isWaitingForOtp &&
-                    <TouchableOpacity style={styles.loginButton} onPress={handleVerifyOtp} disabled={isLoading}>
-                        { isLoading ? (
-                            <ActivityIndicator size="small" color="#ffffff" />
-                        ) : (
-                            <Text style={styles.loginButtonText}>LOGIN</Text>
-                        )
-                        }
-                    </TouchableOpacity>
-                    }
+                    <AppButton label={isWaitingForOtp ? 'LOGIN' : 'Send OTP'} onPress={isWaitingForOtp ? handleVerifyOtp : handleSendOtp} loading={isLoading} style={styles.loginButton} />
 
                     <View style={{height: 16}} />
                 </View>
@@ -256,7 +246,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: 'rgba(243, 143, 77, 0.1)',
+    backgroundColor: COLORS.warmSurface,
   },
   loginBox: {
     width: '100%',
@@ -278,39 +268,30 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-    borderRadius: 5,
+    ...FIELD_STYLES.surface,
     marginBottom: 15,
-    paddingHorizontal: 10,
   },
   inputIcon: {
     marginRight: 10,
   },
   input: {
     flex: 1,
-    height: 45,
   },
   inputAction: {
+    minWidth: 48,
+    minHeight: 48,
+    justifyContent: 'center',
     marginLeft: 8,
   },
-  loginButton: {
-    backgroundColor: 'tomato',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  loginButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
+  loginButton: { marginBottom: 20 },
   resendContainer: {
+    minHeight: 48,
+    justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 10,
   },
   resendText: {
-    color: 'tomato',
+    color: COLORS.accentText,
     fontSize: 14,
   },
   resendTextDisabled: {

@@ -105,7 +105,6 @@ test('successful card Retry clears the failed-leave banner and prevention', asyn
  expect(navigation.getCurrentRoute()!.name).toBe('home');
 });
 test.each([false, true])('membership failure during Back keeps the editor open with its inline error, adding=%s', async adding => {
- const Checkbox = require('expo-checkbox').default;
  const navigation = createNavigationContainerRef<any>();
  let finish: any;
  if (adding) require('../services/collectionService').getCheckMovieExistInCollection.mockResolvedValueOnce(new Success([]));
@@ -113,7 +112,7 @@ test.each([false, true])('membership failure during Back keeps the editor open w
  change.mockImplementationOnce(() => new Promise(r => finish = r)).mockResolvedValue(new Success(true));
  const ui = render(<NavigationContainer ref={navigation} initialState={{ index: 1, routes: [{ name: 'home' }, { name: 'editor' }] }}><Stack.Navigator><Stack.Screen name="home" component={Home}/><Stack.Screen name="editor" component={Editor}/></Stack.Navigator></NavigationContainer>);
  await act(async () => {});
- await act(async () => { ui.UNSAFE_getByType(Checkbox).props.onValueChange(adding); });
+ await act(async () => { fireEvent.press(ui.getByRole('checkbox')); });
  await act(async () => { navigation.goBack(); });
  await act(async () => { finish(new ApiError('offline')); });
  expect(navigation.getCurrentRoute()!.name).toBe('editor');

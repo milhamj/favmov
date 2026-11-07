@@ -1,9 +1,9 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View, Image, Text } from 'react-native';
 import { Movie } from '../model/movieModel';
-import { COLORS } from '../styles/colors'; 
+import { COLORS, RADIUS, ROW_ELEVATION, SPACING, TYPOGRAPHY } from '../styles/colors';
 import ExpandableText from './ExpandableText';
-import { getRatingColor } from '../utils/util';
+import { displayRating, getRatingColor } from '../utils/util';
 
 interface MovieCardHorizontalProps {
     movie: Movie;
@@ -20,7 +20,7 @@ const MovieCardHorizontal: React.FC<MovieCardHorizontalProps> = ({ movie, onClic
                 <Text style={styles.posterTitle} numberOfLines={1} ellipsizeMode="tail">
                     {movie.title}{movie.releaseYear() ? ` (${movie.releaseYear()})` : ''}
                 </Text>
-                { movie.rating && (
+                { movie.rating != null && (
                     <Text
                     style={[
                         styles.posterRating,
@@ -32,8 +32,8 @@ const MovieCardHorizontal: React.FC<MovieCardHorizontalProps> = ({ movie, onClic
                     numberOfLines={1}
                     ellipsizeMode="tail"
                     >
-                    ⭐ {movie.rating}{' '}
-                    {movie.ratingCount && (
+                    ⭐ {displayRating(movie.rating)}{' '}
+                    {movie.ratingCount != null && (
                         <Text style={styles.posterRatingCount}>({movie.ratingCount})</Text>
                     )}
                     </Text>
@@ -55,20 +55,17 @@ const MovieCardHorizontal: React.FC<MovieCardHorizontalProps> = ({ movie, onClic
 const styles = StyleSheet.create({
   posterContainer: {
     width: '100%',
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    borderRadius: RADIUS.control,
+    ...ROW_ELEVATION,
+    backgroundColor: COLORS.page,
     flex: 1,
     flexDirection: 'row',
   },
   poster: {
     width: 80,
-    aspectRatio: 3 / 4,
-    borderTopLeftRadius: 8,
-    borderBottomLeftRadius: 8,
+    aspectRatio: 2 / 3,
+    borderTopLeftRadius: RADIUS.control,
+    borderBottomLeftRadius: RADIUS.control,
     borderTopRightRadius: 0,
     borderBottomRightRadius: 0,
   },
@@ -76,31 +73,30 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'column',
     justifyContent: 'center',
-    padding: 8,
+    padding: SPACING.small,
   },
   posterTitle: {
     marginTop: 2,
-    fontSize: 12,
-    textAlign: 'left',
-    fontWeight: '700'
+    ...TYPOGRAPHY.rowTitle,
+    color: COLORS.text,
+    textAlign: 'left'
   },
   posterRating: {
     marginTop: 2,
-    fontSize: 12,
+    ...TYPOGRAPHY.caption,
     textAlign: 'left',
   },
   posterRatingCount: {
-    color: COLORS.text_gray,
+    color: COLORS.secondaryText,
     fontWeight: 'normal',
   },
   posterNotes: {
     marginTop: 2,
   },
   posterNotesText: {
-    fontSize: 14,
+    ...TYPOGRAPHY.caption,
     textAlign: 'left',
-    fontWeight: '300',
-    color: '#444',
+    color: COLORS.text,
   },
 });
 

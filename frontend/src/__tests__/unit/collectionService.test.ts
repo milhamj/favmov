@@ -40,12 +40,12 @@ test('getUserCollections maps counts and dates', async () => {
 
 test('getCollectionDetail maps the titles', async () => {
   api.get.mockResolvedValue(ok({ id: 'c1', name: 'A', movies: [
-    { id: 1, title: 'Up', poster_path: '/up.jpg', is_tv_show: false, rating: 8, rating_count: 3, notes: 'n', release_date: '2009-05-28', created_at: '2026-01-01T00:00:00Z' },
+    { id: 1, title: 'Up', poster_path: '/up.jpg', is_tv_show: false, rating: 7.123, rating_count: 3, notes: 'n', release_date: '2009-05-28', created_at: '2026-01-01T00:00:00Z' },
   ] }));
   const { data } = await getCollectionDetail('c1') as Success<any>;
   expect(api.get).toHaveBeenCalledWith('/collections/c1/movies');
   expect(data.movies[0]).toBeInstanceOf(Movie);
-  expect(data.movies[0]).toMatchObject({ posterPath: '/up.jpg', collectionNotes: 'n', releaseDate: '2009-05-28', collectionAddTime: Date.parse('2026-01-01T00:00:00Z') });
+  expect(data.movies[0]).toMatchObject({ posterPath: '/up.jpg', rating: '7.12', collectionNotes: 'n', releaseDate: '2009-05-28', collectionAddTime: Date.parse('2026-01-01T00:00:00Z') });
 });
 
 test('getCheckMovieExistInCollection maps collection names and notes', async () => {

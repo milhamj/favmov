@@ -16,9 +16,9 @@ describe('TopBar', () => {
   test('shows the title, and only the buttons it was given', () => {
     const back = jest.fn();
     const search = jest.fn();
-    render(<TopBar title="Home" backButton={{ isShow: true, onClick: back }} icons={[{ name: 'search', onClick: search }]} />);
+    render(<TopBar title="Home" backButton={{ isShow: true, onClick: back }} icons={[{ name: 'search', label: 'Search', onClick: search }]} />);
     fireEvent.press(screen.getByRole('button', { name: 'Go back' }));
-    fireEvent.press(screen.getByText('search'));
+    fireEvent.press(screen.getByRole('button', { name: 'Search' }));
     expect(screen.getByText('Home')).toBeTruthy();
     expect(back).toHaveBeenCalled();
     expect(search).toHaveBeenCalled();
@@ -34,6 +34,7 @@ describe('SelectableChip', () => {
   test('reports the toggled state', () => {
     const onSelect = jest.fn();
     render(<SelectableChip text="Movie" selected onSelect={onSelect} />);
+    expect(screen.getByRole('button', { name: 'Movie', selected: true })).toBeTruthy();
     fireEvent.press(screen.getByText('Movie'));
     expect(onSelect).toHaveBeenCalledWith(false);
   });
@@ -48,6 +49,20 @@ describe('movie cards', () => {
     expect(screen.getByText('(10)')).toBeTruthy();
     fireEvent.press(screen.getByText('Up'));
     expect(onClick).toHaveBeenCalledWith(movie);
+  });
+
+  test.each([['MovieCard', MovieCard], ['MovieCardHorizontal', MovieCardHorizontal]])('%s shows an unrated title neutrally with its zero count', (_name, Card: any) => {
+    render(<Card movie={new Movie({ id: 1, title: 'Up', rating: '0.00', ratingCount: 0 })} />);
+    expect(screen.getByText(/⭐ –/)).toBeTruthy();
+    expect(screen.getByText('(0)')).toBeTruthy();
+    expect(screen.queryByText(/0\.00/)).toBeNull();
+  });
+
+  test.each([['MovieCard', MovieCard], ['MovieCardHorizontal', MovieCardHorizontal]])('%s shows a raw numeric 0 rating as a dash, never a bare 0', (_name, Card: any) => {
+    // A Movie built from a people credit carries TMDB's raw number, not the formatted string
+    render(<Card movie={new Movie({ id: 1, title: 'Up', rating: 0, ratingCount: 0 })} />);
+    expect(screen.getByText(/⭐ –/)).toBeTruthy();
+    expect(screen.queryByText('0')).toBeNull();
   });
 
   test('MovieCard leaves out a missing rating', () => {
@@ -92,8 +107,10 @@ describe('ExpandableText', () => {
 
     fireEvent(screen.getByText('Long text'), 'textLayout', layout(3));
     expect(screen.getByText('Long text').props.numberOfLines).toBe(1); // room for "See More"
+    expect(screen.getByRole('button', { name: 'See More', expanded: false })).toBeTruthy();
     fireEvent.press(screen.getByText('See More'));
     expect(screen.getByText('Long text').props.numberOfLines).toBeUndefined();
+    expect(screen.getByRole('button', { name: 'See Less', expanded: true })).toBeTruthy();
     fireEvent.press(screen.getByText('See Less'));
     expect(screen.getByText('See More')).toBeTruthy();
   });

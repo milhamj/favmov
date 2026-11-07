@@ -13,7 +13,7 @@ import ImageViewer from '../../components/ImageViewer';
 import { COLORS } from '../../styles/colors'; 
 import { getCheckMovieExistInCollection } from '../../services/collectionService';
 import { useAuth } from '../../hooks/useAuth';
-import { getRatingColor, parseBooleanParam, parseIntParam } from '../../utils/util';
+import { displayRating, getRatingColor, parseBooleanParam, parseIntParam } from '../../utils/util';
 import { router } from '../../navigation/router';
 import { routes } from '../../navigation/routes';
 import { MovieStore } from '../../stores/movieStore';
@@ -23,7 +23,7 @@ const MovieDetailPage = () => {
   const movieId = parseIntParam(params.id);
   const isTvShow = parseBooleanParam(params.is_tv_show);
 
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading: isAuthLoading } = useAuth();
   const [isFocused, setIsFocused] = useState(true);
 
   const [movie, setMovie] = useState(() => {
@@ -31,6 +31,8 @@ const MovieDetailPage = () => {
     return cached || new Movie({id : movieId, isTvShow: isTvShow});
   });
   const [isCollectionLoading, setIsCollectionLoading] = useState(false);
+  // Whether the first saved-state lookup finished; until then the heart can't tell saved from unsaved
+  const [collectionsChecked, setCollectionsChecked] = useState(false);
   const isInitialLoad = useRef(true);
 
   // Initial load - fetch both movie details and collection status
@@ -64,6 +66,7 @@ const MovieDetailPage = () => {
   }, []);
 
   useEffect(() => {
+    setCollectionsChecked(false); // a new session (sign-in after sign-out) has not been looked up yet
     if (!isAuthenticated) return;
   
     let isMounted = true;
@@ -82,6 +85,7 @@ const MovieDetailPage = () => {
       }
 
       isInitialLoad.current = false
+      if (isMounted) setCollectionsChecked(true);
     };
   
     checkCollection();
@@ -144,11 +148,14 @@ const MovieDetailPage = () => {
       router.navigate(routes.addToCollection(movie.id, movie.isTvShow));
     }
     
+    // Until the saved state is known a tap would send a signed-in user to login or open the editor blind
+    const isHeartLoading = isCollectionLoading || isAuthLoading || (isAuthenticated && !collectionsChecked);
+
     return (
         movie.collections !== undefined ? (
-          <TouchableOpacity style={styles.addToCollectionButton} onPress={handleFavoriteClick}> 
+          <TouchableOpacity style={styles.addToCollectionButton} onPress={handleFavoriteClick} disabled={isHeartLoading} accessibilityState={{ disabled: isHeartLoading, busy: isHeartLoading }}>
             {
-              isCollectionLoading ? 
+              isHeartLoading ?
                 <ActivityIndicator style={{width: 24, height: 24}} color={'white'}/>
               : <Icon name={movie.collections.length > 0 ? "favorite" : "favorite-outline"} size={24} color='white' />
             }
@@ -202,13 +209,13 @@ const MovieDetailPage = () => {
           {/* Top Section */}
           <Text style={styles.title}>{movie.title}</Text>
           {
-            movie.rating && 
+            movie.rating != null &&
               <Text style={[styles.rating, {
                   color: getRatingColor(movie.rating),
                 },
               ]}>
-                {'⭐ '}{movie.rating}{' '}
-                {movie.ratingCount && (
+                {'⭐ '}{displayRating(movie.rating)}{' '}
+                {movie.ratingCount != null && (
                   <Text style={styles.ratingCount}>({movie.ratingCount})</Text>
                 )}
               </Text>
@@ -340,7 +347,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   ratingCount: {
-    color: COLORS.text_gray,
+    color: COLORS.secondaryText,
     fontWeight: 'normal',
   },
   info: {

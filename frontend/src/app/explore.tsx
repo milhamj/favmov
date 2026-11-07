@@ -1,7 +1,10 @@
+import EmptyState from '../components/EmptyState';
+import { SPACING } from '../styles/colors';
+import { useGridLayout } from '../hooks/useGridLayout';
 import RetryButton from '../components/RetryButton';
 import { useEffect, useState } from "react";
 import { Movie } from "../model/movieModel";
-import { ActivityIndicator, View, StyleSheet, FlatList, Image, Text } from "react-native";
+import { ActivityIndicator, View, StyleSheet, FlatList } from "react-native";
 import { useLocalSearchParams } from 'expo-router';
 import { router } from '../navigation/router';
 import { routes } from '../navigation/routes';
@@ -16,6 +19,7 @@ import { MovieStore } from "../stores/movieStore";
 import { usePagedFetch } from "../hooks/usePagedFetch";
 
 const ExplorePage = () => {
+    const { itemWidth, onContentSizeChange } = useGridLayout();
     const params = useLocalSearchParams();
     const sectionType = parseStrParam(params.section_type);
 
@@ -46,19 +50,18 @@ const ExplorePage = () => {
 
     const handleOnEndReached = () => {
         if (canLoadMore()) void fetchExploreData(page.current + 1);
-    };    
+    };
 
     const renderMovieItem = ({ item, index }: { item: Movie, index: number }) => (
         <View style={{
-            width: '48%', 
+            width: itemWidth,
             marginTop: index === 0 || index === 1 ? 16 : 0,
-            marginRight: index % 2 === 0 ? 16 : 0,
-            marginBottom: 16, 
+            marginBottom: 16,
             alignContent: 'center'
         }}>
-            <MovieCard 
+            <MovieCard
                 movie={item}
-                onClick={() => { 
+                onClick={() => {
                     MovieStore.cacheMovie(item);
                     router.navigate(routes.movie(item.id, item.isTvShow))
                 }}
@@ -94,14 +97,11 @@ const ExplorePage = () => {
                     ) : failedPage === 1 ? (
                         <RetryButton message="Unable to load results" onPress={() => void fetchExploreData(1)}/>
                     ) : isEmptyResult ? (
-                        <View style={styles.emptyState}>
-                            <Image source={require('../../assets/empty_search.png')} style={styles.emptyImage} />
-                            <Text style={styles.emptyText}>
-                                No results found.
-                            </Text>
-                        </View>
+                        <EmptyState title="No results found." illustration={require('../../assets/empty_search.png')} />
                     ) : (
                         <FlatList
+                            onContentSizeChange={onContentSizeChange}
+                            extraData={itemWidth}
                             data={movies}
                             renderItem={renderMovieItem}
                             keyExtractor={(item) => item.id.toString()}
@@ -123,27 +123,9 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingHorizontal: 16
     },
-    emptyState: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      paddingHorizontal: 20,
-    },
-    emptyImage: {
-      width: 120,
-      height: 120,
-      marginBottom: 20,
-    },
-    emptyText: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: '#333',
-      textAlign: 'center',
-      marginBottom: 8,
-      paddingHorizontal: 20,
-    },
     row: {
       justifyContent: 'flex-start',
+      gap: SPACING.medium,
     },
     footerLoader: {
         paddingVertical: 20,

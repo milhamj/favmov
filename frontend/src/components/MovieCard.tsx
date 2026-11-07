@@ -1,8 +1,8 @@
 import React from 'react';
-import { StyleSheet, Dimensions, TouchableOpacity, View, Image, Text } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, Image, Text } from 'react-native';
 import { Movie } from '../model/movieModel';
-import { COLORS } from '../styles/colors'; 
-import { getRatingColor } from '../utils/util';
+import { COLORS, RADIUS, TYPOGRAPHY } from '../styles/colors';
+import { displayRating, getRatingColor } from '../utils/util';
 
 interface MovieCardProps {
     movie: Movie;
@@ -15,7 +15,7 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, onClick }) => {
   return (
     <Container onPress={onClick ? () => onClick(movie) : undefined} style={[styles.posterContainer]}>
         <Image source={{ uri: movie.smallPosterUrl() }} style={[styles.poster]} />
-        {movie.rating && (
+        {movie.rating != null && (
           <Text
             style={[
               styles.posterRating,
@@ -25,8 +25,8 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, onClick }) => {
               },
             ]}
           >
-            ⭐ {movie.rating}{' '}
-            {movie.ratingCount && (
+            ⭐ {displayRating(movie.rating)}{' '}
+            {movie.ratingCount != null && (
               <Text style={styles.posterRatingCount}>({movie.ratingCount})</Text>
             )}
           </Text>
@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
   },
   poster: {
     aspectRatio: 2 / 3,
-    borderRadius: 8,
+    borderRadius: RADIUS.control,
     marginBottom: 2,
   },
   posterTitle: {
@@ -55,11 +55,11 @@ const styles = StyleSheet.create({
   },
   posterRating: {
     marginTop: 2,
-    fontSize: 14,
+    ...TYPOGRAPHY.caption,
     textAlign: 'left',
   },
   posterRatingCount: {
-    color: COLORS.text_gray,
+    color: COLORS.secondaryText,
     fontWeight: 'normal',
   },
 });

@@ -1,10 +1,14 @@
+import { useGridLayout } from '../../hooks/useGridLayout';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, Image, TouchableOpacity, Dimensions } from 'react-native';
+import { View, FlatList, StyleSheet } from 'react-native';
 import Toast from 'react-native-toast-message';
 import withAuth from '../../components/withAuth';
 import PageContainer from '../../components/PageContainer';
 import TopBar from '../../components/TopBar';
-import { COLORS } from '../../styles/colors';
+import AppButton from '../../components/AppButton';
+import EmptyState from '../../components/EmptyState';
+import RetryButton from '../../components/RetryButton';
+import { SPACING } from '../../styles/colors';
 import CreateCollectionSheet from '../../components/CreateCollectionSheet';
 import { Collection as CollectionModel } from '../../model/collectionModel';
 import { getUserCollections } from '../../services/collectionService';
@@ -18,18 +22,23 @@ import FullPageLoader from '../../components/FullPageLoader';
 const numColumns = 2;
 
 const CollectionPage = withAuth(() => {
+    const { itemWidth, onContentSizeChange } = useGridLayout();
     const [collections, setCollections] = useState<CollectionModel[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState('');
     const [isCreateSheetVisible, setIsCreateSheetVisible] = useState(false);
     const lastFetchedTimestamp = useRef<number | null>(null);
     
     const fetchCollections = async () => {
         setIsLoading(true);
+        setError('');
         const result = await getUserCollections();
         if ('data' in result) {
           setCollections(result.data);
           lastFetchedTimestamp.current = Date.now();
         } else {
+          // Keep an already loaded list on screen; only a first load has nothing to fall back to
+          if (lastFetchedTimestamp.current === null) setError(result.message);
           Toast.show({
               type: 'error',
               text1: 'Error',
@@ -80,10 +89,12 @@ const CollectionPage = withAuth(() => {
     };
 
     const renderItem = ({ item }: { item: CollectionModel }) => (
-        <CollectionCard 
-        collection={item} 
-        onPress={() => handleCollectionPress(item)} 
-        />
+        <View style={{ width: itemWidth }}>
+            <CollectionCard
+                collection={item}
+                onPress={() => handleCollectionPress(item)}
+            />
+        </View>
     );
 
     return (
@@ -91,33 +102,22 @@ const CollectionPage = withAuth(() => {
         <TopBar
             title={'Collections'}
             icons={[
-            { name: 'add-circle', onClick: handleCreateCollection }
+            { name: 'add-circle', label: 'Create Collection', onClick: handleCreateCollection }
             ]}
         />
         <View style={styles.container}>
             { isLoading ? (
               <FullPageLoader />
+            ) : error ? (
+              <RetryButton message={error} onPress={() => void fetchCollections()} />
             ) : collections.length === 0 ? (
-            <View style={styles.emptyState}>
-                <Image 
-                source={require('../../../assets/empty_search.png')} 
-                style={styles.emptyImage} 
-                />
-                <Text style={styles.emptyText}>
-                You don't have any collections yet.
-                </Text>
-                <Text style={styles.emptySubText}>
-                Create a collection to organize your favorite movies.
-                </Text>
-                <TouchableOpacity 
-                style={styles.createButton}
-                onPress={handleCreateCollection}
-                >
-                <Text style={styles.createButtonText}>Create Collection</Text>
-                </TouchableOpacity>
-            </View>
+              <EmptyState title="You don't have any collections yet." description="Create a collection to organize your favorite movies." illustration={require('../../../assets/empty_search.png')}>
+                <AppButton label="Create Collection" style={styles.createButton} onPress={handleCreateCollection} />
+              </EmptyState>
             ) : (
             <FlatList
+                onContentSizeChange={onContentSizeChange}
+                extraData={itemWidth}
                 data={collections}
                 renderItem={renderItem}
                 keyExtractor={(item) => item.id}
@@ -147,48 +147,11 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   columnWrapper: {
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
+    gap: SPACING.medium,
     marginBottom: 16,
   },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  emptyImage: {
-    width: 120,
-    height: 120,
-    marginBottom: 20,
-    opacity: 0.8,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  emptySubText: {
-    fontSize: 16,
-    color: COLORS.text_gray,
-    textAlign: 'center',
-    marginBottom: 32,
-  },
-  createButton: {
-    backgroundColor: 'tomato',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    width: '80%',
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  createButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
+    createButton: { width: '80%', marginTop: 16 },
 });
 
 export default CollectionPage;

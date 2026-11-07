@@ -2,6 +2,7 @@ import { Movie, Actor, Crew } from '../model/movieModel';
 import { Success, Error } from '../model/apiResponse';
 import tmdbApiClient from './tmdbClient';
 import backendClient from './backendClient';
+import { movieFromRow } from './collectionService';
 import { SearchMovieResponse } from '../model/searchResponse';
 
 const mTmdbApiClient = tmdbApiClient();
@@ -119,27 +120,7 @@ export const fetchFavoriteMovies = async (): Promise<Success<Movie[]> | Error> =
   try {
     const response = await backendClient.get(`/collections/latest_movies`);
 
-    const movies = response.data.data.map((item: any) => {
-      const movie = new Movie({
-        id: item.id,
-        title: item.title,
-        posterPath: item.poster_path
-      });
-      movie.isTvShow = item.is_tv_show;
-      if (item.rating) {
-        movie.rating = item.rating;
-      }
-      if (item.rating_count) {
-        movie.ratingCount = item.rating_count;
-      }
-      if (item.notes) {
-        movie.collectionNotes = item.notes;
-      }
-      if (item.last_added_at) {
-        movie.collectionAddTime = new Date(item.last_added_at).getTime();
-      }
-      return movie;
-    });
+    const movies = response.data.data.map(movieFromRow);
 
     return new Success<Movie[]>(movies, 'Favorite movies retrieved successfully');
   } catch (error: any) {
