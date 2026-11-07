@@ -23,7 +23,7 @@ export const parseBooleanParam = (param: string | string[]): boolean => {
 export const displayRating = (rating: number | string): string => Number(rating) === 0 ? '–' : Number(rating).toFixed(2);
 
 export const getRatingColor = (rating: number | string): string => {
-  const value = Number(rating);
+  const value = Number(Number(rating).toFixed(2)); // same rounding as displayRating, so text and color agree
   if (value === 0) {
     return COLORS.secondaryText;
   } else if (value >= 7.0) {

@@ -30,7 +30,7 @@ const PeopleMovieCreditView = ({ credit }: PeopleMovieCreditProps) => {
         router.navigate(routes.movie(credit.id, credit.isTvShow));
     }
 
-    const rating = credit.rating != null ? parseFloat(credit.rating.toFixed(2)) : undefined;
+    const rating = credit.rating ?? undefined;
 
     return <TouchableOpacity
         style={styles.container}

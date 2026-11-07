@@ -33,6 +33,8 @@ test.each([
   [5, COLORS.rating_yellow],
   [4.99, COLORS.rating_red],
   [0.5, COLORS.rating_red],
+  [6.996, COLORS.rating_green], // displays as 7.00
+  [4.996, COLORS.rating_yellow], // displays as 5.00
   [0, COLORS.secondaryText],
   ['0.00' as any, COLORS.secondaryText],
 ])('rating %s has the right color', (rating, color) => {

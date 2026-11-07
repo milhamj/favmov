@@ -24,7 +24,8 @@ const transformCollectionData = (data: any): Collection => {
   return collection;
 }
 
-const transformMovieData = (item: any): Movie => {
+// One backend row (a collection's movie or a favorite) to a Movie; the two lists name the added-at column differently
+export const movieFromRow = (item: any): Movie => {
   const movie = new Movie({
     id: item.id,
     title: item.title,
@@ -41,8 +42,9 @@ const transformMovieData = (item: any): Movie => {
   if (item.notes) {
     movie.collectionNotes = item.notes;
   }
-  if (item.created_at) {
-    movie.collectionAddTime = new Date(item.created_at).getTime();
+  const addedAt = item.last_added_at ?? item.created_at;
+  if (addedAt) {
+    movie.collectionAddTime = new Date(addedAt).getTime();
   }
   if (item.release_date) {
     movie.releaseDate = item.release_date;
@@ -90,7 +92,7 @@ export const getCollectionDetail = async (id: string): Promise<Success<Collectio
     const collection = transformCollectionData(response.data.data);
 
     collection.movies = response.data.data.movies.map((item: any) => {
-      return transformMovieData(item);
+      return movieFromRow(item);
     });
     
     return new Success<Collection>(collection, 'Collection detail retrieved successfully');
