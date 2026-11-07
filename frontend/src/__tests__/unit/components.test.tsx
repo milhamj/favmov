@@ -51,6 +51,13 @@ describe('movie cards', () => {
     expect(onClick).toHaveBeenCalledWith(movie);
   });
 
+  test.each([['MovieCard', MovieCard], ['MovieCardHorizontal', MovieCardHorizontal]])('%s shows an unrated title neutrally with its zero count', (_name, Card: any) => {
+    render(<Card movie={new Movie({ id: 1, title: 'Up', rating: '0.00', ratingCount: 0 })} />);
+    expect(screen.getByText(/⭐ –/)).toBeTruthy();
+    expect(screen.getByText('(0)')).toBeTruthy();
+    expect(screen.queryByText(/0\.00/)).toBeNull();
+  });
+
   test('MovieCard leaves out a missing rating', () => {
     render(<MovieCard movie={new Movie({ id: 1, title: 'Up' })} />);
     expect(screen.queryByText(/⭐/)).toBeNull();

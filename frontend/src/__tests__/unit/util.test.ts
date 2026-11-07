@@ -1,4 +1,4 @@
-import { appendUnique, getRatingColor, parseBooleanParam, parseIntParam, parseStrParam } from '../../utils/util';
+import { appendUnique, displayRating, getRatingColor, parseBooleanParam, parseIntParam, parseStrParam } from '../../utils/util';
 import { COLORS } from '../../styles/colors';
 
 describe('route param parsing', () => {
@@ -32,7 +32,15 @@ test.each([
   [6.99, COLORS.rating_yellow],
   [5, COLORS.rating_yellow],
   [4.99, COLORS.rating_red],
-  [0, COLORS.rating_red],
+  [0.5, COLORS.rating_red],
+  [0, COLORS.secondaryText],
+  ['0.00' as any, COLORS.secondaryText],
 ])('rating %s has the right color', (rating, color) => {
   expect(getRatingColor(rating)).toBe(color);
+});
+
+test('unrated titles show a dash, rated ones keep their number', () => {
+  expect(displayRating('0.00')).toBe('–');
+  expect(displayRating(0)).toBe('–');
+  expect(displayRating('7.12')).toBe('7.12');
 });

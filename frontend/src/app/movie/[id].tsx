@@ -13,7 +13,7 @@ import ImageViewer from '../../components/ImageViewer';
 import { COLORS } from '../../styles/colors'; 
 import { getCheckMovieExistInCollection } from '../../services/collectionService';
 import { useAuth } from '../../hooks/useAuth';
-import { getRatingColor, parseBooleanParam, parseIntParam } from '../../utils/util';
+import { displayRating, getRatingColor, parseBooleanParam, parseIntParam } from '../../utils/util';
 import { router } from '../../navigation/router';
 import { routes } from '../../navigation/routes';
 import { MovieStore } from '../../stores/movieStore';
@@ -210,8 +210,8 @@ const MovieDetailPage = () => {
                   color: getRatingColor(movie.rating),
                 },
               ]}>
-                {'⭐ '}{movie.rating}{' '}
-                {movie.ratingCount && (
+                {'⭐ '}{displayRating(movie.rating)}{' '}
+                {movie.ratingCount != null && (
                   <Text style={styles.ratingCount}>({movie.ratingCount})</Text>
                 )}
               </Text>

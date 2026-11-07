@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, TouchableOpacity, View, Image, Text } from 'react-native';
 import { Movie } from '../model/movieModel';
 import { COLORS, RADIUS, TYPOGRAPHY } from '../styles/colors';
-import { getRatingColor } from '../utils/util';
+import { displayRating, getRatingColor } from '../utils/util';
 
 interface MovieCardProps {
     movie: Movie;
@@ -25,8 +25,8 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, onClick }) => {
               },
             ]}
           >
-            ⭐ {movie.rating}{' '}
-            {movie.ratingCount && (
+            ⭐ {displayRating(movie.rating)}{' '}
+            {movie.ratingCount != null && (
               <Text style={styles.posterRatingCount}>({movie.ratingCount})</Text>
             )}
           </Text>

@@ -3,7 +3,7 @@ import { StyleSheet, TouchableOpacity, View, Image, Text } from 'react-native';
 import { Movie } from '../model/movieModel';
 import { COLORS, RADIUS, ROW_ELEVATION, SPACING, TYPOGRAPHY } from '../styles/colors';
 import ExpandableText from './ExpandableText';
-import { getRatingColor } from '../utils/util';
+import { displayRating, getRatingColor } from '../utils/util';
 
 interface MovieCardHorizontalProps {
     movie: Movie;
@@ -32,8 +32,8 @@ const MovieCardHorizontal: React.FC<MovieCardHorizontalProps> = ({ movie, onClic
                     numberOfLines={1}
                     ellipsizeMode="tail"
                     >
-                    ⭐ {movie.rating}{' '}
-                    {movie.ratingCount && (
+                    ⭐ {displayRating(movie.rating)}{' '}
+                    {movie.ratingCount != null && (
                         <Text style={styles.posterRatingCount}>({movie.ratingCount})</Text>
                     )}
                     </Text>

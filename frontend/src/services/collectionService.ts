@@ -34,7 +34,7 @@ const transformMovieData = (item: any): Movie => {
   if (item.rating) {
     movie.rating = Number(item.rating).toFixed(2);
   }
-  if (item.rating_count) {
+  if (item.rating_count != null) {
     movie.ratingCount = item.rating_count;
   }
   if (item.notes) {
