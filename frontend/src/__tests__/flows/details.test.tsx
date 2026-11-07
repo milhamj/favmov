@@ -1,4 +1,4 @@
-import { Image } from 'react-native';
+import { ActivityIndicator, Image } from 'react-native';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import Toast from 'react-native-toast-message';
 import ProfilePage from '../../app/(tabs)/profile';
@@ -118,6 +118,19 @@ describe('movie detail', () => {
     expect(savedIn).toHaveBeenCalledWith('7', false);
     expect(MovieStore.getCachedMovie('7')?.collections?.[0].id).toBe('c1');
     expect(router.navigate).toHaveBeenCalledWith('/collection/add?movie_id=7');
+  });
+
+  test('the heart shows a spinner, not an empty heart, while the saved state is loading', async () => {
+    signedIn(true);
+    let finish!: (value: Success<Collection[]>) => void;
+    savedIn.mockReturnValue(new Promise(resolve => { finish = resolve; }));
+    render(<MovieDetailPage />);
+    await screen.findByText('Balloons');
+    expect(screen.UNSAFE_getAllByType(ActivityIndicator).length).toBeGreaterThan(0);
+    expect(screen.queryByText('favorite-outline')).toBeNull();
+
+    await act(async () => finish(new Success([new Collection('c1', 'Sci-Fi')])));
+    expect(await screen.findByText('favorite')).toBeTruthy();
   });
 
   test('re-checks saved state on return from the editor', async () => {

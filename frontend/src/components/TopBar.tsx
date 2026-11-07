@@ -73,6 +73,7 @@ const styles = StyleSheet.create({
   backButton: {
     minWidth: 48,
     minHeight: 48,
+    marginHorizontal: -12, // Keep the original 24px icon slot while enlarging its touch target.
     alignItems: 'center',
     justifyContent: 'center',
   },

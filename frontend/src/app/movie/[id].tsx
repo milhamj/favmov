@@ -23,7 +23,7 @@ const MovieDetailPage = () => {
   const movieId = parseIntParam(params.id);
   const isTvShow = parseBooleanParam(params.is_tv_show);
 
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading: isAuthLoading } = useAuth();
   const [isFocused, setIsFocused] = useState(true);
 
   const [movie, setMovie] = useState(() => {
@@ -31,6 +31,8 @@ const MovieDetailPage = () => {
     return cached || new Movie({id : movieId, isTvShow: isTvShow});
   });
   const [isCollectionLoading, setIsCollectionLoading] = useState(false);
+  // Whether the first saved-state lookup finished; until then the heart can't tell saved from unsaved
+  const [collectionsChecked, setCollectionsChecked] = useState(false);
   const isInitialLoad = useRef(true);
 
   // Initial load - fetch both movie details and collection status
@@ -82,6 +84,7 @@ const MovieDetailPage = () => {
       }
 
       isInitialLoad.current = false
+      if (isMounted) setCollectionsChecked(true);
     };
   
     checkCollection();
@@ -148,7 +151,7 @@ const MovieDetailPage = () => {
         movie.collections !== undefined ? (
           <TouchableOpacity style={styles.addToCollectionButton} onPress={handleFavoriteClick}> 
             {
-              isCollectionLoading ? 
+              isCollectionLoading || isAuthLoading || (isAuthenticated && !collectionsChecked) ? 
                 <ActivityIndicator style={{width: 24, height: 24}} color={'white'}/>
               : <Icon name={movie.collections.length > 0 ? "favorite" : "favorite-outline"} size={24} color='white' />
             }
