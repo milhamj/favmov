@@ -190,6 +190,14 @@ describe('people detail', () => {
     expect(screen.getByText('Acted')).toBeTruthy();
   });
 
+  test('an unrated credit shows a dash and its zero count, like the cards', async () => {
+    person.mockResolvedValue(new Success(new People({ id: 3, name: 'Ann', actingCredits: [credit(1, 'Upcoming', { rating: 0, ratingCount: 0 })] })));
+    render(<PeopleDetailPage />);
+    await screen.findByText('Upcoming');
+    expect(screen.getByText(' – ')).toBeTruthy();
+    expect(screen.getAllByText('(0)')).toHaveLength(2); // the credit's count plus the empty crew section header
+  });
+
   test('a credit shows its year and role, and opens with data cached', async () => {
     person.mockResolvedValue(new Success(new People({ id: 3, name: 'Ann', actingCredits: [credit(1, 'Series', { isTvShow: true })] })));
     render(<PeopleDetailPage />);

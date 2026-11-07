@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     },
     row: {
       justifyContent: 'flex-start',
-    gap: SPACING.medium,
+      gap: SPACING.medium,
     },
     footerLoader: {
         paddingVertical: 20,

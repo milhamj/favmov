@@ -4,7 +4,7 @@ import { router } from '../../navigation/router';
 import { PeopleMovieCredit } from "../../model/peopleModel";
 import React from "react";
 import { COLORS, RADIUS, TYPOGRAPHY } from "../../styles/colors";
-import { getRatingColor } from "../../utils/util";
+import { displayRating, getRatingColor } from "../../utils/util";
 import { Icon } from "react-native-elements";
 import { Movie } from "../../model/movieModel";
 import { MovieStore } from "../../stores/movieStore";
@@ -30,7 +30,7 @@ const PeopleMovieCreditView = ({ credit }: PeopleMovieCreditProps) => {
         router.navigate(routes.movie(credit.id, credit.isTvShow));
     }
 
-    const rating = credit.rating ? parseFloat(credit.rating.toFixed(2)) : undefined;
+    const rating = credit.rating != null ? parseFloat(credit.rating.toFixed(2)) : undefined;
 
     return <TouchableOpacity
         style={styles.container}
@@ -52,15 +52,15 @@ const PeopleMovieCreditView = ({ credit }: PeopleMovieCreditProps) => {
                     </Text>
                 )}
                 {
-                    rating && (
+                    rating !== undefined && (
                         <Text numberOfLines={1} ellipsizeMode="tail" style={styles.creditRating}>⭐
                             <Text style={{
                                 color: getRatingColor(rating),
                                 fontWeight: 'bold',
                             }}>
-                                {` ${rating} `}
+                                {` ${displayRating(rating)} `}
                             </Text>
-                            <Text style={styles.creditRatingCount}>({credit.ratingCount})</Text>
+                            <Text style={styles.creditRatingCount}>({credit.ratingCount ?? 0})</Text>
                         </Text>
                     )
                 }
