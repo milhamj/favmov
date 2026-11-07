@@ -13,7 +13,7 @@ export class Movie {
     genres?: string[];
     cast?: Actor[];
     crew?: Crew[];
-    rating?: number;
+    rating?: number | string; // TMDB-derived ratings are pre-formatted "7.12" strings
     ratingCount?: number;
     runtime?: string;
     isTvShow?: boolean;

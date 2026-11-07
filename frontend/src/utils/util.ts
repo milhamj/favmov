@@ -22,12 +22,13 @@ export const parseBooleanParam = (param: string | string[]): boolean => {
 // TMDB reports 0 for titles nobody has rated yet; show those neutrally instead of as a bad score
 export const displayRating = (rating: number | string): string | number => Number(rating) === 0 ? '–' : rating;
 
-export const getRatingColor = (rating: number): string => {
-  if (Number(rating) === 0) {
+export const getRatingColor = (rating: number | string): string => {
+  const value = Number(rating);
+  if (value === 0) {
     return COLORS.secondaryText;
-  } else if (rating >= 7.0) {
+  } else if (value >= 7.0) {
     return COLORS.rating_green;
-  } else if (rating >= 5.0) {
+  } else if (value >= 5.0) {
     return COLORS.rating_yellow;
   } else {
     return COLORS.rating_red;

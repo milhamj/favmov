@@ -151,7 +151,7 @@ const MovieDetailPage = () => {
         movie.collections !== undefined ? (
           <TouchableOpacity style={styles.addToCollectionButton} onPress={handleFavoriteClick}> 
             {
-              isCollectionLoading || isAuthLoading || (isAuthenticated && !collectionsChecked) ? 
+              isCollectionLoading || isAuthLoading || (isAuthenticated && !collectionsChecked) ?
                 <ActivityIndicator style={{width: 24, height: 24}} color={'white'}/>
               : <Icon name={movie.collections.length > 0 ? "favorite" : "favorite-outline"} size={24} color='white' />
             }
