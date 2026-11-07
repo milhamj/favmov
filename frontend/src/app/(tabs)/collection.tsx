@@ -37,7 +37,8 @@ const CollectionPage = withAuth(() => {
           setCollections(result.data);
           lastFetchedTimestamp.current = Date.now();
         } else {
-          setError(result.message);
+          // Keep an already loaded list on screen; only a first load has nothing to fall back to
+          if (lastFetchedTimestamp.current === null) setError(result.message);
           Toast.show({
               type: 'error',
               text1: 'Error',

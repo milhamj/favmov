@@ -147,11 +147,14 @@ const MovieDetailPage = () => {
       router.navigate(routes.addToCollection(movie.id, movie.isTvShow));
     }
     
+    // Until the saved state is known a tap would send a signed-in user to login or open the editor blind
+    const isHeartLoading = isCollectionLoading || isAuthLoading || (isAuthenticated && !collectionsChecked);
+
     return (
         movie.collections !== undefined ? (
-          <TouchableOpacity style={styles.addToCollectionButton} onPress={handleFavoriteClick}> 
+          <TouchableOpacity style={styles.addToCollectionButton} onPress={handleFavoriteClick} disabled={isHeartLoading} accessibilityState={{ disabled: isHeartLoading, busy: isHeartLoading }}> 
             {
-              isCollectionLoading || isAuthLoading || (isAuthenticated && !collectionsChecked) ?
+              isHeartLoading ?
                 <ActivityIndicator style={{width: 24, height: 24}} color={'white'}/>
               : <Icon name={movie.collections.length > 0 ? "favorite" : "favorite-outline"} size={24} color='white' />
             }

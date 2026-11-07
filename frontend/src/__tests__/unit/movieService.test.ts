@@ -98,6 +98,18 @@ describe('fetchFavoriteMovies', () => {
     expect(data[0]).toMatchObject({ id: 1, posterPath: '/up.jpg', rating: '7.12', ratingCount: 10, collectionNotes: 'n', collectionAddTime: Date.parse('2026-01-01T00:00:00Z') });
   });
 
+  test('keeps an unrated title with its zero rating and count', async () => {
+    backend.mockResolvedValue({ data: { data: [{ id: 2, title: 'New', poster_path: '/n.jpg', is_tv_show: false, rating: 0, rating_count: 0 }] } });
+    const { data } = await fetchFavoriteMovies() as Success<any>;
+    expect(data[0]).toMatchObject({ rating: '0.00', ratingCount: 0 });
+  });
+
+  test('leaves a title with no stored rating unrated', async () => {
+    backend.mockResolvedValue({ data: { data: [{ id: 3, title: 'None', poster_path: '/n.jpg', is_tv_show: false, rating: null, rating_count: null }] } });
+    const { data } = await fetchFavoriteMovies() as Success<any>;
+    expect(data[0].rating).toBeUndefined();
+  });
+
   test('surfaces the backend message', async () => {
     backend.mockRejectedValue({ response: { status: 401, data: { message: 'Authentication required' } } });
     expect(await fetchFavoriteMovies()).toMatchObject({ message: 'Authentication required', errorCode: 401 });

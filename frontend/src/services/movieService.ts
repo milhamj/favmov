@@ -126,7 +126,7 @@ export const fetchFavoriteMovies = async (): Promise<Success<Movie[]> | Error> =
         posterPath: item.poster_path
       });
       movie.isTvShow = item.is_tv_show;
-      if (item.rating) {
+      if (item.rating != null) {
         movie.rating = Number(item.rating).toFixed(2);
       }
       if (item.rating_count != null) {

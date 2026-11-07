@@ -129,6 +129,9 @@ describe('movie detail', () => {
     expect(screen.UNSAFE_getAllByType(ActivityIndicator).length).toBeGreaterThan(0);
     expect(screen.queryByText('favorite-outline')).toBeNull();
 
+    fireEvent.press(screen.UNSAFE_getAllByType(ActivityIndicator)[0]);
+    expect(router.navigate).not.toHaveBeenCalled();
+
     await act(async () => finish(new Success([new Collection('c1', 'Sci-Fi')])));
     expect(await screen.findByText('favorite')).toBeTruthy();
   });

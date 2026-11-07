@@ -140,6 +140,18 @@ describe('collections tab', () => {
     await act(async () => refocus());
     expect(listCollections).toHaveBeenCalledTimes(2);
   });
+
+  test('a failed reload keeps the loaded list and only toasts', async () => {
+    render(<CollectionPage />);
+    await screen.findByText(/Sci-Fi/);
+
+    listCollections.mockResolvedValue(new ApiError('Failed to fetch collections'));
+    CollectionStateStore.setLastUpdated(Date.now() + 1000);
+    await act(async () => refocus());
+    await waitFor(() => expect(Toast.show).toHaveBeenCalledWith(expect.objectContaining({ type: 'error' })));
+    expect(screen.getByText(/Sci-Fi/)).toBeTruthy();
+    expect(screen.queryByText('Retry')).toBeNull();
+  });
 });
 
 describe('collection detail', () => {
@@ -196,6 +208,19 @@ describe('collection detail', () => {
     CollectionStateStore.setLastUpdated(Date.now() + 1000);
     await act(async () => refocus());
     expect(await screen.findByText('New')).toBeTruthy();
+  });
+
+  test('a failed reload keeps the loaded movies and only toasts', async () => {
+    getDetail.mockResolvedValue(detail([new Movie({ id: 1, title: 'Old' })]));
+    render(<CollectionDetailPage />);
+    await screen.findByText('Old');
+
+    getDetail.mockResolvedValue(new ApiError('Unable to read collection'));
+    CollectionStateStore.setLastUpdated(Date.now() + 1000);
+    await act(async () => refocus());
+    await waitFor(() => expect(Toast.show).toHaveBeenCalledWith(expect.objectContaining({ type: 'error', text2: 'Unable to read collection' })));
+    expect(screen.getByText('Old')).toBeTruthy();
+    expect(screen.queryByText('Retry')).toBeNull();
   });
 });
 
