@@ -32,7 +32,7 @@ const transformMovieData = (item: any): Movie => {
   });
   movie.isTvShow = item.is_tv_show;
   if (item.rating) {
-    movie.rating = item.rating;
+    movie.rating = Number(item.rating).toFixed(2);
   }
   if (item.rating_count) {
     movie.ratingCount = item.rating_count;

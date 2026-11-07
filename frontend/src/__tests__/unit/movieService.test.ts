@@ -91,11 +91,11 @@ describe('searchMovie', () => {
 describe('fetchFavoriteMovies', () => {
   test('maps the backend rows', async () => {
     backend.mockResolvedValue({ data: { data: [
-      { id: 1, title: 'Up', poster_path: '/up.jpg', is_tv_show: false, rating: 8, rating_count: 10, notes: 'n', last_added_at: '2026-01-01T00:00:00Z' },
+      { id: 1, title: 'Up', poster_path: '/up.jpg', is_tv_show: false, rating: 7.123, rating_count: 10, notes: 'n', last_added_at: '2026-01-01T00:00:00Z' },
     ] } });
     const { data } = await fetchFavoriteMovies() as Success<any>;
     expect(backend).toHaveBeenCalledWith('/collections/latest_movies');
-    expect(data[0]).toMatchObject({ id: 1, posterPath: '/up.jpg', rating: 8, ratingCount: 10, collectionNotes: 'n', collectionAddTime: Date.parse('2026-01-01T00:00:00Z') });
+    expect(data[0]).toMatchObject({ id: 1, posterPath: '/up.jpg', rating: '7.12', ratingCount: 10, collectionNotes: 'n', collectionAddTime: Date.parse('2026-01-01T00:00:00Z') });
   });
 
   test('surfaces the backend message', async () => {
