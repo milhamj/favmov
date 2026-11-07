@@ -13,7 +13,7 @@ export const COLORS = {
   warmSurface: 'rgba(243, 143, 77, 0.1)',
   rating_green: '#2E7D32',
   rating_red: '#C62828',
-  rating_yellow: '#8A5700',
+  rating_yellow: '#8A6A00',
   background_gray: '#ECEFF1',
 };
 
