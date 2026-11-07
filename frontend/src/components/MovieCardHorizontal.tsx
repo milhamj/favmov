@@ -20,7 +20,7 @@ const MovieCardHorizontal: React.FC<MovieCardHorizontalProps> = ({ movie, onClic
                 <Text style={styles.posterTitle} numberOfLines={1} ellipsizeMode="tail">
                     {movie.title}{movie.releaseYear() ? ` (${movie.releaseYear()})` : ''}
                 </Text>
-                { movie.rating && (
+                { movie.rating != null && (
                     <Text
                     style={[
                         styles.posterRating,

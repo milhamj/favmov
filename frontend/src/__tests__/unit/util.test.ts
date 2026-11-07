@@ -43,4 +43,6 @@ test('unrated titles show a dash, rated ones keep their number', () => {
   expect(displayRating('0.00')).toBe('–');
   expect(displayRating(0)).toBe('–');
   expect(displayRating('7.12')).toBe('7.12');
+  expect(displayRating(7.456)).toBe('7.46');
+  expect(displayRating(8)).toBe('8.00');
 });

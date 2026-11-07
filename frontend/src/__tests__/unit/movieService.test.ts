@@ -104,6 +104,12 @@ describe('fetchFavoriteMovies', () => {
     expect(data[0]).toMatchObject({ rating: '0.00', ratingCount: 0 });
   });
 
+  test('ignores a rating that is not a number', async () => {
+    backend.mockResolvedValue({ data: { data: [{ id: 4, title: 'Odd', poster_path: '/o.jpg', is_tv_show: false, rating: 'abc', rating_count: 1 }] } });
+    const { data } = await fetchFavoriteMovies() as Success<any>;
+    expect(data[0].rating).toBeUndefined();
+  });
+
   test('leaves a title with no stored rating unrated', async () => {
     backend.mockResolvedValue({ data: { data: [{ id: 3, title: 'None', poster_path: '/n.jpg', is_tv_show: false, rating: null, rating_count: null }] } });
     const { data } = await fetchFavoriteMovies() as Success<any>;

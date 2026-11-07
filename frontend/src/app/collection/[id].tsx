@@ -50,6 +50,7 @@ const CollectionDetailPage = withAuth(() => {
 
     useEffect(() => {
         lastFetchedTimestamp.current = null; // a different collection has no data to fall back to
+        setCollection(null);
         fetchCollectionDetail();
     }, [collectionId]);
 

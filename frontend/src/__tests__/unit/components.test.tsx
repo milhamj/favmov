@@ -58,6 +58,13 @@ describe('movie cards', () => {
     expect(screen.queryByText(/0\.00/)).toBeNull();
   });
 
+  test.each([['MovieCard', MovieCard], ['MovieCardHorizontal', MovieCardHorizontal]])('%s shows a raw numeric 0 rating as a dash, never a bare 0', (_name, Card: any) => {
+    // A Movie built from a people credit carries TMDB's raw number, not the formatted string
+    render(<Card movie={new Movie({ id: 1, title: 'Up', rating: 0, ratingCount: 0 })} />);
+    expect(screen.getByText(/⭐ –/)).toBeTruthy();
+    expect(screen.queryByText('0')).toBeNull();
+  });
+
   test('MovieCard leaves out a missing rating', () => {
     render(<MovieCard movie={new Movie({ id: 1, title: 'Up' })} />);
     expect(screen.queryByText(/⭐/)).toBeNull();

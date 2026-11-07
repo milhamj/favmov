@@ -208,7 +208,7 @@ const MovieDetailPage = () => {
           {/* Top Section */}
           <Text style={styles.title}>{movie.title}</Text>
           {
-            movie.rating && 
+            movie.rating != null &&
               <Text style={[styles.rating, {
                   color: getRatingColor(movie.rating),
                 },

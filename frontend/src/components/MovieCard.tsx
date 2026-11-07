@@ -15,7 +15,7 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, onClick }) => {
   return (
     <Container onPress={onClick ? () => onClick(movie) : undefined} style={[styles.posterContainer]}>
         <Image source={{ uri: movie.smallPosterUrl() }} style={[styles.poster]} />
-        {movie.rating && (
+        {movie.rating != null && (
           <Text
             style={[
               styles.posterRating,
