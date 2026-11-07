@@ -153,7 +153,7 @@ const MovieDetailPage = () => {
 
     return (
         movie.collections !== undefined ? (
-          <TouchableOpacity style={styles.addToCollectionButton} onPress={handleFavoriteClick} disabled={isHeartLoading} accessibilityState={{ disabled: isHeartLoading, busy: isHeartLoading }}> 
+          <TouchableOpacity style={styles.addToCollectionButton} onPress={handleFavoriteClick} disabled={isHeartLoading} accessibilityState={{ disabled: isHeartLoading, busy: isHeartLoading }}>
             {
               isHeartLoading ?
                 <ActivityIndicator style={{width: 24, height: 24}} color={'white'}/>
