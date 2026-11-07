@@ -136,6 +136,24 @@ describe('movie detail', () => {
     expect(await screen.findByText('favorite')).toBeTruthy();
   });
 
+  test('the heart waits for a fresh lookup when the user signs in again', async () => {
+    signedIn(true);
+    const { rerender } = render(<MovieDetailPage />);
+    await screen.findByText('favorite-outline');
+
+    signedIn(false);
+    rerender(<MovieDetailPage {...({ session: 1 } as any)} />);
+    let finish!: (value: Success<Collection[]>) => void;
+    savedIn.mockReturnValue(new Promise(resolve => { finish = resolve; }));
+    signedIn(true);
+    rerender(<MovieDetailPage {...({ session: 2 } as any)} />);
+
+    await waitFor(() => expect(savedIn).toHaveBeenCalledTimes(2));
+    expect(screen.queryByText('favorite-outline')).toBeNull();
+    await act(async () => finish(new Success([new Collection('c1', 'Sci-Fi')])));
+    expect(await screen.findByText('favorite')).toBeTruthy();
+  });
+
   test('re-checks saved state on return from the editor', async () => {
     signedIn(true);
     render(<MovieDetailPage />);

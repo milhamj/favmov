@@ -51,7 +51,7 @@ const CollectionDetailPage = withAuth(() => {
         setIsLoading(false);
     }
 
-    // Leaving the screen retires any request still in flight, so a late failure can't toast on another screen
+    // Unmounting retires any request still in flight, so a late failure can't toast on another screen
     useEffect(() => () => { latestRequest.current++; }, []);
 
     useEffect(() => {

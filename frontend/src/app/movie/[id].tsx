@@ -66,6 +66,7 @@ const MovieDetailPage = () => {
   }, []);
 
   useEffect(() => {
+    setCollectionsChecked(false); // a new session (sign-in after sign-out) has not been looked up yet
     if (!isAuthenticated) return;
   
     let isMounted = true;
