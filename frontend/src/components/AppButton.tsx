@@ -21,7 +21,7 @@ export default function AppButton({ label, onPress, disabled = false, loading = 
       disabled={unavailable}
       onPress={onPress}
       activeOpacity={0.7}
-      style={[styles.button, destructive && styles.destructive, style, unavailable && styles.disabled]}
+      style={[styles.button, destructive && styles.destructive, style, disabled && !loading && styles.disabled]} // a loading button keeps its full-strength spinner
     >
       {loading ? <ActivityIndicator size="small" color={COLORS.onAccent} /> : <Text style={styles.label}>{label}</Text>}
     </TouchableOpacity>

@@ -210,6 +210,23 @@ describe('collection detail', () => {
     expect(await screen.findByText('New')).toBeTruthy();
   });
 
+  test('a slow response for a previous collection cannot overwrite the current one', async () => {
+    let finishFirst!: (value: Success<Collection>) => void;
+    getDetail.mockReturnValueOnce(new Promise(resolve => { finishFirst = resolve; }));
+    searchParams.current = { id: 'a' };
+    const { rerender } = render(<CollectionDetailPage />);
+    await waitFor(() => expect(getDetail).toHaveBeenCalledWith('a'));
+
+    getDetail.mockResolvedValue(detail([new Movie({ id: 2, title: 'From B' })]));
+    searchParams.current = { id: 'b' };
+    rerender(<CollectionDetailPage {...({ routeChanged: true } as any)} />); // the real router re-renders the memoized page; this mock needs a prop change to do so
+    await screen.findByText('From B');
+
+    await act(async () => finishFirst(detail([new Movie({ id: 1, title: 'From A' })])));
+    expect(screen.getByText('From B')).toBeTruthy();
+    expect(screen.queryByText('From A')).toBeNull();
+  });
+
   test('a failed reload keeps the loaded movies and only toasts', async () => {
     getDetail.mockResolvedValue(detail([new Movie({ id: 1, title: 'Old' })]));
     render(<CollectionDetailPage />);

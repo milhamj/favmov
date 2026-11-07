@@ -1,4 +1,5 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import AppButton from '../components/AppButton';
 import RetryButton from '../components/RetryButton';
@@ -17,6 +18,15 @@ test.each([{ disabled: true }, { loading: true }])('an unavailable action keeps 
   expect(button.props.accessibilityState).toEqual({ disabled: true, busy: !!props.loading });
   fireEvent.press(button);
   expect(onPress).not.toHaveBeenCalled();
+});
+
+test('a disabled action is dimmed but a loading one keeps its full-strength spinner', () => {
+  const opacity = () => StyleSheet.flatten(screen.getByRole('button', { name: 'Save' }).props.style).opacity;
+  const disabled = render(<AppButton label="Save" onPress={jest.fn()} disabled />);
+  expect(opacity()).toBe(0.5);
+  disabled.unmount();
+  render(<AppButton label="Save" onPress={jest.fn()} loading />);
+  expect(opacity()).toBe(1);
 });
 
 test('an error without a recovery action shows only its message', () => {

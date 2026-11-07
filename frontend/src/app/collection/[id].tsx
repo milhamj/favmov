@@ -27,11 +27,14 @@ const CollectionDetailPage = withAuth(() => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const lastFetchedTimestamp = useRef<number | null>(null);
+    const latestRequest = useRef(0);
 
     const fetchCollectionDetail = async () => {
+        const request = ++latestRequest.current;
         setIsLoading(true);
         setError('');
         const result = await getCollectionDetail(collectionId);
+        if (request !== latestRequest.current) return; // a newer fetch (another collection, or a refresh) owns the screen now
         if (result instanceof Success) {
             setCollection(result.data);
             lastFetchedTimestamp.current = Date.now();
