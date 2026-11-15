@@ -28,7 +28,7 @@ test('a user saves a title with notes, sees it everywhere, then removes it', asy
   await page.getByRole('checkbox').click();
 
   const notesSaved = page.waitForResponse(
-    (response) => response.url().endsWith('/notes') && response.status() === 201,
+    (response) => response.url().endsWith('/notes') && response.status() === 200,
   );
   await page.getByPlaceholder('Write custom notes...').fill('  Never give up  ');
   await notesSaved;
