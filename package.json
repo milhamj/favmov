@@ -1,0 +1,30 @@
+{
+  "name": "favmov",
+  "private": true,
+  "packageManager": "pnpm@12.18.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "setup": "pnpm --dir backend install --frozen-lockfile && pnpm --dir frontend install --frozen-lockfile && pnpm --dir e2e install --frozen-lockfile",
+    "test": "pnpm --dir backend test && pnpm --dir frontend test",
+    "e2e": "pnpm --dir e2e test",
+    "lint": "pnpm --dir backend lint && pnpm --dir backend format:check && pnpm --dir frontend lint && pnpm --dir frontend format:check && pnpm --dir e2e lint && pnpm --dir e2e format:check",
+    "typecheck": "pnpm --dir frontend typecheck",
+    "format": "pnpm --dir backend format && pnpm --dir frontend format && pnpm --dir e2e format",
+    "build:web": "pnpm --dir frontend build:web"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "12.18.0",
+      "onFail": "ignore"
+    }
+  },
+  "license": "GPL-2.0-only",
+  "description": "Browse movies, TV shows and people, and save titles in personal collections with notes.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/milhamj/favmov.git"
+  }
+}

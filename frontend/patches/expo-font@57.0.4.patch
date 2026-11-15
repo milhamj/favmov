@@ -1,0 +1,24 @@
+diff --git a/build/ExpoFontLoader.web.js b/build/ExpoFontLoader.web.js
+index f5c5f89927c005b2b83026589b3f76a3df5b9fbc..4c1370453b1d9c2599bc0f3f0012d8076da1ad2c 100644
+--- a/build/ExpoFontLoader.web.js
++++ b/build/ExpoFontLoader.web.js
+@@ -42,8 +42,8 @@ function normalizeFontFamilyName(fontFamily) {
+ function getFontFaceRulesMatchingResource(fontFamilyName, options) {
+     const rules = getFontFaceRules();
+     return rules.filter(({ rule }) => {
+-        return (normalizeFontFamilyName(rule.style.fontFamily) === fontFamilyName &&
+-            (options && options.display ? options.display === rule.style.fontDisplay : true));
++        return (normalizeFontFamilyName(rule.style.getPropertyValue('font-family')) === fontFamilyName &&
++            (options && options.display ? options.display === rule.style.getPropertyValue('font-display') : true));
+     });
+ }
+ const ExpoFontLoader = {
+@@ -87,7 +87,7 @@ const ExpoFontLoader = {
+             return getLoadedServerFonts();
+         }
+         const rules = getFontFaceRules();
+-        return rules.map(({ rule }) => normalizeFontFamilyName(rule.style.fontFamily));
++        return rules.map(({ rule }) => normalizeFontFamilyName(rule.style.getPropertyValue('font-family')));
+     },
+     isLoaded(fontFamilyName, resource = {}) {
+         if (typeof window === 'undefined') {

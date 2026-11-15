@@ -1,0 +1,35 @@
+const createAuthenticatedSupabaseClient = require('../config/supabase');
+const { errorResponse } = require('../utils/responses');
+
+const authenticate = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return errorResponse(res, 'Authentication required', 401);
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    const supabase = createAuthenticatedSupabaseClient(token);
+
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+
+    if (error || !user) {
+      return errorResponse(res, 'Invalid or expired token', 401);
+    }
+
+    req.user = user;
+    req.supabase = supabase;
+
+    next();
+  } catch (error) {
+    console.error('Authentication error:', error);
+    return errorResponse(res, 'Authentication failed', 401);
+  }
+};
+
+module.exports = { authenticate };

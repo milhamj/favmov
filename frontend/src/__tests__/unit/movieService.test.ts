@@ -1,0 +1,224 @@
+import backendClient from '@/lib/backendClient';
+import {
+  fetchFavoriteMovies,
+  fetchMovieDetails,
+  fetchPopularMovies,
+  fetchTrendingMovies,
+  fetchTrendingShows,
+  searchMovie,
+} from '@/features/movies/movieService';
+import tmdbApiClient from '@/lib/tmdbClient';
+
+jest.mock('@/lib/tmdbClient', () => {
+  const client = { get: jest.fn() };
+  return {
+    __esModule: true,
+    default: () => client,
+    TMDB_IMAGE_BIG: 'big/',
+    TMDB_IMAGE_SMALL: 'small/',
+  };
+});
+jest.mock('@/lib/backendClient', () => ({
+  __esModule: true,
+  default: { get: jest.fn() },
+}));
+
+const tmdb = tmdbApiClient().get as jest.Mock;
+const backend = backendClient.get as jest.Mock;
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  jest.spyOn(console, 'error').mockImplementation(() => {});
+});
+
+test.each([
+  [fetchTrendingMovies, '/trending/movie/week', false],
+  [fetchTrendingShows, '/trending/tv/week', true],
+  [fetchPopularMovies, '/movie/popular', undefined],
+])('lists fetch page 1 by default and mark TV shows', async (fetchList, path, isTvShow) => {
+  tmdb.mockResolvedValue({ data: { results: [{ id: 1, name: 'Named', vote_average: 7.123 }] } });
+  const result = await fetchList();
+
+  expect(tmdb).toHaveBeenCalledWith(path, { params: { page: 1 } });
+  expect(result[0]).toMatchObject({
+    id: 1,
+    title: 'Named',
+    rating: '7.12',
+    isTvShow: isTvShow === true,
+  });
+});
+
+test('list failures keep the HTTP status', async () => {
+  tmdb.mockRejectedValue({ isAxiosError: true, response: { status: 429 } });
+  await expect(fetchTrendingMovies()).rejects.toMatchObject({
+    message: 'Failed to fetch trending movies',
+    status: 429,
+  });
+});
+
+describe('fetchMovieDetails', () => {
+  const person = (id: number, job: string) => ({ id, name: `P${id}`, job, profile_path: '/p.jpg' });
+
+  test('picks the endpoint by media type', async () => {
+    tmdb.mockResolvedValue({ data: { id: 1 } });
+    await fetchMovieDetails('1');
+    await fetchMovieDetails('1', true);
+    expect(tmdb.mock.calls.map(([url]) => url)).toEqual([
+      '/movie/1?append_to_response=credits',
+      '/tv/1?append_to_response=credits',
+    ]);
+  });
+
+  test('maps TV fields', async () => {
+    tmdb.mockResolvedValue({ data: { id: 1, name: 'Show', first_air_date: '2020-01-01' } });
+    const data = await fetchMovieDetails('1', true);
+    expect(data).toMatchObject({ title: 'Show', releaseDate: '2020-01-01', isTvShow: true });
+  });
+
+  test('keeps the first 10 cast, and lists director then producers first in 20 crew', async () => {
+    const cast = Array.from({ length: 12 }, (_, id) => ({ id, name: `A${id}`, character: 'C' }));
+    const others = Array.from({ length: 30 }, (_, index) => person(100 + index, 'Writer'));
+    const crew = [...others, person(2, 'Executive Producer'), person(1, 'Director')];
+    tmdb.mockResolvedValue({
+      data: { id: 1, genres: [{ name: 'Drama' }], credits: { cast, crew } },
+    });
+
+    const data = await fetchMovieDetails('1');
+    expect(data.cast).toHaveLength(10);
+    expect(data.crew).toHaveLength(20);
+    expect(data.crew!.slice(0, 3).map((c: any) => c.job)).toEqual([
+      'Director',
+      'Executive Producer',
+      'Writer',
+    ]);
+    expect(data.genres).toEqual(['Drama']);
+  });
+
+  test('reports failures', async () => {
+    tmdb.mockRejectedValue({ isAxiosError: true, response: { status: 404 } });
+    await expect(fetchMovieDetails('1')).rejects.toMatchObject({
+      message: 'Failed to fetch movie details',
+      status: 404,
+    });
+  });
+});
+
+describe('searchMovie', () => {
+  test('searches movies, excluding adult titles unless asked', async () => {
+    tmdb.mockResolvedValue({ data: { results: [{ id: 1, title: 'Up' }], total_pages: 3 } });
+    const data = await searchMovie('up', 2);
+    expect(tmdb).toHaveBeenCalledWith('/search/movie', {
+      params: { query: 'up', page: 2, include_adult: false },
+    });
+    expect(data.totalPages).toBe(3);
+    expect(data.movies[0].title).toBe('Up');
+  });
+
+  test('searches TV shows', async () => {
+    tmdb.mockResolvedValue({ data: { results: [{ id: 1, name: 'Lost' }], total_pages: 1 } });
+    const data = await searchMovie('lost', 1, true, true);
+    expect(tmdb).toHaveBeenCalledWith('/search/tv', {
+      params: { query: 'lost', page: 1, include_adult: true },
+    });
+    expect(data.movies[0]).toMatchObject({ title: 'Lost', isTvShow: true });
+  });
+});
+
+describe('fetchFavoriteMovies', () => {
+  test('maps the backend rows', async () => {
+    backend.mockResolvedValue({
+      data: {
+        data: [
+          {
+            id: 1,
+            title: 'Up',
+            poster_path: '/up.jpg',
+            is_tv_show: false,
+            rating: 7.123,
+            rating_count: 10,
+            notes: 'n',
+            last_added_at: '2026-01-01T00:00:00Z',
+          },
+        ],
+      },
+    });
+    const data = await fetchFavoriteMovies();
+    expect(backend).toHaveBeenCalledWith('/collections/latest_movies');
+    expect(data[0]).toMatchObject({
+      id: 1,
+      posterPath: '/up.jpg',
+      rating: '7.12',
+      ratingCount: 10,
+      collectionNotes: 'n',
+      collectionAddTime: Date.parse('2026-01-01T00:00:00Z'),
+    });
+  });
+
+  test('keeps an unrated title with its zero rating and count', async () => {
+    backend.mockResolvedValue({
+      data: {
+        data: [
+          {
+            id: 2,
+            title: 'New',
+            poster_path: '/n.jpg',
+            is_tv_show: false,
+            rating: 0,
+            rating_count: 0,
+          },
+        ],
+      },
+    });
+    const data = await fetchFavoriteMovies();
+    expect(data[0]).toMatchObject({ rating: '0.00', ratingCount: 0 });
+  });
+
+  test('ignores a rating that is not a number', async () => {
+    backend.mockResolvedValue({
+      data: {
+        data: [
+          {
+            id: 4,
+            title: 'Odd',
+            poster_path: '/o.jpg',
+            is_tv_show: false,
+            rating: 'abc',
+            rating_count: 1,
+          },
+        ],
+      },
+    });
+    const data = await fetchFavoriteMovies();
+    expect(data[0].rating).toBeUndefined();
+  });
+
+  test('leaves a title with no stored rating unrated', async () => {
+    backend.mockResolvedValue({
+      data: {
+        data: [
+          {
+            id: 3,
+            title: 'None',
+            poster_path: '/n.jpg',
+            is_tv_show: false,
+            rating: null,
+            rating_count: null,
+          },
+        ],
+      },
+    });
+    const data = await fetchFavoriteMovies();
+    expect(data[0].rating).toBeUndefined();
+  });
+
+  test('surfaces the backend message', async () => {
+    backend.mockRejectedValue({
+      isAxiosError: true,
+      response: { status: 401, data: { message: 'Authentication required' } },
+    });
+    await expect(fetchFavoriteMovies()).rejects.toMatchObject({
+      message: 'Authentication required',
+      status: 401,
+    });
+  });
+});
