@@ -10,8 +10,20 @@ const freePort = () =>
     });
   });
 
+// A server already on a fixed port would answer the health check while ours fails to bind.
+const assertPortFree = (port) =>
+  new Promise((resolve, reject) => {
+    const probe = net
+      .createServer()
+      .once('error', () =>
+        reject(new Error(`Port ${port} is already in use; stop that server first`)),
+      )
+      .listen(port, () => probe.close(resolve));
+  });
+
 // Runs the real server.js in its own process, exactly as `pnpm start` does
 const startServer = async ({ supabaseUrl, nodeEnv = 'development', port }) => {
+  if (port) await assertPortFree(port);
   port ??= await freePort();
   const child = spawn(process.execPath, ['server.js'], {
     cwd: path.join(__dirname, '..'),
