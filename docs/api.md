@@ -4,7 +4,7 @@ Base path: `/api`. All collection endpoints require `Authorization: Bearer <Supa
 
 ## Responses
 
-Success responses contain `success: true`, `message` and `data`. Errors contain `success: false` and `message`, without `data`. `debugMessage` is included only in development. The unauthenticated health check is an exception: `GET /api/health` returns `{ "status": "ok" }`.
+Success responses contain `success: true`, `message` and `data`. Errors contain `success: false` and `message`, without `data`. `debugMessage` is included only in development. The unauthenticated health checks are an exception: `GET /api/health` and `GET /api/health/db` return `{ "status": "ok" }`, and the database check returns 503 with `{ "status": "error" }` when its query fails.
 
 ```json
 {
@@ -21,6 +21,7 @@ Paths below are relative to `/api`. `collection_id` identifies a collection; tit
 | Method | Path                                                             | Purpose                                                  | Notable status codes                                                      |
 | ------ | ---------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------- |
 | GET    | `/health`                                                        | Health check, no authentication                          | 200                                                                       |
+| GET    | `/health/db`                                                     | Database health check, no authentication                 | 200; 503 database query failed or timed out                               |
 | POST   | `/collections`                                                   | Create a collection with `{ "name": "Watch next" }`      | 201; 400 blank or duplicate name                                          |
 | GET    | `/collections`                                                   | List caller's collections                                | 200                                                                       |
 | DELETE | `/collections/:collection_id`                                    | Delete an owned collection and its entries               | 200; 404 missing or inaccessible                                          |

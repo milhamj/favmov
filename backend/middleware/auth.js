@@ -1,4 +1,4 @@
-const createAuthenticatedSupabaseClient = require('../config/supabase');
+const { createAuthenticatedSupabaseClient } = require('../config/supabase');
 const { errorResponse } = require('../utils/responses');
 
 const authenticate = async (req, res, next) => {

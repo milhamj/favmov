@@ -59,7 +59,31 @@ beforeEach(() => supabase.reset());
 
 describe('server', () => {
   test('reports health without authentication', async () => {
-    assert.strictEqual((await call('GET', '/health', { token: null })).status, 200);
+    const response = await fetch(`${server.url}/api/health`);
+    assert.strictEqual(response.status, 200);
+    assert.strictEqual(response.headers.get('cache-control'), 'no-store');
+  });
+
+  test('reports database health without authentication', async () => {
+    const response = await fetch(`${server.url}/api/health/db`);
+    assert.strictEqual(response.status, 200);
+    assert.strictEqual(response.headers.get('cache-control'), 'no-store');
+    assert.deepStrictEqual(await response.json(), { status: 'ok' });
+  });
+
+  test('reports 503 when the database query fails', async () => {
+    supabase.failNext('GET', 'dev_collections');
+    const response = await fetch(`${server.url}/api/health/db`);
+    assert.strictEqual(response.status, 503);
+    assert.deepStrictEqual(await response.json(), { status: 'error' });
+  });
+
+  // The limit fails the test instead of hanging if the query timeout stops working
+  test('reports 503 when the database does not answer', { timeout: 15000 }, async () => {
+    supabase.stallNext('GET', 'dev_collections');
+    const response = await fetch(`${server.url}/api/health/db`);
+    assert.strictEqual(response.status, 503);
+    assert.deepStrictEqual(await response.json(), { status: 'error' });
   });
 
   test('answers unknown API paths with the JSON error envelope', async () => {

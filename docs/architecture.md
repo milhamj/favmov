@@ -31,7 +31,7 @@ The expo-font patch reads CSS font properties through `getPropertyValue` so expo
 
 ## Backend
 
-Requests follow routes → validators → controllers → repositories. Middleware verifies authentication; validators check request bodies; controllers apply application behavior; repositories contain Supabase queries. Shared response helpers return `{ success, message, data }` on success and `{ success: false, message }` on failure, with `debugMessage` only in development. The health check instead returns `{ "status": "ok" }`.
+Requests follow routes → validators → controllers → repositories. Middleware verifies authentication; validators check request bodies; controllers apply application behavior; repositories contain Supabase queries. Shared response helpers return `{ success, message, data }` on success and `{ success: false, message }` on failure, with `debugMessage` only in development. The health checks instead return `{ "status": "ok" }`; `/api/health/db` also runs a small database query and returns 503 with `{ "status": "error" }` when it fails.
 
 `FAVMOV_NODE_ENV` selects `dev_` or `prod_` table and view prefixes. Any other value fails data requests. The expected database objects and required configuration are listed in the [README](../README.md#getting-started); the schema and policies must be provisioned separately.
 

@@ -12,6 +12,7 @@ const createFakeSupabase = () => {
   const tables = {};
   const tokens = new Map();
   const failures = [];
+  const stalls = [];
   let clock = Date.parse('2026-01-01T00:00:00Z');
 
   const rowsOf = (table) => (tables[table] ??= []);
@@ -217,6 +218,11 @@ const createFakeSupabase = () => {
         hint: null,
       });
     }
+    const stall = stalls.findIndex(
+      (f) => f.method === req.method && url.pathname.endsWith(f.target),
+    );
+    // Never answers, like an unreachable database; stop() closes the socket
+    if (stall !== -1) return stalls.splice(stall, 1);
     if (url.pathname.startsWith('/rest/v1/rpc/'))
       return res.json(200, rpc(url.pathname.split('/').pop(), body));
     return handleRest(req, res, url.pathname.split('/').pop(), url.searchParams, body, user);
@@ -227,9 +233,11 @@ const createFakeSupabase = () => {
     addUser,
     rowsOf,
     failNext: (method, target) => failures.push({ method, target }),
+    stallNext: (method, target) => stalls.push({ method, target }),
     reset: () => {
       Object.keys(tables).forEach((table) => delete tables[table]);
       failures.length = 0;
+      stalls.length = 0;
     },
     start: (port = 0) =>
       new Promise((resolve) =>
