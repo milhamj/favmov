@@ -56,8 +56,11 @@ const host = process.env.FAVMOV_HOST || '127.0.0.1';
 // Express 5 passes listen errors (bad address, port in use) to this callback instead of throwing
 app.listen(port, host, (error) => {
   if (error) {
-    console.error(`Cannot listen on ${host}:${port}: ${error.message}`);
-    process.exit(1);
+    // Exit after the write lands: piped stderr is asynchronous on some platforms
+    process.stderr.write(`Cannot listen on ${host}:${port}: ${error.message}\n`, () =>
+      process.exit(1),
+    );
+    return;
   }
   console.log(
     `Server is running on ${host}:${port} with environment ${process.env.FAVMOV_NODE_ENV}`,
