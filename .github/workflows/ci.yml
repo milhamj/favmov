@@ -46,7 +46,13 @@ jobs:
             frontend/pnpm-lock.yaml
             e2e/pnpm-lock.yaml
       - run: pnpm run setup
-      - run: pnpm --dir e2e exec playwright install --with-deps chromium firefox
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('e2e/pnpm-lock.yaml') }}
+      # No --with-deps: the runner image already has the browser libraries, and apt only added fonts
+      # the tests never use, at mirror speeds that ranged from 20s to 9 minutes.
+      - run: pnpm --dir e2e exec playwright install chromium firefox
       - run: pnpm e2e --reporter=html --workers=100%
         env:
           PLAYWRIGHT_HTML_OPEN: never
