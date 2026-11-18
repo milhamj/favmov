@@ -76,7 +76,8 @@ describe('server', () => {
     assert.deepStrictEqual(await response.json(), { status: 'error' });
   });
 
-  test('reports 503 when the database does not answer', async () => {
+  // The limit fails the test instead of hanging if the query timeout stops working
+  test('reports 503 when the database does not answer', { timeout: 15000 }, async () => {
     supabase.stallNext('GET', 'dev_collections');
     const response = await fetch(`${server.url}/api/health/db`);
     assert.strictEqual(response.status, 503);
