@@ -3,7 +3,9 @@ const { defineConfig } = require('@playwright/test');
 module.exports = defineConfig({
   testDir: './tests',
   timeout: 60_000,
-  workers: '100%', // safe: every sign-in gets a fresh user id from the fake Supabase
+  // Each sign-in is a fresh fake-Supabase user, so tests keep separate collections and notes.
+  fullyParallel: true,
+  workers: '100%',
   use: { baseURL: 'http://127.0.0.1:3190', trace: 'retain-on-failure' },
   projects: [
     { name: 'chromium', use: { browserName: 'chromium' } },

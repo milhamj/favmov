@@ -7,7 +7,6 @@ module.exports = {
     ],
   },
   testTimeout: 15000,
-  maxWorkers: '100%', // default is cores - 1
   setupFilesAfterEnv: ['<rootDir>/jest.setup.tsx'],
   testPathIgnorePatterns: ['/node_modules/', '/src/app/'],
   transformIgnorePatterns: [
