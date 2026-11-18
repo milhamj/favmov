@@ -107,4 +107,36 @@ const createCollection = async (page, name) => {
   await base.expect(page.getByText(`"${name}" has been created successfully`)).toBeVisible();
 };
 
-module.exports = { test, expect: base.expect, icon, signIn, openTab, createCollection };
+// The browser focus ring wraps the focused element, so the input itself must draw the field
+// surface; any border or fill on a wrapper hugging the input shows a second box around the ring.
+const expectFieldOwnsFocusRing = async (input) => {
+  await input.focus();
+  await base.expect(input).toBeFocused();
+  await base.expect(input).not.toHaveCSS('outline-style', 'none');
+  await base.expect(input).toHaveCSS('border-top-width', '1px');
+  const decoratedWrappers = await input.evaluate((el) => {
+    const field = el.getBoundingClientRect();
+    const found = [];
+    for (let node = el.parentElement; node; node = node.parentElement) {
+      const box = node.getBoundingClientRect();
+      // Wrappers around just the field stay under twice its area; past that it's the form or page.
+      if (box.width * box.height > 2 * field.width * field.height) break;
+      const style = getComputedStyle(node);
+      if (style.borderTopWidth !== '0px' || style.backgroundColor !== 'rgba(0, 0, 0, 0)') {
+        found.push(node.outerHTML.slice(0, 80));
+      }
+    }
+    return found;
+  });
+  base.expect(decoratedWrappers).toEqual([]);
+};
+
+module.exports = {
+  test,
+  expect: base.expect,
+  icon,
+  signIn,
+  openTab,
+  createCollection,
+  expectFieldOwnsFocusRing,
+};

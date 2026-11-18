@@ -12,7 +12,7 @@ import { useSearchPeople } from '@/features/people/peopleQueries';
 import { useGridLayout } from '@/hooks/useGridLayout';
 import { appendUnique } from '@/lib/util';
 import { router } from '@/navigation/router';
-import { COLORS, LAYOUT, SPACING, RADIUS } from '@/theme/colors';
+import { COLORS, LAYOUT, SPACING } from '@/theme/colors';
 import { FIELD_STYLES } from '@/theme/fields';
 import { useQueryClient } from '@tanstack/react-query';
 import React, { useEffect, useRef, useState } from 'react';
@@ -167,10 +167,6 @@ const SearchScreen = () => {
 const styles = StyleSheet.create({
   reading: { width: '100%', maxWidth: LAYOUT.reading, alignSelf: 'flex-start' },
   searchBox: {
-    borderColor: COLORS.border,
-    borderWidth: 1,
-    borderRadius: RADIUS.control,
-    paddingHorizontal: 12,
     marginTop: SPACING.medium,
     marginHorizontal: SPACING.medium,
     marginVertical: SPACING.small,

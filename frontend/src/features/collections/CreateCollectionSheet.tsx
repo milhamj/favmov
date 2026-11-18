@@ -62,17 +62,15 @@ const CreateCollectionSheet: React.FC<CreateCollectionSheetProps> = ({ visible, 
 
           <View style={styles.content}>
             <Text style={styles.label}>Name</Text>
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={[FIELD_STYLES.input, styles.input]}
-                accessibilityLabel="Name"
-                placeholderTextColor={COLORS.secondaryText}
-                placeholder="Type collection name here..."
-                value={collectionName}
-                onChangeText={setCollectionName}
-                autoFocus
-              />
-            </View>
+            <TextInput
+              style={[FIELD_STYLES.input, FIELD_STYLES.surface, styles.input]}
+              accessibilityLabel="Name"
+              placeholderTextColor={COLORS.secondaryText}
+              placeholder="Type collection name here..."
+              value={collectionName}
+              onChangeText={setCollectionName}
+              autoFocus
+            />
 
             {errorMessage && <Text style={styles.errorMessage}> {errorMessage} </Text>}
 
@@ -126,16 +124,8 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.small,
     color: COLORS.text,
   },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    ...FIELD_STYLES.surface,
-    marginBottom: SPACING.large,
-    paddingHorizontal: 12,
-  },
   input: {
-    flex: 1,
-    fontSize: 16,
+    marginBottom: SPACING.large,
   },
   errorMessage: {
     fontSize: 12,

@@ -177,7 +177,6 @@ const styles = StyleSheet.create({
   },
   checked: { backgroundColor: COLORS.accent },
   notesInput: {
-    borderColor: COLORS.border,
     marginTop: 6,
     marginBottom: 2,
   },

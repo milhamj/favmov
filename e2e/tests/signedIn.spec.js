@@ -1,4 +1,12 @@
-const { test, expect, icon, signIn, openTab, createCollection } = require('./app');
+const {
+  test,
+  expect,
+  icon,
+  signIn,
+  openTab,
+  createCollection,
+  expectFieldOwnsFocusRing,
+} = require('./app');
 
 test('login recovers from a wrong code and returns to the title', async ({ page }) => {
   await page.goto('/movie/101');
@@ -91,6 +99,7 @@ test('the add-to-collection page survives a reload, and can create the first col
   await page.getByText('Save', { exact: true }).click();
   await page.getByRole('checkbox').click();
   await expect(page.getByPlaceholder('Write custom notes...')).toBeVisible();
+  await expectFieldOwnsFocusRing(page.getByPlaceholder('Write custom notes...'));
 
   await page.reload();
   await expect(page.getByRole('checkbox')).toBeChecked();
@@ -104,4 +113,11 @@ test('a guest sent to login from a protected page returns to it', async ({ page 
   await page.getByText('LOGIN', { exact: true }).click();
   await expect(page).toHaveURL('/profile');
   await expect(page.getByText('alice@example.com')).toBeVisible();
+});
+
+test('the collection name field owns its focus ring', async ({ page }) => {
+  await signIn(page);
+  await openTab(page, 'Collections');
+  await page.getByText('Create Collection').click();
+  await expectFieldOwnsFocusRing(page.getByPlaceholder('Type collection name here...'));
 });
