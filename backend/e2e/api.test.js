@@ -65,6 +65,7 @@ describe('server', () => {
   test('reports database health without authentication', async () => {
     const response = await fetch(`${server.url}/api/health/db`);
     assert.strictEqual(response.status, 200);
+    assert.strictEqual(response.headers.get('cache-control'), 'no-store');
     assert.deepStrictEqual(await response.json(), { status: 'ok' });
   });
 

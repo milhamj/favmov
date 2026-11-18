@@ -8,6 +8,7 @@ let anonClient;
 exports.getHealth = (req, res) => res.status(200).json({ status: 'ok' });
 
 exports.getDatabaseHealth = async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   try {
     // checkEnv rejects unknown environments at startup, so the table name always resolves.
     // Row Level Security hides rows from the anon key; the query still has to reach the database.
