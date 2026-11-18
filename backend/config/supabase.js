@@ -1,7 +1,9 @@
 const { createClient } = require('@supabase/supabase-js');
 
 const createAnonSupabaseClient = () =>
-  createClient(process.env.FAVMOV_SUPABASE_URL, process.env.FAVMOV_SUPABASE_ANON_KEY);
+  createClient(process.env.FAVMOV_SUPABASE_URL, process.env.FAVMOV_SUPABASE_ANON_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false }, // otherwise each call leaves a timer in the server
+  });
 
 const createAuthenticatedSupabaseClient = (token) => {
   if (token) {
