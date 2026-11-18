@@ -17,6 +17,8 @@ const createPageRoutes = require('./routes/pageRoutes');
 
 const app = express();
 const port = process.env.FAVMOV_PORT || 3000;
+// Loopback by default so only the local reverse proxy or tunnel can reach the server
+const host = process.env.FAVMOV_HOST || '127.0.0.1';
 
 app.use(cors());
 app.use(
@@ -51,6 +53,8 @@ app.use((err, req, res, next) => {
   return errorResponse(res, message, status, err.details ?? err.message);
 });
 
-app.listen(port, () => {
-  console.log(`Server is running on port ${port} with environment ${process.env.FAVMOV_NODE_ENV}`);
+app.listen(port, host, () => {
+  console.log(
+    `Server is running on ${host}:${port} with environment ${process.env.FAVMOV_NODE_ENV}`,
+  );
 });

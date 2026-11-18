@@ -52,6 +52,7 @@ Fill in both environment files before starting the app:
 | frontend/.env | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Yes              | Supabase public anonymous key                                 |
 | frontend/.env | `EXPO_PUBLIC_API_URL`           | Yes              | Backend API URL; local example is `http://localhost:3080/api` |
 | backend/.env  | `FAVMOV_PORT`                   | No               | Listening port; defaults to 3000, example uses 3080           |
+| backend/.env  | `FAVMOV_HOST`                   | No               | Listening address; defaults to `127.0.0.1`, `0.0.0.0` for all |
 | backend/.env  | `FAVMOV_NODE_ENV`               | Yes              | `development` or `production`; selects database names         |
 | backend/.env  | `FAVMOV_SUPABASE_URL`           | Yes              | Supabase project URL                                          |
 | backend/.env  | `FAVMOV_SUPABASE_ANON_KEY`      | Yes              | Public key used with the caller's session token               |
