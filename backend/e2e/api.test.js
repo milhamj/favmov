@@ -59,7 +59,9 @@ beforeEach(() => supabase.reset());
 
 describe('server', () => {
   test('reports health without authentication', async () => {
-    assert.strictEqual((await call('GET', '/health', { token: null })).status, 200);
+    const response = await fetch(`${server.url}/api/health`);
+    assert.strictEqual(response.status, 200);
+    assert.strictEqual(response.headers.get('cache-control'), 'no-store');
   });
 
   test('reports database health without authentication', async () => {

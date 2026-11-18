@@ -2,7 +2,8 @@ const { createAnonSupabaseClient } = require('../config/supabase');
 const repository = require('../repositories/healthRepository');
 const { getTableName, COLLECTIONS } = require('../utils/tableNames');
 
-exports.getHealth = (req, res) => res.status(200).json({ status: 'ok' });
+exports.getHealth = (req, res) =>
+  res.set('Cache-Control', 'no-store').status(200).json({ status: 'ok' });
 
 exports.getDatabaseHealth = async (req, res) => {
   res.set('Cache-Control', 'no-store');
