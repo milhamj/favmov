@@ -1,4 +1,4 @@
-const { test, expect, icon } = require('./app');
+const { test, expect, icon, expectFieldOwnsFocusRing } = require('./app');
 
 test('a guest can browse from home to a title and a person', async ({ page }) => {
   await page.goto('/');
@@ -129,4 +129,33 @@ test('pages hydrate without React errors', async ({ page }) => {
     await page.waitForLoadState('networkidle');
   }
   expect(errors).toEqual([]);
+});
+
+test('login fields own their focus ring and keep text clear of the icon', async ({ page }) => {
+  const expectTextClearOfIcon = async (input) => {
+    const overlap = await input.evaluate((el) => {
+      const icon = el.parentElement.querySelector('[aria-hidden="true"]');
+      if (!icon) throw new Error('field icon not found');
+      const textStart =
+        el.getBoundingClientRect().left + parseFloat(getComputedStyle(el).paddingLeft);
+      return icon.getBoundingClientRect().right - textStart;
+    });
+    expect(overlap).toBeLessThan(0);
+  };
+
+  await page.goto('/login');
+  const email = page.getByPlaceholder('Email');
+  await expectFieldOwnsFocusRing(email);
+  await expectTextClearOfIcon(email);
+
+  await email.fill('alice@example.com');
+  await page.getByText('Send OTP').click();
+  const otp = page.getByPlaceholder('Input your OTP here...');
+  await expectFieldOwnsFocusRing(otp);
+  await expectTextClearOfIcon(otp);
+});
+
+test('the search box owns its focus ring', async ({ page }) => {
+  await page.goto('/search');
+  await expectFieldOwnsFocusRing(page.getByRole('textbox', { name: 'Search' }));
 });
