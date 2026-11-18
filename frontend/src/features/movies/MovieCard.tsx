@@ -3,7 +3,7 @@ import React from 'react';
 import { StyleSheet, Pressable, View, Image, Text } from 'react-native';
 import { smallPosterUrl, Movie } from '@/features/movies/movieModel';
 import { COLORS, RADIUS, TYPOGRAPHY } from '@/theme/colors';
-import { displayRating, getRatingColor } from '@/lib/util';
+import { displayCount, displayRating, getRatingColor } from '@/lib/util';
 
 const POSTER_ASPECT = 2 / 3;
 const GAP = 2;
@@ -49,7 +49,6 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, onClick }) => {
         <Text
           numberOfLines={1}
           style={[
-            styles.ratingLine,
             styles.posterRating,
             {
               color: getRatingColor(movie.rating),
@@ -59,7 +58,7 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, onClick }) => {
         >
           ⭐ {displayRating(movie.rating)}{' '}
           {movie.ratingCount != null && (
-            <Text style={styles.posterRatingCount}>({movie.ratingCount})</Text>
+            <Text style={styles.posterRatingCount}>({displayCount(movie.ratingCount)})</Text>
           )}
         </Text>
       )}
@@ -87,7 +86,9 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   ratingLine: { marginTop: GAP, height: RATING_LINE },
+  // No fixed height: user text-spacing overrides must grow the line, not clip it
   posterRating: {
+    marginTop: GAP,
     ...TYPOGRAPHY.caption,
     lineHeight: RATING_LINE,
     textAlign: 'left',

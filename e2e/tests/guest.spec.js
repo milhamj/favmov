@@ -60,6 +60,7 @@ test('home sections keep their height when their titles arrive', async ({ page }
     for (const name of Object.keys(held))
       await expect(busy(name)).not.toHaveAttribute('aria-busy', 'true');
     expect(await heights()).toEqual(loading);
+    await expect(page.getByText('(35K)')).toBeVisible();
   } finally {
     release();
   }

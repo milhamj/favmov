@@ -26,6 +26,10 @@ export const parseBooleanParam = (param: string | string[]): boolean => {
 export const displayRating = (rating: number | string): string =>
   Number(rating) === 0 ? '–' : Number(rating).toFixed(2);
 
+// Fixed 'en' locale so the server render and the browser produce the same text
+const compactCount = new Intl.NumberFormat('en', { notation: 'compact' });
+export const displayCount = (count: number): string => compactCount.format(count);
+
 export const getRatingColor = (rating: number | string): string => {
   const value = Number(Number(rating).toFixed(2)); // same rounding as displayRating, so text and color agree
   if (value === 0) {

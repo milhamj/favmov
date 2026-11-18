@@ -1,5 +1,6 @@
 import {
   appendUnique,
+  displayCount,
   displayRating,
   getRatingColor,
   parseBooleanParam,
@@ -55,4 +56,12 @@ test('unrated titles show a dash, rated ones keep their number', () => {
   expect(displayRating('7.12')).toBe('7.12');
   expect(displayRating(7.456)).toBe('7.46');
   expect(displayRating(8)).toBe('8.00');
+});
+
+test('review counts use the short form', () => {
+  expect(displayCount(0)).toBe('0');
+  expect(displayCount(999)).toBe('999');
+  expect(displayCount(1234)).toBe('1.2K');
+  expect(displayCount(35421)).toBe('35K');
+  expect(displayCount(1250000)).toBe('1.3M');
 });
