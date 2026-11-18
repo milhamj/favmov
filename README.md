@@ -52,7 +52,7 @@ Fill in both environment files before starting the app:
 | frontend/.env | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Yes              | Supabase public anonymous key                                 |
 | frontend/.env | `EXPO_PUBLIC_API_URL`           | Yes              | Backend API URL; local example is `http://localhost:3080/api` |
 | backend/.env  | `FAVMOV_PORT`                   | No               | Listening port; defaults to 3000, example uses 3080           |
-| backend/.env  | `FAVMOV_HOST`                   | No               | Listening address; defaults to `127.0.0.1`, `0.0.0.0` for all |
+| backend/.env  | `FAVMOV_HOST`                   | No               | Listening address; defaults to `127.0.0.1`                    |
 | backend/.env  | `FAVMOV_NODE_ENV`               | Yes              | `development` or `production`; selects database names         |
 | backend/.env  | `FAVMOV_SUPABASE_URL`           | Yes              | Supabase project URL                                          |
 | backend/.env  | `FAVMOV_SUPABASE_ANON_KEY`      | Yes              | Public key used with the caller's session token               |
@@ -107,7 +107,7 @@ pnpm build:web
 pnpm --dir backend start
 ```
 
-The build replaces `backend/public` with the exported site. The backend serves both pages and `/api`; deploy it behind your HTTPS endpoint. Do not deploy under a path containing a dot-directory (for example, `/srv/.apps/favmov`): Express `res.sendFile` refuses those paths for page fallbacks.
+The build replaces `backend/public` with the exported site. The backend serves both pages and `/api`; deploy it behind your HTTPS endpoint. It listens on `127.0.0.1` only, which suits a proxy or tunnel on the same machine; in a container, on a hosting platform, or behind a proxy on another machine, set `FAVMOV_HOST=0.0.0.0` so it accepts outside connections, or `::` to also accept IPv6 where the host has it. Do not deploy under a path containing a dot-directory (for example, `/srv/.apps/favmov`): Express `res.sendFile` refuses those paths for page fallbacks.
 
 With both sync keys set, the first request each UTC day starts a background media refresh; failed runs retry on a request at least an hour later. Run it manually with `pnpm --dir backend sync`.
 

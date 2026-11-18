@@ -16,9 +16,6 @@ const { dailyMediaSync } = require('./middleware/dailyMediaSync');
 const createPageRoutes = require('./routes/pageRoutes');
 
 const app = express();
-const port = process.env.FAVMOV_PORT || 3000;
-// Loopback by default so only the local reverse proxy or tunnel can reach the server
-const host = process.env.FAVMOV_HOST || '127.0.0.1';
 
 app.use(cors());
 app.use(
@@ -53,7 +50,15 @@ app.use((err, req, res, next) => {
   return errorResponse(res, message, status, err.details ?? err.message);
 });
 
-app.listen(port, host, () => {
+const port = process.env.FAVMOV_PORT || 3000;
+// Loopback by default so only a local reverse proxy or tunnel can reach the server
+const host = process.env.FAVMOV_HOST || '127.0.0.1';
+// Express 5 passes listen errors (bad address, port in use) to this callback instead of throwing
+app.listen(port, host, (error) => {
+  if (error) {
+    console.error(`Cannot listen on ${host}:${port}: ${error.message}`);
+    process.exit(1);
+  }
   console.log(
     `Server is running on ${host}:${port} with environment ${process.env.FAVMOV_NODE_ENV}`,
   );
