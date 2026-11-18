@@ -6,7 +6,7 @@ module.exports = defineConfig({
   // The fake Supabase gives every sign-in a new user id, so parallel tests never share collections.
   // Media rows are shared by TMDB id; concurrent inserts of one title rely on the 23505 tolerance.
   fullyParallel: true,
-  workers: process.env.CI ? '100%' : undefined, // CI gets every core, local runs keep half
+  workers: process.env.GITHUB_ACTIONS ? '100%' : undefined, // the runner gets every core; local runs, even CI=1, keep half
   use: { baseURL: 'http://127.0.0.1:3190', trace: 'retain-on-failure' },
   projects: [
     { name: 'chromium', use: { browserName: 'chromium' } },
