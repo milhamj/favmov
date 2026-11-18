@@ -47,7 +47,7 @@ jobs:
             e2e/pnpm-lock.yaml
       - run: pnpm run setup
       - run: pnpm --dir e2e exec playwright install --with-deps chromium firefox
-      - run: pnpm e2e --reporter=html
+      - run: pnpm e2e --reporter=html --workers=100%
         env:
           PLAYWRIGHT_HTML_OPEN: never
       - uses: actions/upload-artifact@v7
