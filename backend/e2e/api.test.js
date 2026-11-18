@@ -521,7 +521,11 @@ describe('listening address', () => {
     const local = await startServer({ supabaseUrl: server.supabaseUrl, host: '' });
     t.after(local.stop);
 
-    await assert.rejects(healthVia(externalAddress, local));
+    // Refused, not timed out: a filtered interface would also reject without proving the bind address
+    await assert.rejects(
+      healthVia(externalAddress, local),
+      (error) => error.cause?.code === 'ECONNREFUSED',
+    );
   });
 
   test('FAVMOV_HOST opens other interfaces', { skip }, async (t) => {

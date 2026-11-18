@@ -1,4 +1,5 @@
 const { spawn } = require('node:child_process');
+const { once } = require('node:events');
 const net = require('node:net');
 const path = require('node:path');
 
@@ -50,7 +51,11 @@ const startServer = async ({ supabaseUrl, nodeEnv = 'development', port, host = 
 
   const url = `http://127.0.0.1:${port}`;
   for (let attempt = 0; attempt < 100; attempt++) {
-    if (child.exitCode !== null) throw new Error(`Server exited early: ${stderr}`);
+    if (child.exitCode !== null) {
+      // 'exit' can fire before the last stderr chunks arrive; 'close' waits for them
+      if (child.stderr.readable) await once(child, 'close');
+      throw new Error(`Server exited early: ${stderr}`);
+    }
     try {
       if ((await fetch(`${url}/api/health`)).ok) {
         return {
