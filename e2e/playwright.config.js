@@ -3,7 +3,9 @@ const { defineConfig } = require('@playwright/test');
 module.exports = defineConfig({
   testDir: './tests',
   timeout: 60_000,
-  workers: 1, // one shared API and fake Supabase; each test signs in as a fresh user
+  // The fake Supabase gives every sign-in a new user id, so parallel tests never share collections.
+  // Media rows are shared by TMDB id; concurrent inserts of one title rely on the 23505 tolerance.
+  fullyParallel: true,
   use: { baseURL: 'http://127.0.0.1:3190', trace: 'retain-on-failure' },
   projects: [
     { name: 'chromium', use: { browserName: 'chromium' } },
