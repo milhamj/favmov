@@ -5,6 +5,7 @@ const os = require('node:os');
 const fs = require('node:fs');
 const path = require('node:path');
 const backend = path.join(__dirname, '..', 'backend');
+const frontend = path.join(__dirname, '..', 'frontend');
 const express = require(path.join(backend, 'node_modules', 'express'));
 const createPageRoutes = require(path.join(backend, 'routes', 'pageRoutes'));
 const { createFakeSupabase } = require(path.join(backend, 'e2e', 'fakeSupabase'));
@@ -19,12 +20,14 @@ const buildDir = path.join(os.tmpdir(), 'favmov-e2e-build');
 const main = async () => {
   const supabaseUrl = `http://127.0.0.1:${SUPABASE_PORT}`;
 
+  // Run the installed Expo CLI directly: `npx pnpm` downloaded whatever pnpm was latest on every run.
+  const expoCli = require.resolve('expo/bin/cli', { paths: [frontend] });
   // The app reads these at build time. process.env beats frontend/.env, so a real .env is left alone.
   execFileSync(
-    'npx',
-    ['pnpm', 'exec', 'expo', 'export', '-p', 'web', '--clear', '--output-dir', 'dist'],
+    process.execPath,
+    [expoCli, 'export', '-p', 'web', '--clear', '--output-dir', 'dist'],
     {
-      cwd: path.join(__dirname, '..', 'frontend'),
+      cwd: frontend,
       stdio: 'inherit',
       env: {
         ...process.env,
@@ -37,7 +40,7 @@ const main = async () => {
   );
 
   fs.rmSync(buildDir, { recursive: true, force: true });
-  fs.cpSync(path.join(__dirname, '..', 'frontend', 'dist'), buildDir, { recursive: true });
+  fs.cpSync(path.join(frontend, 'dist'), buildDir, { recursive: true });
 
   await createFakeSupabase().start(SUPABASE_PORT);
   await startServer({ supabaseUrl, port: API_PORT });
