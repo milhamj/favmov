@@ -62,6 +62,19 @@ describe('server', () => {
     assert.strictEqual((await call('GET', '/health', { token: null })).status, 200);
   });
 
+  test('reports database health without authentication', async () => {
+    const response = await fetch(`${server.url}/api/health/db`);
+    assert.strictEqual(response.status, 200);
+    assert.deepStrictEqual(await response.json(), { status: 'ok' });
+  });
+
+  test('reports 503 when the database query fails', async () => {
+    supabase.failNext('GET', 'dev_collections');
+    const response = await fetch(`${server.url}/api/health/db`);
+    assert.strictEqual(response.status, 503);
+    assert.deepStrictEqual(await response.json(), { status: 'error' });
+  });
+
   test('answers unknown API paths with the JSON error envelope', async () => {
     const response = await call('GET', '/nope', { token: null });
     assert.strictEqual(response.status, 404);
