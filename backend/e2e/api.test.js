@@ -1,5 +1,6 @@
 const { test, describe, before, after, beforeEach } = require('node:test');
 const assert = require('node:assert');
+const os = require('node:os');
 const { createFakeSupabase } = require('./fakeSupabase');
 const { startServer } = require('./startServer');
 
@@ -504,6 +505,40 @@ describe('environments', () => {
   test('refuses to start under an unknown environment', async () => {
     await assert.rejects(startServer({ supabaseUrl: server.supabaseUrl, nodeEnv: 'staging' }), {
       message: /FAVMOV_NODE_ENV must be development or production/,
+    });
+  });
+});
+
+// shortcut: needs a non-loopback IPv4 address to probe from; skipped on hosts without one
+const externalAddress = Object.values(os.networkInterfaces())
+  .flat()
+  .find((i) => i.family === 'IPv4' && !i.internal)?.address;
+const skip = !externalAddress && 'no non-loopback IPv4 address';
+const healthVia = (address, { url }) => fetch(`http://${address}:${new URL(url).port}/api/health`);
+
+describe('listening address', () => {
+  test('listens on loopback only by default', { skip }, async (t) => {
+    const local = await startServer({ supabaseUrl: server.supabaseUrl, host: '' });
+    t.after(local.stop);
+
+    // Refused, not timed out: a filtered interface would also reject without proving the bind address
+    await assert.rejects(
+      healthVia(externalAddress, local),
+      (error) => error.cause?.code === 'ECONNREFUSED',
+    );
+  });
+
+  test('FAVMOV_HOST opens other interfaces', { skip }, async (t) => {
+    const open = await startServer({ supabaseUrl: server.supabaseUrl, host: '0.0.0.0' });
+    t.after(open.stop);
+
+    assert.strictEqual((await healthVia(externalAddress, open)).status, 200);
+  });
+
+  test('exits with a clear error when the address is unusable', async () => {
+    // 192.0.2.1 is a documentation address no host owns
+    await assert.rejects(startServer({ supabaseUrl: server.supabaseUrl, host: '192.0.2.1' }), {
+      message: /Cannot listen on 192\.0\.2\.1:\d+/,
     });
   });
 });

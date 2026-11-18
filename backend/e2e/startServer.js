@@ -1,4 +1,5 @@
 const { spawn } = require('node:child_process');
+const { once } = require('node:events');
 const net = require('node:net');
 const path = require('node:path');
 
@@ -22,7 +23,7 @@ const assertPortFree = (port) =>
   });
 
 // Runs the real server.js in its own process, exactly as `pnpm start` does
-const startServer = async ({ supabaseUrl, nodeEnv = 'development', port }) => {
+const startServer = async ({ supabaseUrl, nodeEnv = 'development', port, host = '127.0.0.1' }) => {
   if (port) await assertPortFree(port);
   port ??= await freePort();
   const child = spawn(process.execPath, ['server.js'], {
@@ -31,6 +32,9 @@ const startServer = async ({ supabaseUrl, nodeEnv = 'development', port }) => {
     env: {
       ...process.env,
       FAVMOV_PORT: String(port),
+      // Pinned so a developer's backend/.env can't move the server off the health-check address;
+      // an empty host leaves server.js to pick its default
+      FAVMOV_HOST: host,
       FAVMOV_NODE_ENV: nodeEnv,
       FAVMOV_SUPABASE_URL: supabaseUrl,
       FAVMOV_SUPABASE_ANON_KEY: 'anon-key',
@@ -47,7 +51,11 @@ const startServer = async ({ supabaseUrl, nodeEnv = 'development', port }) => {
 
   const url = `http://127.0.0.1:${port}`;
   for (let attempt = 0; attempt < 100; attempt++) {
-    if (child.exitCode !== null) throw new Error(`Server exited early: ${stderr}`);
+    if (child.exitCode !== null) {
+      // 'exit' can fire before the last stderr chunks arrive; 'close' waits for them
+      if (child.stderr.readable) await once(child, 'close');
+      throw new Error(`Server exited early: ${stderr}`);
+    }
     try {
       if ((await fetch(`${url}/api/health`)).ok) {
         return {
