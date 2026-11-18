@@ -5,6 +5,12 @@ import { smallPosterUrl, Movie } from '@/features/movies/movieModel';
 import { COLORS, RADIUS, TYPOGRAPHY } from '@/theme/colors';
 import { displayRating, getRatingColor } from '@/lib/util';
 
+const POSTER_ASPECT = 2 / 3;
+const GAP = 2;
+// Fixed single-line heights keep every card the same height; see movieCardHeight.
+const RATING_LINE = 16;
+const TITLE_LINE = 14;
+
 interface MovieCardProps {
   movie: Movie;
   onClick?: (movie: Movie) => void;
@@ -36,9 +42,14 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, onClick }) => {
         source={{ uri: smallPosterUrl(movie) }}
         style={[styles.poster]}
       />
-      {movie.rating != null && (
+      {movie.rating == null ? (
+        // Keeps the card height fixed when a title has no rating
+        <View style={styles.ratingLine} />
+      ) : (
         <Text
+          numberOfLines={1}
           style={[
+            styles.ratingLine,
             styles.posterRating,
             {
               color: getRatingColor(movie.rating),
@@ -64,19 +75,21 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   poster: {
-    aspectRatio: 2 / 3,
+    aspectRatio: POSTER_ASPECT,
     borderRadius: RADIUS.control,
-    marginBottom: 2,
+    marginBottom: GAP,
   },
   posterTitle: {
-    marginTop: 2,
+    marginTop: GAP,
     fontSize: 12,
+    lineHeight: TITLE_LINE,
     textAlign: 'left',
     fontWeight: '500',
   },
+  ratingLine: { marginTop: GAP, height: RATING_LINE },
   posterRating: {
-    marginTop: 2,
     ...TYPOGRAPHY.caption,
+    lineHeight: RATING_LINE,
     textAlign: 'left',
   },
   posterRatingCount: {
@@ -84,5 +97,9 @@ const styles = StyleSheet.create({
     fontWeight: 'normal',
   },
 });
+
+// Height of a card rendered at this width, so placeholders can match a loaded row.
+export const movieCardHeight = (width: number) =>
+  width / POSTER_ASPECT + GAP + GAP + RATING_LINE + GAP + TITLE_LINE;
 
 export default MovieCard;

@@ -135,6 +135,7 @@ module.exports = {
   test,
   expect: base.expect,
   icon,
+  media,
   signIn,
   openTab,
   createCollection,
