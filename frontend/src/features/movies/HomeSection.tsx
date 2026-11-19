@@ -3,7 +3,7 @@ import { COLORS, TYPOGRAPHY, SPACING } from '@/theme/colors';
 import React from 'react';
 import { Text, StyleSheet, View, FlatList, Pressable } from 'react-native';
 import { useHomeMovies, seedMovieDetails } from './movieQueries';
-import MovieCard from './MovieCard';
+import MovieCard, { movieCardHeight } from './MovieCard';
 import RetryButton from '@/components/RetryButton';
 import FullPageLoader from '@/components/FullPageLoader';
 import { Movie } from './movieModel';
@@ -11,6 +11,8 @@ import { useAuth } from '@/features/auth/useAuth';
 import { router } from '@/navigation/router';
 import { routes } from '@/navigation/routes';
 import { useQueryClient } from '@tanstack/react-query';
+
+const CARD_WIDTH = 120;
 
 export const SectionType = {
   TrendingMovies: 'Trending Movies',
@@ -31,7 +33,7 @@ const HomeSection: React.FC<{
     refetch,
   } = useHomeMovies(section, isAuthenticated, user?.id);
   const renderMoviePoster = ({ item }: { item: Movie }) => (
-    <View style={{ width: 120, marginEnd: SPACING.small }}>
+    <View style={{ width: CARD_WIDTH, marginEnd: SPACING.small }}>
       <MovieCard
         movie={item}
         onClick={() => {
@@ -53,7 +55,7 @@ const HomeSection: React.FC<{
     return null;
 
   return (
-    <View style={styles.section}>
+    <View style={styles.section} testID={`home-section-${section}`}>
       <Pressable
         hitSlop={14}
         {...linkKeyboardProps}
@@ -115,7 +117,8 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     width: '100%',
-    height: 250,
+    // Same height as the loaded row so the section does not jump when data arrives
+    height: movieCardHeight(CARD_WIDTH),
     justifyContent: 'center',
     alignItems: 'center',
   },

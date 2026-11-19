@@ -27,6 +27,7 @@ jest.mock('@/features/movies/movieService', () => {
 jest.mock('@/navigation/router', () => ({ router: { navigate: jest.fn() } }));
 jest.mock('@/features/movies/MovieCard', () => ({
   __esModule: true,
+  ...jest.requireActual('@/features/movies/MovieCard'),
   default: ({ movie, onClick }: any) => {
     const { Text } = require('react-native');
     return <Text onPress={onClick}>{movie.title}</Text>;
