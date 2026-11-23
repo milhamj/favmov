@@ -8,7 +8,7 @@ jest.mock('@/navigation/router', () => ({ router: { navigate: jest.fn() } }));
 const movie = { id: 1, title: 'Inception', posterPath: '', rating: 8.4 };
 
 test('poster cards name the movie and its rating', () => {
-  const ui = render(<MovieCard movie={movie} onClick={jest.fn()} />);
+  const ui = render(<MovieCard movie={movie} link={{ href: '/movie/1', onPress: jest.fn() }} />);
   expect(ui.getByRole('link', { name: 'Inception, rated 8.40' })).toBeTruthy();
 });
 
@@ -39,21 +39,39 @@ test('the page title is a level-one heading', () => {
   expect(ui.getByRole('header', { name: 'Movie' }).props['aria-level']).toBe(1);
 });
 
-test('web links activate once on Enter', () => {
+test('web links let the browser handle modified clicks, block when disabled and navigate on plain ones', () => {
   jest.isolateModules(() => {
     jest.doMock('react-native', () => ({ Platform: { OS: 'web' } }));
-    const { linkKeyboardProps } = require('@/navigation/linkKeyboardProps');
-    const event = {
-      key: 'Enter',
-      repeat: false,
-      preventDefault: jest.fn(),
-      currentTarget: { click: jest.fn() },
-    };
-    linkKeyboardProps.onKeyDownCapture(event);
-    expect(event.currentTarget.click).toHaveBeenCalledTimes(1);
-    expect(event.preventDefault).toHaveBeenCalledTimes(1);
-    linkKeyboardProps.onKeyDownCapture({ ...event, repeat: true });
-    linkKeyboardProps.onKeyDownCapture({ ...event, key: 'Tab' });
-    expect(event.currentTarget.click).toHaveBeenCalledTimes(1);
+    const { linkProps } = require('@/navigation/linkProps');
+    const { navigate } = require('@/navigation/router').router;
+    const beforeNavigate = jest.fn();
+    const link = linkProps('/movie/1', beforeNavigate);
+    expect(link.href).toBe('/movie/1');
+    const click = (extra: object) => ({ preventDefault: jest.fn(), ...extra });
+
+    for (const modified of [{ ctrlKey: true }, { metaKey: true }, { shiftKey: true }]) {
+      const event = click(modified);
+      link.onPress(event);
+      expect(event.preventDefault).not.toHaveBeenCalled();
+    }
+    expect(navigate).not.toHaveBeenCalled();
+    expect(beforeNavigate).not.toHaveBeenCalled();
+
+    const disabledLink = linkProps('/movie/1', beforeNavigate, true);
+    const newTab = click({ ctrlKey: true });
+    disabledLink.onPress(newTab);
+    expect(newTab.preventDefault).not.toHaveBeenCalled();
+    const blocked = click({});
+    disabledLink.onPress(blocked);
+    expect(blocked.preventDefault).toHaveBeenCalledTimes(1);
+    expect(navigate).not.toHaveBeenCalled();
+    expect(beforeNavigate).not.toHaveBeenCalled();
+
+    const plain = click({});
+    link.onPress(plain);
+    expect(plain.preventDefault).toHaveBeenCalledTimes(1);
+    expect(beforeNavigate).toHaveBeenCalledTimes(1);
+    expect(navigate).toHaveBeenCalledTimes(1);
+    expect(navigate).toHaveBeenCalledWith('/movie/1');
   });
 });

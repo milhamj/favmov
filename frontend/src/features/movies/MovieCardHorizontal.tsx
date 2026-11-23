@@ -1,4 +1,4 @@
-import { linkKeyboardProps } from '@/navigation/linkKeyboardProps';
+import type { LinkProps } from '@/navigation/linkProps';
 import React from 'react';
 import { StyleSheet, Pressable, View, Image, Text } from 'react-native';
 import { releaseYear, smallPosterUrl, Movie } from '@/features/movies/movieModel';
@@ -8,32 +8,31 @@ import { displayRating, getRatingColor } from '@/lib/util';
 
 interface MovieCardHorizontalProps {
   movie: Movie;
-  onClick?: (movie: Movie) => void;
+  link?: LinkProps;
 }
 
-const MovieCardHorizontal: React.FC<MovieCardHorizontalProps> = ({ movie, onClick }) => {
-  const Container = onClick ? Pressable : View;
+const MovieCardHorizontal: React.FC<MovieCardHorizontalProps> = ({ movie, link }) => {
+  const Container = link ? Pressable : View;
 
   return (
     <Container
-      {...(onClick ? linkKeyboardProps : {})}
-      accessibilityRole={onClick ? 'link' : undefined}
+      {...link}
+      accessibilityRole={link ? 'link' : undefined}
       accessibilityLabel={
-        onClick
+        link
           ? movie.title + (movie.rating != null ? `, rated ${displayRating(movie.rating)}` : '')
           : undefined
       }
-      onPress={onClick ? () => onClick(movie) : undefined}
       style={
-        onClick
+        link
           ? ({ pressed }) => [styles.posterContainer, pressed && { opacity: 0.7 }]
           : styles.posterContainer
       }
     >
       <Image
-        aria-hidden={!!onClick}
-        accessible={!onClick}
-        accessibilityLabel={onClick ? undefined : `${movie.title} poster`}
+        aria-hidden={!!link}
+        accessible={!link}
+        accessibilityLabel={link ? undefined : `${movie.title} poster`}
         source={{ uri: smallPosterUrl(movie) }}
         style={[styles.poster]}
       />

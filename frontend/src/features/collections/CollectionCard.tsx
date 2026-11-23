@@ -1,4 +1,4 @@
-import { linkKeyboardProps } from '@/navigation/linkKeyboardProps';
+import type { LinkProps } from '@/navigation/linkProps';
 import React from 'react';
 import { Pressable, Text, StyleSheet } from 'react-native';
 import { COLORS, SPACING } from '@/theme/colors';
@@ -21,18 +21,17 @@ const collectionColor = (id: string) => {
 
 interface CollectionCardProps {
   collection: Collection;
-  onPress: () => void;
+  link: LinkProps;
 }
 
-const CollectionCard = ({ collection, onPress }: CollectionCardProps) => {
+const CollectionCard = ({ collection, link }: CollectionCardProps) => {
   const backgroundColor = collectionColor(collection.id);
 
   return (
     <Pressable
-      {...linkKeyboardProps}
+      {...link}
       accessibilityRole="link"
       style={({ pressed }) => [[styles.card, { backgroundColor }], pressed && { opacity: 0.7 }]}
-      onPress={onPress}
     >
       <Text style={styles.cardText}>
         {collection.name}

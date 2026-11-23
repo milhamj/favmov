@@ -1,7 +1,6 @@
-import { linkKeyboardProps } from '@/navigation/linkKeyboardProps';
+import { linkProps } from '@/navigation/linkProps';
 import { StyleSheet, Pressable, Text, View, Image } from 'react-native';
 import { routes } from '@/navigation/routes';
-import { router } from '@/navigation/router';
 import { creditPosterUrl, PeopleMovieCredit } from '@/features/people/peopleModel';
 import React from 'react';
 import { COLORS, RADIUS, TYPOGRAPHY, SPACING } from '@/theme/colors';
@@ -19,7 +18,7 @@ const PeopleMovieCreditView = ({ credit }: PeopleMovieCreditProps) => {
   const queryClient = useQueryClient();
   const releaseDate = credit.releaseDate ? credit.releaseDate.split('-')[0] : '----';
 
-  const handleCreditPress = () => {
+  const seedCredit = () => {
     const movie: Movie = {
       id: credit.id ?? 0,
       title: credit.title ?? '',
@@ -30,20 +29,18 @@ const PeopleMovieCreditView = ({ credit }: PeopleMovieCreditProps) => {
       isTvShow: credit.isTvShow,
     };
     seedMovieDetails(queryClient, movie);
-    router.navigate(routes.movie(credit.id, credit.isTvShow));
   };
 
   const rating = credit.rating ?? undefined;
 
   return (
     <Pressable
-      {...linkKeyboardProps}
+      {...linkProps(routes.movie(credit.id, credit.isTvShow), seedCredit)}
       accessibilityRole="link"
       accessibilityLabel={
         credit.title + (rating !== undefined ? `, rated ${displayRating(rating)}` : '')
       }
       style={({ pressed }) => [styles.container, pressed && { opacity: 0.7 }]}
-      onPress={() => handleCreditPress()}
     >
       <Text style={styles.creditYear}>{releaseDate}</Text>
       <Image

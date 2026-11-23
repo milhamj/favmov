@@ -4,7 +4,7 @@ import { Movie } from '@/features/movies/movieModel';
 import { seedMovieDetails } from '@/features/movies/movieQueries';
 import PeopleCardHorizontal from '@/features/people/PeopleCardHorizontal';
 import { People } from '@/features/people/peopleModel';
-import { router } from '@/navigation/router';
+import { linkProps } from '@/navigation/linkProps';
 import { routes } from '@/navigation/routes';
 import React from 'react';
 import { View } from 'react-native';
@@ -28,10 +28,9 @@ export const renderSearchMovieResult = ({
   >
     <MovieCard
       movie={item}
-      onClick={() => {
-        seedMovieDetails(queryClient, item);
-        router.navigate(routes.movie(item.id, item.isTvShow));
-      }}
+      link={linkProps(routes.movie(item.id, item.isTvShow), () =>
+        seedMovieDetails(queryClient, item),
+      )}
     />
   </View>
 );
@@ -44,11 +43,6 @@ export const renderSearchPersonResult = ({ item }: { item: People }) => (
       alignContent: 'center',
     }}
   >
-    <PeopleCardHorizontal
-      people={item}
-      onClick={() => {
-        router.navigate(routes.people(item.id.toString()));
-      }}
-    />
+    <PeopleCardHorizontal people={item} link={linkProps(routes.people(item.id.toString()))} />
   </View>
 );

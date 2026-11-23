@@ -9,7 +9,7 @@ import CreateCollectionSheet from '@/features/collections/CreateCollectionSheet'
 import { Collection as CollectionModel } from '@/features/collections/collectionModel';
 import { useCollections } from '@/features/collections/collectionQueries';
 import { useGridLayout } from '@/hooks/useGridLayout';
-import { router } from '@/navigation/router';
+import { linkProps } from '@/navigation/linkProps';
 import { routes } from '@/navigation/routes';
 import { SPACING } from '@/theme/colors';
 import React, { useEffect, useState } from 'react';
@@ -44,13 +44,9 @@ const CollectionsScreen = () => {
     setIsCreateSheetVisible(false);
   };
 
-  const handleCollectionPress = (collection: CollectionModel) => {
-    router.navigate(routes.collection(collection.id));
-  };
-
   const renderItem = ({ item }: { item: CollectionModel }) => (
     <View style={{ width: itemWidth }}>
-      <CollectionCard collection={item} onPress={() => handleCollectionPress(item)} />
+      <CollectionCard collection={item} link={linkProps(routes.collection(item.id))} />
     </View>
   );
 

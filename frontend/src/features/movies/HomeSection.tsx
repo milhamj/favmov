@@ -1,18 +1,31 @@
-import { linkKeyboardProps } from '@/navigation/linkKeyboardProps';
+import { linkProps } from '@/navigation/linkProps';
 import { COLORS, TYPOGRAPHY, SPACING } from '@/theme/colors';
 import React from 'react';
-import { Text, StyleSheet, View, FlatList, Pressable } from 'react-native';
+import { Text, StyleSheet, View, FlatList, Pressable, Platform, ViewStyle } from 'react-native';
 import { useHomeMovies, seedMovieDetails } from './movieQueries';
 import MovieCard, { movieCardHeight } from './MovieCard';
 import RetryButton from '@/components/RetryButton';
 import FullPageLoader from '@/components/FullPageLoader';
 import { Movie } from './movieModel';
 import { useAuth } from '@/features/auth/useAuth';
-import { router } from '@/navigation/router';
 import { routes } from '@/navigation/routes';
 import { useQueryClient } from '@tanstack/react-query';
 
 const CARD_WIDTH = 120;
+// Always reserve the horizontal scrollbar track so the loader and loaded row share one height.
+// `dataSet` (RN Web only) marks both for touchHidesTrack, which hides the track on touch screens.
+const webScrollTrack =
+  Platform.OS === 'web'
+    ? {
+        style: { overflowX: 'scroll', overflowY: 'hidden' } as ViewStyle,
+        dataSet: { homeRow: 'true' },
+      }
+    : {};
+// Touch screens swipe rows, so they skip the always-on scrollbar track.
+const touchHidesTrack = `@media (hover: none) and (pointer: coarse) {
+  [data-home-row] { scrollbar-width: none; }
+  [data-home-row]::-webkit-scrollbar { display: none; }
+}`;
 
 export const SectionType = {
   TrendingMovies: 'Trending Movies',
@@ -36,17 +49,12 @@ const HomeSection: React.FC<{
     <View style={{ width: CARD_WIDTH, marginEnd: SPACING.small }}>
       <MovieCard
         movie={item}
-        onClick={() => {
-          seedMovieDetails(queryClient, item);
-          router.navigate(routes.movie(item.id, item.isTvShow));
-        }}
+        link={linkProps(routes.movie(item.id, item.isTvShow), () =>
+          seedMovieDetails(queryClient, item),
+        )}
       />
     </View>
   );
-
-  const handleHeaderPress = () => {
-    router.navigate(routes.explore(section));
-  };
 
   if (
     (!isAuthenticated && section === SectionType.YourFavorites) ||
@@ -54,17 +62,26 @@ const HomeSection: React.FC<{
   )
     return null;
 
+  const headerDisabled = section === SectionType.YourFavorites || isLoading || Boolean(error);
+
   return (
     <View style={styles.section} testID={`home-section-${section}`}>
+      {Platform.OS === 'web' && (
+        // React 19 hoists this into <head> once, however many sections render it
+        <style href="home-row-track" precedence="default">
+          {touchHidesTrack}
+        </style>
+      )}
       <Pressable
         hitSlop={14}
-        {...linkKeyboardProps}
+        // Your Favorites has no explore page, so it never gets an href
+        {...(section === SectionType.YourFavorites
+          ? {}
+          : linkProps(routes.explore(section), undefined, headerDisabled))}
         accessibilityRole="link"
-        aria-disabled={section === SectionType.YourFavorites || isLoading || Boolean(error)}
+        disabled={section === SectionType.YourFavorites}
         aria-busy={isLoading}
         style={styles.header}
-        disabled={section === SectionType.YourFavorites || isLoading || Boolean(error)}
-        onPress={handleHeaderPress}
       >
         <Text accessibilityRole="header" aria-level={2} style={styles.headerTitle}>
           {section}
@@ -74,8 +91,10 @@ const HomeSection: React.FC<{
         )}
       </Pressable>
       {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <FullPageLoader />
+        <View {...webScrollTrack}>
+          <View style={styles.loadingContainer}>
+            <FullPageLoader />
+          </View>
         </View>
       ) : error ? (
         <RetryButton message={error.message} onPress={() => void refetch()} />
@@ -85,7 +104,7 @@ const HomeSection: React.FC<{
           renderItem={renderMoviePoster}
           keyExtractor={(item) => `${item.isTvShow ? 'tv' : 'movie'}-${item.id}`}
           horizontal
-          showsHorizontalScrollIndicator={false}
+          {...webScrollTrack}
           contentContainerStyle={styles.flatListContent}
         />
       )}
