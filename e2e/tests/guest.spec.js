@@ -1,4 +1,4 @@
-const { test, expect, icon, expectFieldOwnsFocusRing, media } = require('./app');
+const { test, expect, icon, expectFieldOwnsFocusRing } = require('./app');
 
 test('a guest can browse from home to a title and a person', async ({ page }) => {
   await page.goto('/');
@@ -20,50 +20,53 @@ test('a guest can browse from home to a title and a person', async ({ page }) =>
   await expect(page).toHaveURL('/movie/101');
 });
 
-test('home sections keep their height when their titles arrive', async ({ page }) => {
-  // A long rating that could wrap, and a title with no rating at all
-  const held = {
-    'Trending Movies': ['trending/movie/**', { vote_average: 8.534, vote_count: 35421 }],
-    'Popular Movies': ['movie/popular**', { vote_average: undefined }],
-  };
-  let release;
-  const gate = new Promise((resolve) => (release = resolve));
-  for (const [path, extra] of Object.values(held))
-    await page.route(`https://api.themoviedb.org/3/${path}`, async (route) => {
-      await gate;
-      await route.fulfill({
-        contentType: 'application/json',
-        headers: { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' },
-        body: JSON.stringify({
-          page: 1,
-          total_pages: 1,
-          results: [media(303, 'Held Film', extra)],
-        }),
-      });
-    });
-  const heights = () =>
-    Promise.all(
-      Object.keys(held).map((name) =>
-        page
-          .getByTestId(`home-section-${name}`)
-          .evaluate((el) => el.getBoundingClientRect().height),
-      ),
-    );
-  const busy = (name) => page.getByRole('link', { name });
+test('home cards are real links that navigate in place on click and Enter', async ({ page }) => {
+  await page.goto('/');
+  const card = page.getByRole('link', { name: /^Galaxy Quest/ }).first();
+  // A real anchor gives the browser copy link, open in new tab and modified clicks.
+  await expect(card).toHaveJSProperty('tagName', 'A');
+  await expect(card).toHaveAttribute('href', '/movie/101');
 
-  try {
-    await page.goto('/');
-    for (const name of Object.keys(held))
-      await expect(busy(name)).toHaveAttribute('aria-busy', 'true');
-    const loading = await heights();
-    release();
-    for (const name of Object.keys(held))
-      await expect(busy(name)).not.toHaveAttribute('aria-busy', 'true');
-    expect(await heights()).toEqual(loading);
-    await expect(page.getByText('(35K)')).toBeVisible();
-  } finally {
-    release();
-  }
+  // Modified clicks are left to the browser: a new tab opens and this one stays home.
+  const [tab] = await Promise.all([
+    page.context().waitForEvent('page'),
+    card.click({ modifiers: ['ControlOrMeta'] }),
+  ]);
+  await expect(tab).toHaveURL(/\/movie\/101$/);
+  await tab.close();
+  await expect(page).toHaveURL('/');
+
+  // A marker on window survives client-side navigation but not a full page load.
+  await page.evaluate(() => (window.__noReload = true));
+  await card.click();
+  await expect(page).toHaveURL('/movie/101');
+  expect(await page.evaluate(() => window.__noReload)).toBe(true);
+
+  await page.goBack();
+  await page
+    .getByRole('link', { name: /^Galaxy Quest/ })
+    .first()
+    .focus();
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL('/movie/101');
+  expect(await page.evaluate(() => window.__noReload)).toBe(true);
+  // One history entry per activation: a single Back returns home.
+  await page.goBack();
+  await expect(page).toHaveURL('/');
+});
+
+test('home rows do not hide their horizontal scrollbar', async ({ page }) => {
+  await page.goto('/');
+  // CSS only: headless Chromium hides scrollbars regardless; the height spec lays them out.
+  const scroller = await page
+    .getByRole('link', { name: /^Galaxy Quest/ })
+    .first()
+    .evaluate((el) => {
+      while (el && getComputedStyle(el).overflowX === 'visible') el = el.parentElement;
+      const style = getComputedStyle(el);
+      return { overflowX: style.overflowX, scrollbarWidth: style.scrollbarWidth };
+    });
+  expect(scroller).toEqual({ overflowX: 'scroll', scrollbarWidth: 'auto' });
 });
 
 test('a TV show keeps its type through a reload', async ({ page }) => {

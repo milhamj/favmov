@@ -1,4 +1,4 @@
-import { linkKeyboardProps } from '@/navigation/linkKeyboardProps';
+import type { LinkProps } from '@/navigation/linkProps';
 import React from 'react';
 import { StyleSheet, Pressable, View, Image, Text } from 'react-native';
 import { COLORS, RADIUS, ROW_ELEVATION, SPACING, TYPOGRAPHY } from '@/theme/colors';
@@ -6,28 +6,27 @@ import { personPhotoUrl, People } from '@/features/people/peopleModel';
 
 interface PeopleCardHorizontalProps {
   people: People;
-  onClick?: (movie: People) => void;
+  link?: LinkProps;
 }
 
-const PeopleCardHorizontal: React.FC<PeopleCardHorizontalProps> = ({ people, onClick }) => {
-  const Container = onClick ? Pressable : View;
+const PeopleCardHorizontal: React.FC<PeopleCardHorizontalProps> = ({ people, link }) => {
+  const Container = link ? Pressable : View;
 
   return (
     <Container
-      {...(onClick ? linkKeyboardProps : {})}
-      accessibilityRole={onClick ? 'link' : undefined}
-      accessibilityLabel={onClick ? people.name : undefined}
-      onPress={onClick ? () => onClick(people) : undefined}
+      {...link}
+      accessibilityRole={link ? 'link' : undefined}
+      accessibilityLabel={link ? people.name : undefined}
       style={
-        onClick
+        link
           ? ({ pressed }) => [styles.posterContainer, pressed && { opacity: 0.7 }]
           : styles.posterContainer
       }
     >
       <Image
-        aria-hidden={!!onClick}
-        accessible={!onClick}
-        accessibilityLabel={onClick ? undefined : people.name}
+        aria-hidden={!!link}
+        accessible={!link}
+        accessibilityLabel={link ? undefined : people.name}
         source={{ uri: personPhotoUrl(people) }}
         style={[styles.poster]}
       />

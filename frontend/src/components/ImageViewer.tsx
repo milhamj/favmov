@@ -1,7 +1,6 @@
-import { linkKeyboardProps } from '@/navigation/linkKeyboardProps';
+import { linkProps } from '@/navigation/linkProps';
 import React, { useState } from 'react';
 import { View, Image, StyleSheet, Pressable, StyleProp, ViewStyle, ImageStyle } from 'react-native';
-import { router } from '@/navigation/router';
 import { routes } from '@/navigation/routes';
 
 interface ImageViewerProps {
@@ -27,12 +26,9 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
   return (
     <View style={style}>
       <Pressable
-        {...linkKeyboardProps}
+        {...linkProps(routes.image(fullImageUrl || bigImageUrl || smallImageUrl, smallImageUrl))}
         accessibilityRole="link"
         accessibilityLabel={accessibilityLabel}
-        onPress={() =>
-          router.navigate(routes.image(fullImageUrl || bigImageUrl || smallImageUrl, smallImageUrl))
-        }
         style={({ pressed }) => [styles.imageContainer, pressed && { opacity: 0.7 }]}
       >
         {!isBigImageLoaded ? (

@@ -1,4 +1,4 @@
-import { linkKeyboardProps } from '@/navigation/linkKeyboardProps';
+import { linkProps } from '@/navigation/linkProps';
 import ImageViewer from '@/components/ImageViewer';
 import { useContainingCollections } from '@/features/collections/collectionQueries';
 import {
@@ -9,7 +9,6 @@ import {
   Movie,
 } from '@/features/movies/movieModel';
 import { useMovieDetails } from '@/features/movies/movieQueries';
-import { router } from '@/navigation/router';
 import { routes } from '@/navigation/routes';
 import { COLORS, LAYOUT, SPACING } from '@/theme/colors';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -31,14 +30,11 @@ const AddToCollectionButton = ({
   details: ReturnType<typeof useMovieDetails>;
   collections: unknown[];
 }) => {
-  const handleFavoriteClick = () => {
-    if (!isAuthenticated) {
-      router.navigate(routes.loginWithReturnTo(routes.movie(movie.id, movie.isTvShow)));
-      return;
-    }
-
-    router.navigate(routes.addToCollection(movie.id, movie.isTvShow));
-  };
+  // While auth loads the press is a no-op; the add route is protected, so a new tab still lands right
+  const href =
+    isAuthenticated || isAuthLoading
+      ? routes.addToCollection(movie.id, movie.isTvShow)
+      : routes.loginWithReturnTo(routes.movie(movie.id, movie.isTvShow));
 
   // Until the saved state is known a tap would send a signed-in user to login or open the editor blind
   const isHeartLoading =
@@ -46,13 +42,13 @@ const AddToCollectionButton = ({
 
   return details.data ? (
     <Pressable
-      {...linkKeyboardProps}
+      {...linkProps(href, undefined, isHeartLoading)}
       accessibilityRole="link"
       accessibilityLabel={collections.length > 0 ? 'In your collections' : 'Add to collection'}
-      style={({ pressed }) => [styles.addToCollectionButton, pressed && { opacity: 0.7 }]}
-      onPress={handleFavoriteClick}
-      disabled={isHeartLoading}
-      aria-disabled={isHeartLoading}
+      style={({ pressed }) => [
+        styles.addToCollectionButton,
+        pressed && !isHeartLoading && { opacity: 0.7 },
+      ]}
       aria-busy={isHeartLoading}
       accessibilityState={{ disabled: isHeartLoading, busy: isHeartLoading }}
     >

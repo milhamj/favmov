@@ -28,9 +28,9 @@ jest.mock('@/navigation/router', () => ({ router: { navigate: jest.fn() } }));
 jest.mock('@/features/movies/MovieCard', () => ({
   __esModule: true,
   ...jest.requireActual('@/features/movies/MovieCard'),
-  default: ({ movie, onClick }: any) => {
+  default: ({ movie, link }: any) => {
     const { Text } = require('react-native');
-    return <Text onPress={onClick}>{movie.title}</Text>;
+    return <Text onPress={link?.onPress}>{movie.title}</Text>;
   },
 }));
 test.each(Object.values(SectionType))(

@@ -1,15 +1,10 @@
-import { linkKeyboardProps } from '@/navigation/linkKeyboardProps';
+import { linkProps } from '@/navigation/linkProps';
 import { director, Movie } from '@/features/movies/movieModel';
 import { displayRating, getRatingColor } from '@/lib/util';
-import { router } from '@/navigation/router';
 import { routes } from '@/navigation/routes';
 import { LAYOUT, COLORS, SPACING } from '@/theme/colors';
 import React from 'react';
 import { Image, StyleSheet, Text, Pressable, View } from 'react-native';
-
-const handleCastClick = (id: number) => {
-  router.navigate(routes.people(id.toString()));
-};
 
 export default function MovieDetails({ movie }: { movie: Movie }) {
   return (
@@ -64,12 +59,11 @@ export default function MovieDetails({ movie }: { movie: Movie }) {
           </Text>
           {movie.cast?.map((actor, index) => (
             <Pressable
-              {...linkKeyboardProps}
+              {...linkProps(routes.people(actor.id.toString()))}
               accessibilityRole="link"
               accessibilityLabel={actor.name}
               key={index}
               style={({ pressed }) => [styles.castItem, pressed && { opacity: 0.7 }]}
-              onPress={() => handleCastClick(actor.id)}
             >
               <Image
                 aria-hidden
@@ -95,11 +89,10 @@ export default function MovieDetails({ movie }: { movie: Movie }) {
             {movie.crew?.map((crew, index) => (
               <Pressable
                 hitSlop={14}
-                {...linkKeyboardProps}
+                {...linkProps(routes.people(crew.id.toString()))}
                 accessibilityRole="link"
                 key={index}
                 style={({ pressed }) => [styles.crewItem, pressed && { opacity: 0.7 }]}
-                onPress={() => handleCastClick(crew.id)}
               >
                 <Text style={styles.crewName}>{crew.name}</Text>
                 <Text style={styles.crewJob}>{crew.job}</Text>

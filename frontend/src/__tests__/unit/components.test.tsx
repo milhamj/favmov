@@ -59,11 +59,11 @@ describe('movie cards', () => {
   });
 
   test('MovieCard shows the rating and reports presses', () => {
-    const onClick = jest.fn();
-    render(<MovieCard movie={movie} onClick={onClick} />);
+    const onPress = jest.fn();
+    render(<MovieCard movie={movie} link={{ href: '/movie/1', onPress }} />);
     expect(screen.getByText('(10)')).toBeTruthy();
     fireEvent.press(screen.getByText('Up'));
-    expect(onClick).toHaveBeenCalledWith(movie);
+    expect(onPress).toHaveBeenCalledTimes(1);
   });
 
   test.each([
@@ -112,7 +112,7 @@ describe('CollectionCard', () => {
     const collection = makeCollection('c1', 'Sci-Fi');
     collection.moviesCount = 3;
     const onPress = jest.fn();
-    render(<CollectionCard collection={collection} onPress={onPress} />);
+    render(<CollectionCard collection={collection} link={{ href: '/collection/c1', onPress }} />);
     expect(screen.getByText(' (3)')).toBeTruthy();
     fireEvent.press(screen.getByText(/Sci-Fi/));
     expect(onPress).toHaveBeenCalled();

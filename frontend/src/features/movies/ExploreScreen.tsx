@@ -12,6 +12,7 @@ import { useHydrated } from '@/lib/useHydrated';
 import { appendUnique, parseStrParam } from '@/lib/util';
 import { router } from '@/navigation/router';
 import { routes } from '@/navigation/routes';
+import { linkProps } from '@/navigation/linkProps';
 import { SPACING } from '@/theme/colors';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
@@ -42,10 +43,9 @@ const ExploreScreen = ({ params }: { params: ReturnType<typeof useLocalSearchPar
     >
       <MovieCard
         movie={item}
-        onClick={() => {
-          seedMovieDetails(queryClient, item);
-          router.navigate(routes.movie(item.id, item.isTvShow));
-        }}
+        link={linkProps(routes.movie(item.id, item.isTvShow), () =>
+          seedMovieDetails(queryClient, item),
+        )}
       />
     </View>
   );

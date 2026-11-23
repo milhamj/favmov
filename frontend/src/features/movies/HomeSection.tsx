@@ -1,18 +1,20 @@
-import { linkKeyboardProps } from '@/navigation/linkKeyboardProps';
+import { linkProps } from '@/navigation/linkProps';
 import { COLORS, TYPOGRAPHY, SPACING } from '@/theme/colors';
 import React from 'react';
-import { Text, StyleSheet, View, FlatList, Pressable } from 'react-native';
+import { Text, StyleSheet, View, FlatList, Pressable, Platform, ViewStyle } from 'react-native';
 import { useHomeMovies, seedMovieDetails } from './movieQueries';
 import MovieCard, { movieCardHeight } from './MovieCard';
 import RetryButton from '@/components/RetryButton';
 import FullPageLoader from '@/components/FullPageLoader';
 import { Movie } from './movieModel';
 import { useAuth } from '@/features/auth/useAuth';
-import { router } from '@/navigation/router';
 import { routes } from '@/navigation/routes';
 import { useQueryClient } from '@tanstack/react-query';
 
 const CARD_WIDTH = 120;
+// Always reserve the horizontal scrollbar track so the loader and loaded row share one height.
+const webScrollTrack =
+  Platform.OS === 'web' ? ({ overflowX: 'scroll', overflowY: 'hidden' } as ViewStyle) : null;
 
 export const SectionType = {
   TrendingMovies: 'Trending Movies',
@@ -36,17 +38,12 @@ const HomeSection: React.FC<{
     <View style={{ width: CARD_WIDTH, marginEnd: SPACING.small }}>
       <MovieCard
         movie={item}
-        onClick={() => {
-          seedMovieDetails(queryClient, item);
-          router.navigate(routes.movie(item.id, item.isTvShow));
-        }}
+        link={linkProps(routes.movie(item.id, item.isTvShow), () =>
+          seedMovieDetails(queryClient, item),
+        )}
       />
     </View>
   );
-
-  const handleHeaderPress = () => {
-    router.navigate(routes.explore(section));
-  };
 
   if (
     (!isAuthenticated && section === SectionType.YourFavorites) ||
@@ -54,17 +51,20 @@ const HomeSection: React.FC<{
   )
     return null;
 
+  const headerDisabled = section === SectionType.YourFavorites || isLoading || Boolean(error);
+
   return (
     <View style={styles.section} testID={`home-section-${section}`}>
       <Pressable
         hitSlop={14}
-        {...linkKeyboardProps}
+        // Your Favorites has no explore page, so it never gets an href
+        {...(section === SectionType.YourFavorites
+          ? {}
+          : linkProps(routes.explore(section), undefined, headerDisabled))}
         accessibilityRole="link"
-        aria-disabled={section === SectionType.YourFavorites || isLoading || Boolean(error)}
+        disabled={section === SectionType.YourFavorites}
         aria-busy={isLoading}
         style={styles.header}
-        disabled={section === SectionType.YourFavorites || isLoading || Boolean(error)}
-        onPress={handleHeaderPress}
       >
         <Text accessibilityRole="header" aria-level={2} style={styles.headerTitle}>
           {section}
@@ -74,8 +74,10 @@ const HomeSection: React.FC<{
         )}
       </Pressable>
       {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <FullPageLoader />
+        <View style={webScrollTrack}>
+          <View style={styles.loadingContainer}>
+            <FullPageLoader />
+          </View>
         </View>
       ) : error ? (
         <RetryButton message={error.message} onPress={() => void refetch()} />
@@ -85,7 +87,7 @@ const HomeSection: React.FC<{
           renderItem={renderMoviePoster}
           keyExtractor={(item) => `${item.isTvShow ? 'tv' : 'movie'}-${item.id}`}
           horizontal
-          showsHorizontalScrollIndicator={false}
+          style={webScrollTrack}
           contentContainerStyle={styles.flatListContent}
         />
       )}

@@ -17,15 +17,26 @@ it('recalculates two equal cells from the current list width, including an odd f
 it('keeps collection colors stable through remounts and ID changes', () => {
   const color = () => StyleSheet.flatten(view.UNSAFE_getByType(View).props.style).backgroundColor;
   const view = render(
-    <CollectionCard collection={makeCollection('c1', 'One')} onPress={() => {}} />,
+    <CollectionCard
+      collection={makeCollection('c1', 'One')}
+      link={{ href: '/collection/c', onPress: () => {} }}
+    />,
   );
   const original = color();
-  view.rerender(<CollectionCard collection={makeCollection('c2', 'Two')} onPress={() => {}} />);
+  view.rerender(
+    <CollectionCard
+      collection={makeCollection('c2', 'Two')}
+      link={{ href: '/collection/c', onPress: () => {} }}
+    />,
+  );
   const other = color();
   expect(other).not.toBe(original);
   view.unmount();
   const remount = render(
-    <CollectionCard collection={makeCollection('c1', 'One renamed')} onPress={() => {}} />,
+    <CollectionCard
+      collection={makeCollection('c1', 'One renamed')}
+      link={{ href: '/collection/c', onPress: () => {} }}
+    />,
   );
   expect(StyleSheet.flatten(remount.UNSAFE_getByType(View).props.style).backgroundColor).toBe(
     original,
