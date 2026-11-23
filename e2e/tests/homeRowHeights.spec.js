@@ -3,7 +3,11 @@ const { test, expect, media } = require('./app');
 // Headless Chromium hides scrollbars by default; lay them out so a row's scrollbar counts towards its height.
 test.use({ launchOptions: { ignoreDefaultArgs: ['--hide-scrollbars'] } });
 
-test('home sections keep their height when their titles arrive', async ({ page }) => {
+// Each row's scroll track width as the browser computes it ('auto' shows it, 'none' hides it).
+const trackWidths = (page) =>
+  page.$$eval('[data-home-row]', (els) => els.map((el) => getComputedStyle(el).scrollbarWidth));
+
+const keepsHeight = async (page, track) => {
   // A long rating that could wrap, and a title with no rating at all
   const held = {
     'Trending Movies': ['trending/movie/**', { vote_average: 8.534, vote_count: 35421 }],
@@ -42,13 +46,25 @@ test('home sections keep their height when their titles arrive', async ({ page }
       await expect(busy(name)).toHaveAttribute('aria-disabled', 'true');
       await expect(busy(name)).toHaveAttribute('href', /\/explore\?section_type=/);
     }
+    expect(new Set(await trackWidths(page))).toEqual(new Set([track]));
     const loading = await heights();
     release();
     for (const name of Object.keys(held))
       await expect(busy(name)).not.toHaveAttribute('aria-busy', 'true');
     expect(await heights()).toEqual(loading);
+    expect(new Set(await trackWidths(page))).toEqual(new Set([track]));
     await expect(page.getByText('(35K)')).toBeVisible();
   } finally {
     release();
   }
+};
+
+test('home sections keep their height when their titles arrive', ({ page }) =>
+  keepsHeight(page, 'auto'));
+
+test.describe('on a touch screen', () => {
+  test.use({ hasTouch: true, isMobile: true });
+
+  test('home rows hide the scrollbar track and keep their height', ({ page }) =>
+    keepsHeight(page, 'none'));
 });

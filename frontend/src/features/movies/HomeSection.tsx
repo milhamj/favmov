@@ -13,8 +13,19 @@ import { useQueryClient } from '@tanstack/react-query';
 
 const CARD_WIDTH = 120;
 // Always reserve the horizontal scrollbar track so the loader and loaded row share one height.
+// `dataSet` (RN Web only) marks both for touchHidesTrack, which hides the track on touch screens.
 const webScrollTrack =
-  Platform.OS === 'web' ? ({ overflowX: 'scroll', overflowY: 'hidden' } as ViewStyle) : null;
+  Platform.OS === 'web'
+    ? {
+        style: { overflowX: 'scroll', overflowY: 'hidden' } as ViewStyle,
+        dataSet: { homeRow: 'true' },
+      }
+    : {};
+// Touch screens swipe rows, so they skip the always-on scrollbar track.
+const touchHidesTrack = `@media (hover: none) and (pointer: coarse) {
+  [data-home-row] { scrollbar-width: none; }
+  [data-home-row]::-webkit-scrollbar { display: none; }
+}`;
 
 export const SectionType = {
   TrendingMovies: 'Trending Movies',
@@ -55,6 +66,12 @@ const HomeSection: React.FC<{
 
   return (
     <View style={styles.section} testID={`home-section-${section}`}>
+      {Platform.OS === 'web' && (
+        // React 19 hoists this into <head> once, however many sections render it
+        <style href="home-row-track" precedence="default">
+          {touchHidesTrack}
+        </style>
+      )}
       <Pressable
         hitSlop={14}
         // Your Favorites has no explore page, so it never gets an href
@@ -74,7 +91,7 @@ const HomeSection: React.FC<{
         )}
       </Pressable>
       {isLoading ? (
-        <View style={webScrollTrack}>
+        <View {...webScrollTrack}>
           <View style={styles.loadingContainer}>
             <FullPageLoader />
           </View>
@@ -87,7 +104,7 @@ const HomeSection: React.FC<{
           renderItem={renderMoviePoster}
           keyExtractor={(item) => `${item.isTvShow ? 'tv' : 'movie'}-${item.id}`}
           horizontal
-          style={webScrollTrack}
+          {...webScrollTrack}
           contentContainerStyle={styles.flatListContent}
         />
       )}
