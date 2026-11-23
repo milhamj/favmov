@@ -18,7 +18,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { seedMovieDetails, movieDetailKey } from '@/features/movies/movieQueries';
 import { createQueryClient } from '@/lib/queryClient';
 import { unsavedNotes } from '@/features/collections/unsavedNotesStore';
-import { refocus, router, searchParams } from '../../../test/expoRouter';
+import { refocus, router, screenFocused, searchParams } from '../../../test/expoRouter';
 import {
   actor as makeActor,
   collection as makeCollection,
@@ -340,10 +340,39 @@ describe('people detail', () => {
     expect(screen.getByText('No crew credits available.')).toBeTruthy();
   });
 
+  test('publishes SEO tags only while the person screen is focused', async () => {
+    person.mockResolvedValue(
+      makePeople({ id: 3, name: 'Ann', biography: 'Born in Oslo', photoPath: '/ann.jpg' }),
+    );
+    const ui = render(<PeopleDetailPage />);
+    await screen.findByText('Born in Oslo');
+    expect(jest.mocked(SeoHead).mock.lastCall?.[0]).toEqual({
+      title: 'Ann | FavMov',
+      description: 'Born in Oslo',
+      image: 'small//ann.jpg',
+      url: 'https://site/people/3',
+    });
+
+    jest.mocked(SeoHead).mockClear();
+    screenFocused.current = false;
+    try {
+      ui.rerender(<PeopleDetailPage />);
+      expect(SeoHead).not.toHaveBeenCalled();
+    } finally {
+      screenFocused.current = true;
+    }
+  });
+
   test('says when there is no biography', async () => {
     person.mockResolvedValue(makePeople({ id: 3, name: 'Ann' }));
     render(<PeopleDetailPage />);
     expect(await screen.findByText('No biography available.')).toBeTruthy();
+    expect(jest.mocked(SeoHead).mock.lastCall?.[0]).toEqual({
+      title: 'Ann | FavMov',
+      description: undefined,
+      image: undefined,
+      url: 'https://site/people/3',
+    });
   });
 
   test('hides and shows each credit list', async () => {

@@ -1,6 +1,7 @@
 import FullPageLoader from '@/components/FullPageLoader';
 import PageContainer from '@/components/PageContainer';
 import RetryButton from '@/components/RetryButton';
+import { SeoHead, URL_DEFAULT } from '@/components/SeoHead';
 import TopBar from '@/components/TopBar';
 import PeopleMovieCreditView from '@/features/people/PeopleMovieCreditView';
 import { usePeopleDetails } from '@/features/people/peopleQueries';
@@ -8,10 +9,12 @@ import { ApiError } from '@/lib/apiError';
 import { useHydrated } from '@/lib/useHydrated';
 import { parseTmdbId } from '@/lib/util';
 import { router } from '@/navigation/router';
+import { routes } from '@/navigation/routes';
 import { LAYOUT, COLORS, SPACING } from '@/theme/colors';
-import { useLocalSearchParams } from 'expo-router';
+import { useIsFocused, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, Pressable, View } from 'react-native';
+import { personPhotoUrl } from './peopleModel';
 import PersonBiography from './PersonBiography';
 
 const PERSON_NOT_FOUND = 'Person not found';
@@ -19,6 +22,7 @@ const PERSON_NOT_FOUND = 'Person not found';
 const PersonScreen = ({ params }: { params: ReturnType<typeof useLocalSearchParams> }) => {
   const peopleId = parseTmdbId(params.id);
   const hydrated = useHydrated();
+  const isFocused = useIsFocused();
 
   const query = usePeopleDetails(peopleId === null ? '' : String(peopleId));
   const people = query.data;
@@ -42,6 +46,15 @@ const PersonScreen = ({ params }: { params: ReturnType<typeof useLocalSearchPara
         />
       }
     >
+      {people?.name && isFocused ? (
+        <SeoHead
+          title={`${people.name} | FavMov`}
+          description={people.biography || undefined}
+          image={people.photoPath ? personPhotoUrl(people) : undefined}
+          url={URL_DEFAULT + routes.people(String(people.id))}
+        />
+      ) : null}
+
       {/* The prerendered page has no real id, so wait for hydration before calling it invalid */}
       {peopleId === null && hydrated ? (
         <RetryButton message="Invalid person URL" />

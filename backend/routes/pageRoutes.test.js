@@ -95,12 +95,20 @@ test('serves each URL its own prerendered page', async (t) => {
 const movieHtml =
   '<title>Default</title><meta name="description" content="Default"><meta property="og:title" content="Default"><meta property="og:url" content="Default">';
 
-const startMoviePages = async (t) => {
+const peopleHtml =
+  movieHtml +
+  '<meta property="og:description" content="Default"><meta property="og:image" content="DefaultImage">' +
+  '<meta property="twitter:title" content="Default"><meta property="twitter:description" content="Default">' +
+  '<meta property="twitter:image" content="DefaultImage"><body>People template</body>';
+
+const startDetailPages = async (t) => {
   const tmdbKey = process.env.FAVMOV_TMDB_API_KEY;
   process.env.FAVMOV_TMDB_API_KEY = 'test-key';
   const publicDir = await fs.mkdtemp(path.join(os.tmpdir(), 'favmov-seo-'));
   await fs.mkdir(path.join(publicDir, 'movie'));
   await fs.writeFile(path.join(publicDir, 'movie', '[id].html'), movieHtml);
+  await fs.mkdir(path.join(publicDir, 'people'));
+  await fs.writeFile(path.join(publicDir, 'people', '[id].html'), peopleHtml);
 
   const app = express();
   app.use(createPageRoutes(publicDir));
@@ -124,10 +132,10 @@ const startMoviePages = async (t) => {
   };
 };
 
-// Ids differ per test because movieSeo caches lookups for the life of the process
+// Ids differ per test because detail SEO caches lookups for the life of the process
 test('fills a movie page from TMDB, and a TV show from the tv endpoint', async (t) => {
   const urls = [];
-  const get = (await startMoviePages(t))(async (url) => {
+  const get = (await startDetailPages(t))(async (url) => {
     urls.push(url);
     return { ok: true, status: 200, json: async () => ({ name: 'A Show', overview: 'About it' }) };
   });
@@ -145,16 +153,80 @@ test('fills a movie page from TMDB, and a TV show from the tv endpoint', async (
 });
 
 test('answers 404 with the default head for a title TMDB does not have', async (t) => {
-  const get = (await startMoviePages(t))(async () => ({ ok: false, status: 404 }));
+  const get = (await startDetailPages(t))(async () => ({ ok: false, status: 404 }));
   const response = await get('/movie/9002');
   assert.strictEqual(response.status, 404);
   assert.strictEqual(await response.text(), movieHtml);
 });
 
+test('fills the person head from TMDB and keeps the prerendered body', async (t) => {
+  const urls = [];
+  const get = (await startDetailPages(t))(async (url) => {
+    urls.push(url);
+    return Response.json({ name: 'Ann & Jo', biography: 'A "quote"', profile_path: '/ann.jpg' });
+  });
+
+  const response = await get('/people/9001/?is_tv_show=true');
+  const html = await response.text();
+  assert.strictEqual(response.status, 200);
+  assert.deepStrictEqual(urls, ['https://api.themoviedb.org/3/person/9001']);
+  assert.match(html, /<title>Ann &#38; Jo \| FavMov<\/title>/);
+  assert.match(html, /name="description" content="A &#34;quote&#34;"/);
+  for (const prefix of ['og', 'twitter']) {
+    assert.ok(html.includes('property="' + prefix + ':title" content="Ann &#38; Jo | FavMov"'));
+    assert.ok(html.includes('property="' + prefix + ':description" content="A &#34;quote&#34;"'));
+    assert.ok(
+      html.includes(
+        'property="' + prefix + ':image" content="https://image.tmdb.org/t/p/w500/ann.jpg"',
+      ),
+    );
+  }
+  assert.match(html, /og:url" content="https:\/\/favmov\.milhamj\.com\/people\/9001"/);
+  assert.match(html, /<body>People template<\/body>/);
+});
+
+test('keeps the default description and image when a person lacks them', async (t) => {
+  const get = (await startDetailPages(t))(async () =>
+    Response.json({ name: 'Ann', biography: '', profile_path: null }),
+  );
+  const response = await get('/people/9004');
+  const html = await response.text();
+  assert.strictEqual(response.status, 200);
+  assert.match(html, /<title>Ann \| FavMov<\/title>/);
+  assert.match(html, /name="description" content="Default"/);
+  assert.match(html, /og:image" content="DefaultImage"/);
+});
+
+test('keeps the default head when a person has no name', async (t) => {
+  const get = (await startDetailPages(t))(async () =>
+    Response.json({ name: '', biography: 'A biography' }),
+  );
+  const response = await get('/people/9006');
+  assert.strictEqual(response.status, 200);
+  assert.strictEqual(await response.text(), peopleHtml);
+});
+
+test('answers 404 with the default head for a person TMDB does not have', async (t) => {
+  const get = (await startDetailPages(t))(async () => new Response(null, { status: 404 }));
+  const response = await get('/people/9005');
+  assert.strictEqual(response.status, 404);
+  assert.strictEqual(await response.text(), peopleHtml);
+});
+
 test('keeps serving the page with the default head when TMDB is down', async (t) => {
   t.mock.method(console, 'error', () => {});
-  const get = (await startMoviePages(t))(async () => ({ ok: false, status: 503 }));
-  const response = await get('/movie/9003');
-  assert.strictEqual(response.status, 200);
-  assert.strictEqual(await response.text(), movieHtml);
+  const urls = [];
+  const get = (await startDetailPages(t))(async (url) => {
+    urls.push(url);
+    return new Response(null, { status: 503 });
+  });
+
+  const peopleResponse = await get('/people/9003');
+  assert.strictEqual(peopleResponse.status, 200);
+  assert.strictEqual(await peopleResponse.text(), peopleHtml);
+
+  const movieResponse = await get('/movie/9003');
+  assert.strictEqual(movieResponse.status, 200);
+  assert.strictEqual(await movieResponse.text(), movieHtml);
+  assert.deepStrictEqual(urls, ['https://api.themoviedb.org/3/person/9003']);
 });

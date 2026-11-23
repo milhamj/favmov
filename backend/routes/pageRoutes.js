@@ -1,7 +1,7 @@
 const express = require('express');
 const fs = require('fs/promises');
 const path = require('path');
-const { applyMovieSeo, fetchMovie } = require('../utils/movieSeo');
+const { applyDetailSeo, fetchDetails } = require('../utils/detailSeo');
 const { isTmdbId } = require('../utils/tmdbId');
 
 const createPageRoutes = (publicDir) => {
@@ -27,19 +27,35 @@ const createPageRoutes = (publicDir) => {
   router.use(async (req, res) => {
     const [, page, id] = req.path.match(/^\/(movie|people|collection)\/([^/]+)$/) ?? [];
     const isInvalidId = Boolean(page) && page !== 'collection' && !isTmdbId(id);
-    const movieId = page === 'movie' && !isInvalidId ? id : undefined;
-    if (movieId && process.env.FAVMOV_TMDB_API_KEY) {
+    if (
+      !isInvalidId &&
+      (page === 'movie' || page === 'people') &&
+      process.env.FAVMOV_TMDB_API_KEY
+    ) {
       try {
-        const isTvShow = req.query.is_tv_show === 'true';
-        const [html, movie] = await Promise.all([
-          fs.readFile(path.join(publicDir, 'movie', '[id].html'), 'utf8'),
-          fetchMovie(movieId, isTvShow),
+        const isTvShow = page === 'movie' && req.query.is_tv_show === 'true';
+        const endpoint = page === 'people' ? 'person' : isTvShow ? 'tv' : 'movie';
+        const [html, details] = await Promise.all([
+          fs.readFile(path.join(publicDir, page, '[id].html'), 'utf8'),
+          fetchDetails(`${endpoint}/${id}`),
         ]);
-        if (!movie) return res.status(404).type('html').send(html);
-        const pagePath = `/movie/${movieId}${isTvShow ? '?is_tv_show=true' : ''}`;
-        return res.type('html').send(applyMovieSeo(html, movie, pagePath));
+        if (!details) return res.status(404).type('html').send(html);
+        const metadata =
+          page === 'people'
+            ? {
+                name: details.name,
+                description: details.biography,
+                imagePath: details.profile_path,
+              }
+            : {
+                name: details.title || details.name,
+                description: details.overview,
+                imagePath: details.poster_path,
+              };
+        const pagePath = `/${page}/${id}${isTvShow ? '?is_tv_show=true' : ''}`;
+        return res.type('html').send(applyDetailSeo(html, metadata, pagePath));
       } catch (error) {
-        console.error('Movie SEO failed, serving default head:', error.message);
+        console.error('Detail SEO failed, serving default head:', error.message);
       }
     }
 

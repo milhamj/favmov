@@ -5,7 +5,7 @@ const NOT_FOUND_TTL_MS = 5 * 60 * 1000;
 const FAILURE_BACKOFF_MS = 30 * 1000;
 const CACHE_MAX_ENTRIES = 1000; // crawlers can walk many ids, so memory has to stay bounded
 
-const movieCache = new Map();
+const detailCache = new Map();
 const pendingLookups = new Map();
 let retryTmdbAt = 0;
 
@@ -18,27 +18,27 @@ const setMeta = (html, attribute, key, value) =>
   );
 
 // Expo can't render per request, so fill the prerendered template's head from TMDB data
-const applyMovieSeo = (html, movie, pagePath) => {
-  const title = `${movie.title || movie.name} | FavMov`;
+const applyDetailSeo = (html, { name, description, imagePath }, pagePath) => {
+  if (!name) return html;
+  const title = `${name} | FavMov`;
 
   let result = html.replace(/(<title[^>]*>)[^<]*/, (_, prefix) => prefix + escapeHtml(title));
   result = setMeta(result, 'property', 'og:title', title);
   result = setMeta(result, 'property', 'twitter:title', title);
   result = setMeta(result, 'property', 'og:url', SITE_URL + pagePath);
-  if (movie.overview) {
-    result = setMeta(result, 'name', 'description', movie.overview);
-    result = setMeta(result, 'property', 'og:description', movie.overview);
-    result = setMeta(result, 'property', 'twitter:description', movie.overview);
+  if (description) {
+    result = setMeta(result, 'name', 'description', description);
+    result = setMeta(result, 'property', 'og:description', description);
+    result = setMeta(result, 'property', 'twitter:description', description);
   }
-  if (movie.poster_path) {
-    result = setMeta(result, 'property', 'og:image', TMDB_IMAGE_URL + movie.poster_path);
-    result = setMeta(result, 'property', 'twitter:image', TMDB_IMAGE_URL + movie.poster_path);
+  if (imagePath) {
+    result = setMeta(result, 'property', 'og:image', TMDB_IMAGE_URL + imagePath);
+    result = setMeta(result, 'property', 'twitter:image', TMDB_IMAGE_URL + imagePath);
   }
   return result;
 };
 
-const requestMovie = async (id, isTvShow, timeoutMs = 2000) => {
-  const key = `${isTvShow ? 'tv' : 'movie'}/${id}`;
+const requestDetails = async (key, timeoutMs = 2000) => {
   const response = await fetch(`https://api.themoviedb.org/3/${key}`, {
     headers: { Authorization: `Bearer ${process.env.FAVMOV_TMDB_API_KEY}` },
     signal: AbortSignal.timeout(timeoutMs),
@@ -48,26 +48,28 @@ const requestMovie = async (id, isTvShow, timeoutMs = 2000) => {
   return response.json();
 };
 
-const cacheMovie = (key, movie) => {
-  movieCache.delete(key);
+const cacheDetails = (key, details) => {
+  detailCache.delete(key);
   // A Map iterates in insertion order, so the first key is the oldest entry
-  if (movieCache.size >= CACHE_MAX_ENTRIES) movieCache.delete(movieCache.keys().next().value);
-  movieCache.set(key, { movie, expiresAt: Date.now() + (movie ? CACHE_TTL_MS : NOT_FOUND_TTL_MS) });
+  if (detailCache.size >= CACHE_MAX_ENTRIES) detailCache.delete(detailCache.keys().next().value);
+  detailCache.set(key, {
+    details,
+    expiresAt: Date.now() + (details ? CACHE_TTL_MS : NOT_FOUND_TTL_MS),
+  });
 };
 
-// Resolves to null when TMDB has no such title. Other failures reject, and pause all
+// Resolves to null when TMDB has no matching record. Other failures reject, and pause all
 // lookups briefly so an outage doesn't add the timeout to every page view.
-const fetchMovie = async (id, isTvShow) => {
-  const key = `${isTvShow ? 'tv' : 'movie'}/${id}`;
-  const cached = movieCache.get(key);
-  if (cached && Date.now() < cached.expiresAt) return cached.movie;
+const fetchDetails = async (key) => {
+  const cached = detailCache.get(key);
+  if (cached && Date.now() < cached.expiresAt) return cached.details;
   if (pendingLookups.has(key)) return pendingLookups.get(key);
   if (Date.now() < retryTmdbAt) throw new Error('Skipping TMDB after a recent failure');
 
-  const lookup = requestMovie(id, isTvShow)
-    .then((movie) => {
-      cacheMovie(key, movie);
-      return movie;
+  const lookup = requestDetails(key)
+    .then((details) => {
+      cacheDetails(key, details);
+      return details;
     })
     .catch((error) => {
       retryTmdbAt = Date.now() + FAILURE_BACKOFF_MS;
@@ -78,4 +80,7 @@ const fetchMovie = async (id, isTvShow) => {
   return lookup;
 };
 
-module.exports = { applyMovieSeo, fetchMovie, requestMovie };
+const requestMovie = (id, isTvShow, timeoutMs) =>
+  requestDetails(`${isTvShow ? 'tv' : 'movie'}/${id}`, timeoutMs);
+
+module.exports = { applyDetailSeo, fetchDetails, requestMovie };

@@ -39,7 +39,7 @@ See the [API reference](api.md) for endpoint contracts.
 
 ## SEO
 
-Movie and TV page requests use the backend TMDB token to fill title, description and social tags. Lookups are cached for one hour, missing titles for five minutes, with a 1,000-entry limit and a 30-second cooldown after failures. A missing title returns 404; a TMDB failure serves the page with default tags.
+Movie, TV and person page requests use the backend TMDB token to fill title, description and social tags. Lookups are cached for one hour, missing records for five minutes, with a 1,000-entry limit and a 30-second cooldown after failures. A missing record returns 404. A TMDB failure serves the page with default tags.
 
 ## Media sync
 
