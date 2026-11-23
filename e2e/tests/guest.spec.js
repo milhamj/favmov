@@ -15,9 +15,15 @@ test('a guest can browse from home to a title and a person', async ({ page }) =>
   await page.getByText('Sigourney Weaver').click();
   await expect(page).toHaveURL('/people/501');
   await expect(page.getByText('An American actress.')).toBeVisible();
+  await expect(page).toHaveTitle('Sigourney Weaver | FavMov');
+  await expect(page.locator('meta[property="og:description"]')).toHaveAttribute(
+    'content',
+    'An American actress.',
+  );
 
   await page.getByText('as Gwen').click();
   await expect(page).toHaveURL('/movie/101');
+  await expect(page).toHaveTitle('Galaxy Quest | FavMov');
 });
 
 test('home cards are real links that navigate in place on click and Enter', async ({ page }) => {

@@ -1,5 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
-const { requestMovie } = require('./movieSeo');
+const { requestMovie } = require('./detailSeo');
 const { getTableName, MOVIES, TV_SHOWS } = require('./tableNames');
 
 const MAX_FAILURES_IN_ROW = 5;

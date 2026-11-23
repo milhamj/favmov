@@ -10,7 +10,10 @@ import { routes } from '@/navigation/routes';
 import { router } from '@/navigation/router';
 import { person as makePeople } from '../../test/factories';
 let mockId = '1';
-jest.mock('expo-router', () => ({ useLocalSearchParams: () => ({ id: mockId }) }));
+jest.mock('expo-router', () => ({
+  ...require('../../test/expoRouter'),
+  useLocalSearchParams: () => ({ id: mockId }),
+}));
 jest.mock('@/navigation/router', () => ({
   router: { goBackSafely: jest.fn(), navigate: jest.fn() },
 }));
